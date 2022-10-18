@@ -5,6 +5,7 @@ import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
 import lombok.val;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 /**
  *
@@ -12,20 +13,20 @@ import java.util.*;
 public interface TopologyRunInfoStore {
     Optional<EpochTopologyRunInfo> save(final EpochTopologyRunInfo executionInfo);
 
-    Optional<EpochTopologyRunInfo> get(String topologyName, String runId);
+    Optional<EpochTopologyRunInfo> get(String topologyId, String runId);
 
-    Collection<EpochTopologyRunInfo> list(String topologyName);
+    Collection<EpochTopologyRunInfo> list(String topologyId, Predicate<EpochTopologyRunInfo> filter);
 
     default Optional<EpochTopologyRunInfo> updateTaskState(
-            String topologyName,
+            String topologyId,
             String runId,
             String taskName,
             EpochTaskRunState state) {
-        return get(topologyName, runId)
+        return get(topologyId, runId)
                 .flatMap(old -> {
                     val states = new HashMap<>(old.getTaskStates());
                     states.put(taskName, state);
-                    return save(new EpochTopologyRunInfo(topologyName,
+                    return save(new EpochTopologyRunInfo(topologyId,
                                                          runId,
                                                          old.getState(),
                                                          old.getMessage(),

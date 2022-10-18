@@ -7,9 +7,11 @@ import com.phonepe.epoch.models.tasks.EpochTaskVisitor;
 import com.phonepe.epoch.models.topology.EpochTaskRunState;
 import com.phonepe.epoch.models.topology.EpochTopologyDetails;
 import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
+import com.phonepe.epoch.server.remote.TaskExecutionContext;
 import com.phonepe.epoch.server.remote.TaskExecutionEngine;
 import com.phonepe.epoch.server.statemanagement.TaskStateElaborator;
 import com.phonepe.epoch.server.store.TopologyRunInfoStore;
+import com.phonepe.epoch.server.store.TopologyStore;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import net.jodah.failsafe.Failsafe;
@@ -30,20 +32,26 @@ import java.util.Optional;
 public final class TopologyExecutorImpl implements TopologyExecutor {
 
     private final TaskExecutionEngine taskEngine;
+    private final TopologyStore topologyStore;
     private final TopologyRunInfoStore runInfoStore;
 
     @Inject
-    public TopologyExecutorImpl(TaskExecutionEngine taskEngine, TopologyRunInfoStore runInfoStore) {
+    public TopologyExecutorImpl(
+            TaskExecutionEngine taskEngine,
+            TopologyStore topologyStore,
+            TopologyRunInfoStore runInfoStore) {
         this.taskEngine = taskEngine;
+        this.topologyStore = topologyStore;
         this.runInfoStore = runInfoStore;
     }
 
     @Override
     public Optional<EpochTopologyRunInfo> execute(final ExecuteCommand executeCommand) {
-        val topologyDetails = executeCommand.getTopology();
+
+        val topologyDetails = topologyStore.get(executeCommand.getTopologyId()).orElse(null);
         val topologyName = topologyDetails.getTopology().getName();
         val rId = executeCommand.getRunId();
-        val task = executeCommand.getTopology()
+        val task = topologyDetails
                 .getTopology()
                 .getTask();
         var currState = EpochTopologyRunState.RUNNING;
@@ -61,14 +69,14 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
             val state = runTopology(executeCommand, topologyDetails, topologyName, rId, runInfo);
             log.info("Run {}/{} completed with result {}", topologyName, rId, state);
             return runInfoStore.save(runInfo.setState(state)
-                                      .setMessage("Task " + state.name().toLowerCase())
-                                      .setUpdated(new Date()));
+                                             .setMessage("Task " + state.name().toLowerCase())
+                                             .setUpdated(new Date()));
         }
         catch (Exception e) {
             log.error("Error executing task " + topologyName + "/" + rId, e);
             return runInfoStore.save(runInfo.setState(EpochTopologyRunState.FAILED)
-                                      .setMessage("Task Failed with error: " + e.getMessage())
-                                      .setUpdated(new Date()));
+                                             .setMessage("Task Failed with error: " + e.getMessage())
+                                             .setUpdated(new Date()));
         }
 
     }
@@ -82,7 +90,7 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
         return switch (topologyDetails.getState()) {
             case ACTIVE -> {
                 log.debug("Execution planned for active topology run {}/{}", topologyName, rId);
-                yield executeTopology(executeCommand, runInfo);
+                yield executeTopology(executeCommand, topologyDetails, runInfo);
             }
             case PAUSED -> {
                 log.warn("Execution skipped for paused topology run {}/{}", topologyName, rId);
@@ -97,17 +105,18 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
     }
 
     private EpochTopologyRunState executeTopology(
-            final ExecuteCommand executeCommand, final EpochTopologyRunInfo runInfo) {
-        val task = executeCommand.getTopology()
+            final ExecuteCommand executeCommand,
+            EpochTopologyDetails topologyDetails,
+            final EpochTopologyRunInfo runInfo) {
+        val task = topologyDetails
                 .getTopology()
                 .getTask();
-        val topologyName = executeCommand.getTopology().getTopology().getName();
         val runId = executeCommand.getRunId();
 
         val allTaskRunState = task.accept(new TaskExecutor(runId, runInfo, taskEngine));
         val result = allTaskRunState == EpochTaskRunState.COMPLETED
-               ? EpochTopologyRunState.SUCCESSFUL
-               : EpochTopologyRunState.FAILED;
+                     ? EpochTopologyRunState.SUCCESSFUL
+                     : EpochTopologyRunState.FAILED;
         return result;
     }
 
@@ -141,19 +150,22 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
 
         @Override
         public EpochTaskRunState visit(EpochContainerExecutionTask containerExecution) {
-            val topologyName = topologyExecutionInfo.getTopologyName();
+            val topologyName = topologyExecutionInfo.getTopologyId();
             val taskName = containerExecution.getTaskName();
             var status = EpochTaskRunState.FAILED;
+            val context = new TaskExecutionContext(topologyExecutionInfo.getTopologyId(),
+                                                   runId,
+                                                   containerExecution.getTaskName());
             try {
                 val currState = topologyExecutionInfo.getTaskStates().get(taskName);
                 status = switch (currState) {
-                    case NOT_STARTED -> {
+                    case STARTING -> {
                         log.info("Task {}/{}/{} will be executed", topologyName, runId, taskName);
-                        yield runTask(containerExecution);
+                        yield runTask(context, containerExecution);
                     }
                     case RUNNING -> {
                         log.info("Task {}/{}/{} was already running. Will be recovered", topologyName, runId, taskName);
-                        yield pollTillTerminalState(containerExecution);
+                        yield pollTillTerminalState(context, containerExecution);
 
                     }
                     default -> currState;
@@ -161,23 +173,31 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
                 return status;
             }
             catch (Exception e) {
-                log.error("Task " + topologyName + "/" + runId + "/" + taskName + " failed with error: " + e.getMessage(), e);
+                log.error("Task " + topologyName + "/" + runId + "/" + taskName + " failed with error: " + e.getMessage(),
+                          e);
             }
             finally {
                 topologyExecutionInfo.getTaskStates().put(taskName, status);
                 log.info("Task {}/{}/{} completed with status {}", topologyName, runId, taskName, status);
+                if (taskEngine.cleanup(context, containerExecution)) {
+                    log.debug("Task cleaned up complete for {}/{}", taskName, runId);
+                }
+                else {
+                    log.warn("Task cleanup failed for {}/{}", taskName, runId);
+                }
             }
             return status;
         }
 
-        private EpochTaskRunState runTask(final EpochContainerExecutionTask containerExecution) {
-            val topologyName = topologyExecutionInfo.getTopologyName();
+        private EpochTaskRunState runTask(final TaskExecutionContext context,
+                                          final EpochContainerExecutionTask containerExecution) {
+            val topologyName = topologyExecutionInfo.getTopologyId();
             val taskName = containerExecution.getTaskName();
             var status = EpochTaskRunState.FAILED;
             try {
-                status = taskEngine.start(this.runId, containerExecution);
-                if(status.equals(EpochTaskRunState.RUNNING)) {
-                    return pollTillTerminalState(containerExecution);
+                status = taskEngine.start(context, containerExecution);
+                if (status.equals(EpochTaskRunState.STARTING) || status.equals(EpochTaskRunState.RUNNING)) {
+                    return pollTillTerminalState(context, containerExecution);
                 }
                 else {
                     log.warn("Task {}/{}/{} is already finished with status {}", topologyName, runId, taskName, status);
@@ -185,24 +205,26 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
                 }
             }
             catch (Exception e) {
-                log.error("Error starting task " + topologyName + "/" + runId + "/" + taskName + ": " + e.getMessage(), e);
+                log.error("Error starting task " + topologyName + "/" + runId + "/" + taskName + ": " + e.getMessage(),
+                          e);
             }
             return EpochTaskRunState.FAILED;
         }
 
-        private EpochTaskRunState pollTillTerminalState(final EpochContainerExecutionTask containerExecution) {
-            val topologyName = topologyExecutionInfo.getTopologyName();
+        private EpochTaskRunState pollTillTerminalState(final TaskExecutionContext context, final EpochContainerExecutionTask containerExecution) {
+            val topologyName = topologyExecutionInfo.getTopologyId();
             val taskName = containerExecution.getTaskName();
             val retryPolicy = new RetryPolicy<EpochTaskRunState>()
                     .withBackoff(30, 60, ChronoUnit.SECONDS)
                     .handle(Exception.class)
-                    .handleResultIf(result -> null == result || result.equals(EpochTaskRunState.RUNNING));
+                    .handleResultIf(result -> null == result || !EpochTaskRunState.TERMINAL_STATES.contains(result));
             try {
                 return Failsafe.with(List.of(retryPolicy))
-                        .get(() -> taskEngine.status(runId, containerExecution));
+                        .get(() -> taskEngine.status(context, containerExecution));
             }
             catch (Exception e) {
-                log.error("Error determining task status " + topologyName + "/" + runId + "/" + taskName + ": " + e.getMessage(), e);
+                log.error("Error determining task status " + topologyName + "/" + runId + "/" + taskName + ": " + e.getMessage(),
+                          e);
             }
             return EpochTaskRunState.FAILED;
         }

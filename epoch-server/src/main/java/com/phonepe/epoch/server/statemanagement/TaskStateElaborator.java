@@ -37,7 +37,7 @@ public class TaskStateElaborator implements EpochTaskVisitor<Void> {
 
     @Override
     public Void visit(EpochContainerExecutionTask containerExecution) {
-        states.put(containerExecution.getTaskName(), EpochTaskRunState.NOT_STARTED);
+        states.put(containerExecution.getTaskName(), EpochTaskRunState.STARTING);
         return null;
     }
 }

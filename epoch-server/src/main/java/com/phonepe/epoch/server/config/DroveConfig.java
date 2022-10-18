@@ -1,27 +1,29 @@
 package com.phonepe.epoch.server.config;
 
 import com.phonepe.drove.models.operation.ClusterOpSpec;
-import lombok.Builder;
-import lombok.Value;
-import lombok.extern.jackson.Jacksonized;
+import io.dropwizard.util.Duration;
+import lombok.Data;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
+import java.util.List;
 
 /**
  *
  */
-@Value
-@Builder
-@Jacksonized
+@Data
 public class DroveConfig {
     @NotEmpty
-    String droveEndpoint;
+    private List<String> endpoints;
 
-    String droveAuthToken;
+    private Duration checkInterval;
 
-    @NotNull
+    private Duration connectionTimeout;
+
+    private Duration operationTimeout;
+
+    private String droveAuthToken;
+
     @Valid
-    ClusterOpSpec clusterOpSpec;
+    private ClusterOpSpec clusterOpSpec;
 }

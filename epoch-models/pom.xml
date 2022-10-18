@@ -15,7 +15,7 @@
         <dependency>
             <groupId>com.phonepe.drove</groupId>
             <artifactId>drove-models</artifactId>
-            <version>1.10</version>
+            <version>${drove.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

@@ -1,0 +1,63 @@
+package com.phonepe.epoch.server.store;
+
+import com.phonepe.epoch.models.topology.EpochTopology;
+import com.phonepe.epoch.models.topology.EpochTopologyDetails;
+import com.phonepe.epoch.models.topology.EpochTopologyState;
+import lombok.val;
+
+import javax.inject.Singleton;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
+
+/**
+ *
+ */
+@Singleton
+public class InMemoryTopologyStore implements TopologyStore {
+    private final Map<String, EpochTopologyDetails> data = new ConcurrentHashMap<>();
+
+    @Override
+    public Optional<EpochTopologyDetails> save(EpochTopology spec) {
+        val id = spec.getName();
+        return Optional.of(data.compute(id,
+                                        (tid, old) -> new EpochTopologyDetails(id,
+                                                                               spec,
+                                                                               EpochTopologyState.ACTIVE,
+                                                                               old != null ? old.getCreated()
+                                                                                           : new Date(),
+                                                                               new Date())));
+    }
+
+    @Override
+    public Optional<EpochTopologyDetails> get(String id) {
+        return Optional.ofNullable(data.get(id));
+    }
+
+    @Override
+    public List<EpochTopologyDetails> list(Predicate<EpochTopologyDetails> filter) {
+        return data.entrySet()
+                .stream()
+                .filter(e -> filter.test(e.getValue()))
+                .map(Map.Entry::getValue)
+                .toList();
+    }
+
+    @Override
+    public Optional<EpochTopologyDetails> updateState(String id, EpochTopologyState state) {
+        return Optional.ofNullable(data.computeIfPresent(id,
+                                                 (tid, old) -> new EpochTopologyDetails(old.getId(),
+                                                                                        old.getTopology(),
+                                                                                        state,
+                                                                                        old.getCreated(),
+                                                                                        new Date())));
+    }
+
+    @Override
+    public boolean delete(String id) {
+        return data.remove(id) != null;
+    }
+}

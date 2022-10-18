@@ -13,7 +13,7 @@ import java.util.Map;
 @Data
 @AllArgsConstructor
 public class EpochTopologyRunInfo {
-    String topologyName;
+    String topologyId;
     String runId;
     EpochTopologyRunState state;
     String message;

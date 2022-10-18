@@ -1,14 +1,20 @@
-package com.phonepe.epoch.server.execution;
+package com.phonepe.epoch.server.managed;
 
 import com.phonepe.epoch.models.state.EpochTopologyRunState;
-import com.phonepe.epoch.models.topology.EpochTopologyDetails;
 import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
+import com.phonepe.epoch.models.triggers.EpochTaskTrigger;
+import com.phonepe.epoch.server.execution.ExecuteCommand;
+import com.phonepe.epoch.server.execution.ExecutionTimeCalculator;
+import com.phonepe.epoch.server.execution.TopologyExecutor;
+import com.phonepe.epoch.server.store.TopologyStore;
 import io.appform.signals.signals.ConsumingFireForgetSignal;
 import io.dropwizard.lifecycle.Managed;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import ru.vyarus.dropwizard.guice.module.installer.order.Order;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 import java.time.Duration;
 import java.util.Comparator;
@@ -24,10 +30,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @Slf4j
 @Singleton
+@Order(100)
 public final class Scheduler implements Managed {
 
 
     private final ExecutorService executorService;
+    private final TopologyStore topologyStore;
     private final TopologyExecutor topologyExecutor;
 
     private final PriorityBlockingQueue<ExecuteCommand> tasks
@@ -39,11 +47,18 @@ public final class Scheduler implements Managed {
 
     private Future<?> monitorFuture = null;
 
-    public record TaskData(EpochTopologyDetails topologyDetails, EpochTopologyRunInfo runInfo) { }
+    public void cancelAll() {
+
+    }
+
+    public record TaskData(String topologyId, EpochTopologyRunInfo runInfo) { }
 
     @Inject
-    public Scheduler(ExecutorService executorService, TopologyExecutor topologyExecutor) {
+    public Scheduler(@Named("taskPool") ExecutorService executorService,
+                     TopologyStore topologyStore,
+                     TopologyExecutor topologyExecutor) {
         this.executorService = executorService;
+        this.topologyStore = topologyStore;
         this.topologyExecutor = topologyExecutor;
     }
 
@@ -67,9 +82,10 @@ public final class Scheduler implements Managed {
         return taskCompleted;
     }
 
-    public boolean schedule(final EpochTopologyDetails topologyDetails) {
+    public boolean schedule(final String topologyId,
+                            final EpochTaskTrigger trigger) {
         val currTime = new Date();
-        val duration = timeCalculator.executionTime(topologyDetails.getTopology().getTrigger(), currTime)
+        val duration = timeCalculator.executionTime(trigger, currTime)
                 .map(Duration::toMillis)
                 .orElse(-1L);
         if (-1 == duration) {
@@ -78,9 +94,9 @@ public final class Scheduler implements Managed {
         val runId = UUID.randomUUID().toString();
         tasks.put(new ExecuteCommand(runId,
                                      new Date(currTime.getTime() + duration),
-                                     topologyDetails));
+                                     topologyId));
         log.trace("Scheduled task {}/{} with delay of {} at {}",
-                  topologyDetails.getId(),
+                  topologyId,
                   runId,
                   duration,
                   new Date(currTime.getTime() + duration));
@@ -117,11 +133,11 @@ public final class Scheduler implements Managed {
                 log.trace("Nothing queued... will sleep again");
             }
             else {
-                log.trace("pulled exec command for: {}", executeCommand.getTopology().getId());
+                log.trace("pulled exec command for: {}", executeCommand.getTopologyId());
 
                 if (currTime.before(executeCommand.getNextExecutionTime())) {
                     log.trace("Found non-executable earliest task: {}/{}",
-                              executeCommand.getTopology().getId(),
+                              executeCommand.getTopologyId(),
                               executeCommand.getRunId());
                 }
                 else {
@@ -134,7 +150,7 @@ public final class Scheduler implements Managed {
             }
             try {
                 executorService.submit(() -> taskCompleted.dispatch(
-                        new TaskData(executeCommand.getTopology(),
+                        new TaskData(executeCommand.getTopologyId(),
                                      topologyExecutor.execute(executeCommand).orElse(null))));
                 tasks.remove(executeCommand);
             }
@@ -145,18 +161,25 @@ public final class Scheduler implements Managed {
     }
 
     private void handleTaskCompletion(final TaskData taskData) {
-        val tId = taskData.topologyDetails().getTopology().getName();
+        val tId = taskData.topologyId();
         val rId = taskData.runInfo().getRunId();
+
         val result = taskData.runInfo().getState();
 
         if (result == EpochTopologyRunState.COMPLETED) {
             log.info("No further scheduling needed for {}/{}", tId, rId);
             return;
         }
-
+        val trigger = topologyStore.get(tId)
+                .map(e -> e.getTopology().getTrigger())
+                .orElse(null);
+        if(trigger == null) {
+            log.info("Topology {} seems to have been deleted, no scheduling needed.", tId);
+            return;
+        }
         log.debug("{} state for {}/{}. Will try to reschedule for next slot.", result, tId, rId);
-        if (!schedule(taskData.topologyDetails())) {
-            log.warn("Further scheduling skipped for: {}", taskData.topologyDetails().getTopology().getName());
+        if (!schedule(tId, trigger)) {
+            log.warn("Further scheduling skipped for: {}", tId);
         }
     }
 
