@@ -7,6 +7,7 @@ import java.util.Set;
  *
  */
 public enum EpochTaskRunState {
+    PENDING,
     STARTING,
     RUNNING,
     COMPLETED,

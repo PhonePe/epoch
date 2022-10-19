@@ -126,7 +126,9 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
                               context.getTaskName(),
                               currState);
                     return switch (currState) {
-                        case PENDING, PROVISIONING, STARTING, RUNNING, RUN_COMPLETED, DEPROVISIONING ->
+                        case PENDING, PROVISIONING, STARTING ->
+                                EpochTaskRunState.STARTING;
+                        case RUNNING, RUN_COMPLETED, DEPROVISIONING ->
                                 EpochTaskRunState.RUNNING;
                         case PROVISIONING_FAILED, LOST -> EpochTaskRunState.FAILED;
                         case STOPPED -> EpochTaskRunState.COMPLETED;

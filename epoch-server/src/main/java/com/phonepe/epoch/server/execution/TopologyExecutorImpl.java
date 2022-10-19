@@ -159,11 +159,11 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
             try {
                 val currState = topologyExecutionInfo.getTaskStates().get(taskName);
                 status = switch (currState) {
-                    case STARTING -> {
+                    case PENDING -> {
                         log.info("Task {}/{}/{} will be executed", topologyName, runId, taskName);
                         yield runTask(context, containerExecution);
                     }
-                    case RUNNING -> {
+                    case STARTING, RUNNING -> {
                         log.info("Task {}/{}/{} was already running. Will be recovered", topologyName, runId, taskName);
                         yield pollTillTerminalState(context, containerExecution);
 
@@ -180,10 +180,10 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
                 topologyExecutionInfo.getTaskStates().put(taskName, status);
                 log.info("Task {}/{}/{} completed with status {}", topologyName, runId, taskName, status);
                 if (taskEngine.cleanup(context, containerExecution)) {
-                    log.debug("Task cleaned up complete for {}/{}", taskName, runId);
+                    log.debug("Task clean up complete for {}/{}/{}", topologyName, runId, taskName);
                 }
                 else {
-                    log.warn("Task cleanup failed for {}/{}", taskName, runId);
+                    log.warn("Task cleanup failed for {}/{}/{}", topologyName, runId, taskName);
                 }
             }
             return status;
@@ -196,7 +196,7 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
             var status = EpochTaskRunState.FAILED;
             try {
                 status = taskEngine.start(context, containerExecution);
-                if (status.equals(EpochTaskRunState.STARTING) || status.equals(EpochTaskRunState.RUNNING)) {
+                if (status.equals(EpochTaskRunState.STARTING)) {
                     return pollTillTerminalState(context, containerExecution);
                 }
                 else {
