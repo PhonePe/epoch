@@ -2,7 +2,6 @@ package com.phonepe.epoch.server.managed;
 
 import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.topology.EpochTopologyDetails;
-import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
 import com.phonepe.epoch.models.topology.EpochTopologyState;
 import com.phonepe.epoch.server.store.TopologyRunInfoStore;
 import com.phonepe.epoch.server.store.TopologyStore;
@@ -64,29 +63,29 @@ public class TopologyRecovery implements Managed {
                 .collect(Collectors.toMap(EpochTopologyDetails::getId, Function.identity()));
         log.info("Recovering topologies: {}", topologies.keySet());
         topologies.forEach((tId, t) -> {
-            val activeRuns = runInfoStore.list(tId, x -> true);
+            val activeRuns = runInfoStore.list(tId, run -> run.getState().equals(EpochTopologyRunState.RUNNING));
 
-            activeRuns
-                    .stream()
-                    .filter(run -> run.getState().equals(EpochTopologyRunState.RUNNING))
-                    .forEach(run -> {
-                        val status = scheduler.recover(
-                                t.getId(),
-                                run.getRunId(),
-                                new Date(),
-                                0);
-                        if (status) {
-                            log.info("Scheduled topology {} for execution", t.getId());
-                        }
-                        else {
-                            log.warn("Could not schedule topology {} for execution", t.getId());
-                        }
-                    });
+            activeRuns.forEach(run -> {
+                val status = scheduler.recover(
+                        t.getId(),
+                        run.getRunId(),
+                        new Date(),
+                        0);
+                if (status) {
+                    log.info("Scheduled topology {} for execution", t.getId());
+                }
+                else {
+                    log.warn("Could not schedule topology {} for execution", t.getId());
+                }
+            });
+/*
             val lastRunStartTime = activeRuns.stream()
                     .findFirst()
                     .map(EpochTopologyRunInfo::getCreated)
                     .orElse(new Date());
             scheduleTopology(t, scheduler, lastRunStartTime);
+*/
+            scheduleTopology(t, scheduler, new Date());
         });
     }
 }

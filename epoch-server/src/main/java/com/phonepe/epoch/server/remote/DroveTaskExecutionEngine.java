@@ -11,6 +11,7 @@ import com.phonepe.drove.models.taskinstance.TaskInfo;
 import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
 import com.phonepe.epoch.models.topology.EpochTaskRunState;
 import com.phonepe.epoch.server.managed.DroveClientManager;
+import io.appform.functionmetrics.MonitoredFunction;
 import io.dropwizard.util.Strings;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -52,6 +53,7 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
 
     @Override
     @SneakyThrows
+    @MonitoredFunction
     public EpochTaskRunState start(TaskExecutionContext context, EpochContainerExecutionTask executionTask) {
         val client = droveClientManager.getClient();
         val config = droveClientManager.getDroveConfig();
@@ -109,6 +111,7 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
     }
 
     @Override
+    @MonitoredFunction
     public EpochTaskRunState status(TaskExecutionContext context, EpochContainerExecutionTask executionTask) {
         val client = droveClientManager.getClient();
         val config = droveClientManager.getDroveConfig();
@@ -162,6 +165,7 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
     }
 
     @Override
+    @MonitoredFunction
     public boolean cleanup(TaskExecutionContext context, EpochContainerExecutionTask containerExecution) {
         val client = droveClientManager.getClient();
         val config = droveClientManager.getDroveConfig();
