@@ -32,7 +32,6 @@ class ZkTopologyStoreTest extends TestBase {
             cluster.start();
             try (val cf = ZkUtils.buildCurator(
                     new ZkConfig().setConnectionString(cluster.getConnectString()))) {
-                cf.start();
                 val ts = new ZkTopologyStore(cf, MAPPER);
 
                 { //Test CRUD

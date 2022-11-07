@@ -28,7 +28,6 @@ class CachingProxyTopologyRunInfoStoreTest extends TestBase {
             cluster.start();
             try (val curator = ZkUtils.buildCurator(
                     new ZkConfig().setConnectionString(cluster.getConnectString()))) {
-                curator.start();
                 val ris = new CachingProxyTopologyRunInfoStore(new ZkTopologyRunInfoStore(curator, MAPPER));
                 {
                     val executionInfo = new EpochTopologyRunInfo("TID1",

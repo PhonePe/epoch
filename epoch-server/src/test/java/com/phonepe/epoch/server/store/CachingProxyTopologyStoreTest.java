@@ -36,7 +36,6 @@ class CachingProxyTopologyStoreTest extends TestBase {
             cluster.start();
             try (val cf = ZkUtils.buildCurator(
                     new ZkConfig().setConnectionString(cluster.getConnectString()))) {
-                cf.start();
                 val le = mock(LeadershipEnsurer.class);
                 val s = new ConsumingFireForgetSignal<Boolean>();
                 when(le.onLeadershipChange()).thenReturn(s);
