@@ -49,7 +49,7 @@ public class Apis {
         }
         val saved = topologyStore.save(topology);
         if (saved.isPresent()) {
-            scheduleTopology(saved.get(), scheduler);
+            scheduleTopology(saved.get(), scheduler, new Date());
         }
         return saved
                 .map(ApiResponse::success)
@@ -89,7 +89,7 @@ public class Apis {
     @DELETE
     @Path("/topologies/{topologyId}")
     public ApiResponse<Boolean> deleteTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
-        return ApiResponse.success(topologyStore.delete(topologyId));
+        return ApiResponse.success(topologyStore.delete(topologyId) && runInfoStore.deleteAll(topologyId));
     }
 
     @GET

@@ -50,8 +50,8 @@ public class EpochUtils {
         return new EpochTopologyDetails(topologyId(topology), topology, EpochTopologyState.ACTIVE, new Date(), new Date());
     }
 
-    public static void scheduleTopology(EpochTopologyDetails topologyDetails, Scheduler scheduler) {
-        val status = scheduler.schedule(topologyDetails.getId(), topologyDetails.getTopology().getTrigger());
+    public static void scheduleTopology(EpochTopologyDetails topologyDetails, Scheduler scheduler, Date currTime) {
+        val status = scheduler.schedule(topologyDetails.getId(), topologyDetails.getTopology().getTrigger(), currTime);
         if(status) {
             log.info("Scheduled topology {} for execution", topologyDetails.getId());
         }

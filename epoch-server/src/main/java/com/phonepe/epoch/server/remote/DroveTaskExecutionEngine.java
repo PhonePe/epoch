@@ -65,7 +65,7 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
                 .header(HttpHeaders.AUTHORIZATION, "O-Bearer " + config.getDroveAuthToken())
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         val request = requestBuilder.POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(
-                        taskCreateOperation(context.getRunId(), executionTask))))
+                        taskCreateOperation(context, executionTask))))
                 .timeout(getOrDefault(config.getOperationTimeout()))
                 .build();
         try {
@@ -82,6 +82,17 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
                              context.getTaskName(),
                              apiResponse.getData().getOrDefault("taskId", "UNKNOWN"));
                     return EpochTaskRunState.STARTING;
+                }
+            }
+            else if (response.statusCode() == 400) {
+                val res = mapper.readTree(body);
+                val error = res.at("/data/validationErrors/0");
+                if (error.isTextual() && error.asText().contains("Task already exists ")) {
+                    log.info("Task {}/{}/{} already running on drove with taskId: {}",
+                             context.getTopologyId(),
+                             context.getRunId(),
+                             context.getTaskName());
+                    return EpochTaskRunState.RUNNING;
                 }
             }
             throw new IllegalStateException("Received error from api: [" + response.statusCode() + "] " + body);
@@ -101,7 +112,8 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
     public EpochTaskRunState status(TaskExecutionContext context, EpochContainerExecutionTask executionTask) {
         val client = droveClientManager.getClient();
         val config = droveClientManager.getDroveConfig();
-        val url = client.leader().map(host -> host + "/apis/v1/tasks/" + appName + "/instances/" + context.getRunId())
+        val instanceId = instanceId(context);
+        val url = client.leader().map(host -> host + "/apis/v1/tasks/" + appName + "/instances/" + instanceId)
                 .orElse(null);
         if (Strings.isNullOrEmpty(url)) {
             throw new IllegalStateException("No leader found for drove cluster");
@@ -153,7 +165,8 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
     public boolean cleanup(TaskExecutionContext context, EpochContainerExecutionTask containerExecution) {
         val client = droveClientManager.getClient();
         val config = droveClientManager.getDroveConfig();
-        val url = client.leader().map(host -> host + "/apis/v1/tasks/" + appName + "/instances/" + context.getRunId())
+        val instanceId = instanceId(context);
+        val url = client.leader().map(host -> host + "/apis/v1/tasks/" + appName + "/instances/" + instanceId)
                 .orElse(null);
         if (Strings.isNullOrEmpty(url)) {
             throw new IllegalStateException("No leader found for drove cluster");
@@ -188,9 +201,10 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
     }
 
 
-    private TaskCreateOperation taskCreateOperation(String runId, final EpochContainerExecutionTask task) {
+    private TaskCreateOperation taskCreateOperation(final TaskExecutionContext context,
+                                                    final EpochContainerExecutionTask task) {
         return new TaskCreateOperation(new TaskSpec(appName,
-                                                    runId,
+                                                    instanceId(context),
                                                     task.getExecutable(),
                                                     task.getVolumes(),
                                                     task.getLogging(),
@@ -201,5 +215,9 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
                                        Objects.requireNonNullElse(droveClientManager.getDroveConfig()
                                                                           .getClusterOpSpec(),
                                                                   ClusterOpSpec.DEFAULT));
+    }
+
+    private String instanceId(final TaskExecutionContext context) {
+        return context.getTopologyId() + "-" + context.getRunId() + "-" + context.getTaskName();
     }
 }

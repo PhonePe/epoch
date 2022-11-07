@@ -13,6 +13,8 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
+import static com.phonepe.epoch.server.utils.EpochUtils.topologyId;
+
 /**
  *
  */
@@ -22,7 +24,7 @@ public class InMemoryTopologyStore implements TopologyStore {
 
     @Override
     public Optional<EpochTopologyDetails> save(EpochTopology spec) {
-        val id = spec.getName();
+        val id = topologyId(spec.getName());
         return Optional.of(data.compute(id,
                                         (tid, old) -> new EpochTopologyDetails(id,
                                                                                spec,

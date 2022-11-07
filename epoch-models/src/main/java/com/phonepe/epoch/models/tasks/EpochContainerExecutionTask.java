@@ -5,9 +5,11 @@ import com.phonepe.drove.models.application.executable.ExecutableCoordinates;
 import com.phonepe.drove.models.application.logging.LoggingSpec;
 import com.phonepe.drove.models.application.placement.policies.AnyPlacementPolicy;
 import com.phonepe.drove.models.application.requirements.ResourceRequirement;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.Value;
+import lombok.extern.jackson.Jacksonized;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
@@ -21,6 +23,8 @@ import java.util.Map;
 @Value
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
+@Jacksonized
+@Builder
 public class EpochContainerExecutionTask extends EpochTask {
 
     String taskName;

@@ -12,4 +12,5 @@ public class ExecuteCommand {
     String runId;
     Date nextExecutionTime;
     String topologyId;
+    boolean inRecoveryContext;
 }

@@ -15,6 +15,10 @@ public interface TopologyRunInfoStore {
 
     Optional<EpochTopologyRunInfo> get(String topologyId, String runId);
 
+    boolean delete(String topologyId, String runId);
+
+    boolean deleteAll(String topologyId);
+
     Collection<EpochTopologyRunInfo> list(String topologyId, Predicate<EpochTopologyRunInfo> filter);
 
     default Optional<EpochTopologyRunInfo> updateTaskState(

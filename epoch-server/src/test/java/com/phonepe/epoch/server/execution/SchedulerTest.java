@@ -80,8 +80,9 @@ class SchedulerTest {
             }
         });
         s.start();
-        s.schedule(topoId1, topo1.getTrigger());
-        s.schedule(topoId2, topo2.getTrigger());
+        val currDate = new Date();
+        s.schedule(topoId1, topo1.getTrigger(), currDate);
+        s.schedule(topoId2, topo2.getTrigger(), currDate);
 
         Awaitility.await()
                 .forever()

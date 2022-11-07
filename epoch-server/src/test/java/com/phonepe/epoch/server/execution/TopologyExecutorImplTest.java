@@ -1,11 +1,5 @@
 package com.phonepe.epoch.server.execution;
 
-import com.phonepe.drove.models.application.MountedVolume;
-import com.phonepe.drove.models.application.executable.DockerCoordinates;
-import com.phonepe.drove.models.application.logging.LocalLoggingSpec;
-import com.phonepe.drove.models.application.placement.policies.AnyPlacementPolicy;
-import com.phonepe.drove.models.application.requirements.CPURequirement;
-import com.phonepe.drove.models.application.requirements.MemoryRequirement;
 import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.tasks.EpochCompositeTask;
 import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
@@ -14,10 +8,10 @@ import com.phonepe.epoch.models.topology.EpochTaskRunState;
 import com.phonepe.epoch.models.topology.EpochTopology;
 import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
 import com.phonepe.epoch.models.triggers.EpochTaskTriggerCron;
+import com.phonepe.epoch.server.TestUtils;
 import com.phonepe.epoch.server.remote.TaskExecutionEngine;
 import com.phonepe.epoch.server.store.InMemoryTopologyRunInfoStore;
 import com.phonepe.epoch.server.store.TopologyStore;
-import io.dropwizard.util.Duration;
 import lombok.val;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
@@ -42,7 +36,7 @@ class TopologyExecutorImplTest {
     void checkSingleTask() {
         val topoName = "test-topo";
         val topo = new EpochTopology(topoName,
-                                     genContainerTask(1),
+                                     TestUtils.genContainerTask(1),
                                      new EpochTaskTriggerCron("0/2 * * ? * * *"));
         val ts = mock(TopologyStore.class);
         when(ts.get(anyString())).thenReturn(Optional.of(detailsFrom(topo)));
@@ -71,7 +65,7 @@ class TopologyExecutorImplTest {
         val topoName = "test-topo";
         val topo = new EpochTopology(topoName,
                                      new EpochCompositeTask(IntStream.rangeClosed(1, 10)
-                                                                    .<EpochTask>mapToObj(TopologyExecutorImplTest::genContainerTask)
+                                                                    .<EpochTask>mapToObj(TestUtils::genContainerTask)
                                                                     .toList(),
                                                             EpochCompositeTask.CompositionType.ALL),
                                      new EpochTaskTriggerCron("0/2 * * ? * * *"));
@@ -101,7 +95,7 @@ class TopologyExecutorImplTest {
         val topoName = "test-topo";
         val topo = new EpochTopology(topoName,
                                      new EpochCompositeTask(IntStream.rangeClosed(1, 10)
-                                                                    .<EpochTask>mapToObj(TopologyExecutorImplTest::genContainerTask)
+                                                                    .<EpochTask>mapToObj(TestUtils::genContainerTask)
                                                                     .toList(),
                                                             EpochCompositeTask.CompositionType.ALL),
                                      new EpochTaskTriggerCron("0/2 * * ? * * *"));
@@ -138,7 +132,7 @@ class TopologyExecutorImplTest {
         val topoName = "test-topo";
         val topo = new EpochTopology(topoName,
                                      new EpochCompositeTask(IntStream.rangeClosed(1, 10)
-                                                                    .<EpochTask>mapToObj(TopologyExecutorImplTest::genContainerTask)
+                                                                    .<EpochTask>mapToObj(TestUtils::genContainerTask)
                                                                     .toList(),
                                                             EpochCompositeTask.CompositionType.ANY),
                                      new EpochTaskTriggerCron("0/2 * * ? * * *"));
@@ -170,20 +164,4 @@ class TopologyExecutorImplTest {
     }
 
 
-    private static EpochContainerExecutionTask genContainerTask(int index) {
-        return new EpochContainerExecutionTask("test-task-" + index,
-                                               new DockerCoordinates(
-                                                       "docker.io/santanusinha/perf-test-server" +
-                                                               ":0.3",
-                                                       Duration.seconds(100)),
-                                               List.of(new CPURequirement(1),
-                                                       new MemoryRequirement(512)),
-                                               List.of(new MountedVolume("/tmp",
-                                                                         "/tmp",
-                                                                         MountedVolume.MountMode.READ_ONLY)),
-                                               LocalLoggingSpec.DEFAULT,
-                                               new AnyPlacementPolicy(),
-                                               Map.of(),
-                                               Map.of());
-    }
 }

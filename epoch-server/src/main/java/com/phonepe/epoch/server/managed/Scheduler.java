@@ -51,7 +51,7 @@ public final class Scheduler implements Managed {
 
     }
 
-    public record TaskData(String topologyId, EpochTopologyRunInfo runInfo) { }
+    public record TaskData(String topologyId, EpochTopologyRunInfo runInfo, boolean inRecoveryContext) { }
 
     @Inject
     public Scheduler(@Named("taskPool") ExecutorService executorService,
@@ -83,8 +83,8 @@ public final class Scheduler implements Managed {
     }
 
     public boolean schedule(final String topologyId,
-                            final EpochTaskTrigger trigger) {
-        val currTime = new Date();
+                            final EpochTaskTrigger trigger,
+                            Date currTime) {
         val duration = timeCalculator.executionTime(trigger, currTime)
                 .map(Duration::toMillis)
                 .orElse(-1L);
@@ -92,9 +92,25 @@ public final class Scheduler implements Managed {
             return false;
         }
         val runId = UUID.randomUUID().toString();
+        val executionTime = new Date(currTime.getTime() + duration);
+        tasks.put(new ExecuteCommand(runId,
+                                     executionTime,
+                                     topologyId,
+                                     false));
+        log.debug("Scheduled task {}/{} with delay of {} ms at {}. Reference time: {}",
+                  topologyId,
+                  runId,
+                  duration,
+                  executionTime,
+                  currTime);
+        return true;
+    }
+
+    public boolean recover(String topologyId, String runId, Date currTime, long duration) {
         tasks.put(new ExecuteCommand(runId,
                                      new Date(currTime.getTime() + duration),
-                                     topologyId));
+                                     topologyId,
+                                     true));
         log.trace("Scheduled task {}/{} with delay of {} at {}",
                   topologyId,
                   runId,
@@ -102,7 +118,6 @@ public final class Scheduler implements Managed {
                   new Date(currTime.getTime() + duration));
         return true;
     }
-
 
     private void check() {
         var done = false;
@@ -151,7 +166,8 @@ public final class Scheduler implements Managed {
             try {
                 executorService.submit(() -> taskCompleted.dispatch(
                         new TaskData(executeCommand.getTopologyId(),
-                                     topologyExecutor.execute(executeCommand).orElse(null))));
+                                     topologyExecutor.execute(executeCommand).orElse(null),
+                                     executeCommand.isInRecoveryContext())));
                 tasks.remove(executeCommand);
             }
             catch (Exception e) {
@@ -165,7 +181,10 @@ public final class Scheduler implements Managed {
         val rId = taskData.runInfo().getRunId();
 
         val result = taskData.runInfo().getState();
-
+        if(taskData.inRecoveryContext()) {
+            log.info("Run was recovered. Run {}/{} finished with state: {}", tId, rId, result);
+            return;
+        }
         if (result == EpochTopologyRunState.COMPLETED) {
             log.info("No further scheduling needed for {}/{}", tId, rId);
             return;
@@ -178,7 +197,7 @@ public final class Scheduler implements Managed {
             return;
         }
         log.debug("{} state for {}/{}. Will try to reschedule for next slot.", result, tId, rId);
-        if (!schedule(tId, trigger)) {
+        if (!schedule(tId, trigger, new Date())) {
             log.warn("Further scheduling skipped for: {}", tId);
         }
     }

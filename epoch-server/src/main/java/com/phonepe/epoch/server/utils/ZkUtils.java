@@ -27,11 +27,13 @@ public class ZkUtils {
     private static final String DEFAULT_NAMESPACE = "epoch";
 
     public static CuratorFramework buildCurator(ZkConfig config) {
-        return CuratorFrameworkFactory.builder()
+        val curator = CuratorFrameworkFactory.builder()
                 .connectString(config.getConnectionString())
                 .namespace(Objects.requireNonNullElse(config.getNameSpace(), DEFAULT_NAMESPACE))
                 .retryPolicy(new RetryForever(1000))
                 .build();
+        curator.start();
+        return curator;
     }
 
     public static boolean setNodeData(
@@ -48,7 +50,6 @@ public class ZkUtils {
         catch (Exception e) {
             log.error("Error writing node data for " + path, e);
         }
-
         return false;
     }
 

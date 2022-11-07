@@ -19,7 +19,7 @@ import net.jodah.failsafe.RetryPolicy;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.time.temporal.ChronoUnit;
+import java.time.Duration;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -113,7 +113,7 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
                 .getTask();
         val runId = executeCommand.getRunId();
 
-        val allTaskRunState = task.accept(new TaskExecutor(runId, runInfo, taskEngine));
+        val allTaskRunState = task.accept(new TaskExecutor(runId, runInfo, taskEngine, runInfoStore));
         val result = allTaskRunState == EpochTaskRunState.COMPLETED
                      ? EpochTopologyRunState.SUCCESSFUL
                      : EpochTopologyRunState.FAILED;
@@ -125,14 +125,17 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
         private final String runId;
         private final EpochTopologyRunInfo topologyExecutionInfo;
         private final TaskExecutionEngine taskEngine;
+        private final TopologyRunInfoStore runInfoStore;
 
         private TaskExecutor(
                 String runId,
                 EpochTopologyRunInfo topologyExecutionInfo,
-                TaskExecutionEngine taskEngine) {
+                TaskExecutionEngine taskEngine,
+                TopologyRunInfoStore runInfoStore) {
             this.runId = runId;
             this.topologyExecutionInfo = topologyExecutionInfo;
             this.taskEngine = taskEngine;
+            this.runInfoStore = runInfoStore;
         }
 
         @Override
@@ -196,7 +199,7 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
             var status = EpochTaskRunState.FAILED;
             try {
                 status = taskEngine.start(context, containerExecution);
-                if (status.equals(EpochTaskRunState.STARTING)) {
+                if (status.equals(EpochTaskRunState.STARTING) || status.equals(EpochTaskRunState.RUNNING)) {
                     return pollTillTerminalState(context, containerExecution);
                 }
                 else {
@@ -215,12 +218,24 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
             val topologyName = topologyExecutionInfo.getTopologyId();
             val taskName = containerExecution.getTaskName();
             val retryPolicy = new RetryPolicy<EpochTaskRunState>()
-                    .withBackoff(30, 60, ChronoUnit.SECONDS)
+                    .withDelay(Duration.ofSeconds(3))
+                    .withMaxRetries(-1)
                     .handle(Exception.class)
                     .handleResultIf(result -> null == result || !EpochTaskRunState.TERMINAL_STATES.contains(result));
             try {
                 return Failsafe.with(List.of(retryPolicy))
-                        .get(() -> taskEngine.status(context, containerExecution));
+                        .get(() -> {
+                            val status = taskEngine.status(context, containerExecution);
+                            try {
+                                runInfoStore.updateTaskState(context.getTopologyId(),
+                                                             context.getRunId(),
+                                                             context.getTaskName(),
+                                                             status);
+                            }
+                            catch (Exception e) {
+                                log.error("Error updating state: ", e);
+                            }
+                            return status;});
             }
             catch (Exception e) {
                 log.error("Error determining task status " + topologyName + "/" + runId + "/" + taskName + ": " + e.getMessage(),

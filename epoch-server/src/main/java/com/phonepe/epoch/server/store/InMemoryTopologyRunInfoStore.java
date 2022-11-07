@@ -4,7 +4,10 @@ import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
 import lombok.val;
 
 import javax.inject.Singleton;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 /**
@@ -28,6 +31,26 @@ public class InMemoryTopologyRunInfoStore implements TopologyRunInfoStore {
     @Override
     public Optional<EpochTopologyRunInfo> get(String topologyId, String runId) {
         return Optional.ofNullable(data.getOrDefault(topologyId, new HashMap<>()).get(runId));
+    }
+
+    @Override
+    public boolean delete(String topologyId, String runId) {
+        return data.compute(topologyId,
+                            (itd, old) -> {
+                                if (old == null) {
+                                    return null;
+                                }
+                                old.remove(runId);
+                                if(old.isEmpty()) {
+                                    return null;
+                                }
+                                return old;
+                            }) != null;
+    }
+
+    @Override
+    public boolean deleteAll(String topologyId) {
+        return data.remove(topologyId) != null;
     }
 
     @Override

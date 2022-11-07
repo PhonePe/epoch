@@ -2,16 +2,14 @@ package com.phonepe.epoch.server;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+import com.google.inject.name.Names;
 import com.phonepe.epoch.server.config.AppConfig;
 import com.phonepe.epoch.server.config.DroveConfig;
 import com.phonepe.epoch.server.execution.TopologyExecutor;
 import com.phonepe.epoch.server.execution.TopologyExecutorImpl;
 import com.phonepe.epoch.server.remote.DroveTaskExecutionEngine;
 import com.phonepe.epoch.server.remote.TaskExecutionEngine;
-import com.phonepe.epoch.server.store.InMemoryTopologyRunInfoStore;
-import com.phonepe.epoch.server.store.InMemoryTopologyStore;
-import com.phonepe.epoch.server.store.TopologyRunInfoStore;
-import com.phonepe.epoch.server.store.TopologyStore;
+import com.phonepe.epoch.server.store.*;
 import com.phonepe.epoch.server.utils.ZkUtils;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.util.Duration;
@@ -32,8 +30,14 @@ public class EpochModule extends AbstractModule {
     protected void configure() {
         bind(TaskExecutionEngine.class).to(DroveTaskExecutionEngine.class);
         bind(TopologyExecutor.class).to(TopologyExecutorImpl.class);
-        bind(TopologyStore.class).to(InMemoryTopologyStore.class);
-        bind(TopologyRunInfoStore.class).to(InMemoryTopologyRunInfoStore.class);
+
+        bind(TopologyStore.class).to(CachingProxyTopologyStore.class);
+        bind(TopologyStore.class).annotatedWith(Names.named("rootTopologyStore")).to(ZkTopologyStore.class);
+
+        bind(TopologyRunInfoStore.class).to(CachingProxyTopologyRunInfoStore.class);
+        bind(TopologyRunInfoStore.class)
+                .annotatedWith(Names.named("rootRunInfoStore"))
+                .to(ZkTopologyRunInfoStore.class);
     }
 
     @Provides
