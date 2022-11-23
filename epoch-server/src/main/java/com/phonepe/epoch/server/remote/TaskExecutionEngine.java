@@ -7,7 +7,7 @@ import com.phonepe.epoch.models.topology.EpochTaskRunState;
  *
  */
 public interface TaskExecutionEngine {
-    EpochTaskRunState start(TaskExecutionContext context, final EpochContainerExecutionTask executionTask);
+    TaskExecutionData start(TaskExecutionContext context, final EpochContainerExecutionTask executionTask);
     EpochTaskRunState status(TaskExecutionContext context, final EpochContainerExecutionTask executionTask);
     boolean cleanup(TaskExecutionContext context, EpochContainerExecutionTask containerExecution);
 }

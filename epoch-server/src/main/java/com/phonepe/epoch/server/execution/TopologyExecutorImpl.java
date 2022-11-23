@@ -8,6 +8,7 @@ import com.phonepe.epoch.models.topology.EpochTaskRunState;
 import com.phonepe.epoch.models.topology.EpochTopologyDetails;
 import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
 import com.phonepe.epoch.server.remote.TaskExecutionContext;
+import com.phonepe.epoch.server.remote.TaskExecutionData;
 import com.phonepe.epoch.server.remote.TaskExecutionEngine;
 import com.phonepe.epoch.server.statemanagement.TaskStateElaborator;
 import com.phonepe.epoch.server.store.TopologyRunInfoStore;
@@ -59,6 +60,7 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
                 = runInfoStore.save(new EpochTopologyRunInfo(
                         topologyName,
                         rId,
+                        null,
                         currState,
                         "Job started",
                         new TaskStateElaborator().states(task),
@@ -156,9 +158,13 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
             val topologyName = topologyExecutionInfo.getTopologyId();
             val taskName = containerExecution.getTaskName();
             var status = EpochTaskRunState.FAILED;
+            val existingData = runInfoStore.get(topologyName, runId).orElse(null);
             val context = new TaskExecutionContext(topologyExecutionInfo.getTopologyId(),
                                                    runId,
-                                                   containerExecution.getTaskName());
+                                                   containerExecution.getTaskName(),
+                                                   null == existingData
+                                                   ? TaskExecutionData.UNKNOWN_TASK_ID
+                                                   : existingData.getUpstreamTaskId());
             try {
                 val currState = topologyExecutionInfo.getTaskStates().get(taskName);
                 status = switch (currState) {
@@ -198,7 +204,10 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
             val taskName = containerExecution.getTaskName();
             var status = EpochTaskRunState.FAILED;
             try {
-                status = taskEngine.start(context, containerExecution);
+                val taskData = taskEngine.start(context, containerExecution);
+                status = taskData.state();
+                context.setUpstreamTaskId(taskData.upstreamTaskId());
+                runInfoStore.updateUpstreamId(topologyName, runId, taskData.upstreamTaskId());
                 if (status.equals(EpochTaskRunState.STARTING) || status.equals(EpochTaskRunState.RUNNING)) {
                     return pollTillTerminalState(context, containerExecution);
                 }

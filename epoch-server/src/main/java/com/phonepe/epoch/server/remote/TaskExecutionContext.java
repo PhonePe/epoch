@@ -1,13 +1,16 @@
 package com.phonepe.epoch.server.remote;
 
-import lombok.Value;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 /**
  *
  */
-@Value
+@Data
+@AllArgsConstructor
 public class TaskExecutionContext{
     String topologyId;
     String runId;
     String taskName;
+    String upstreamTaskId;
 }

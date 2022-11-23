@@ -16,10 +16,10 @@ import ru.vyarus.dropwizard.guice.module.installer.order.Order;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.PriorityBlockingQueue;
@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Singleton
 @Order(100)
 public final class Scheduler implements Managed {
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS");
 
 
     private final ExecutorService executorService;
@@ -91,8 +92,8 @@ public final class Scheduler implements Managed {
         if (-1 == duration) {
             return false;
         }
-        val runId = UUID.randomUUID().toString();
         val executionTime = new Date(currTime.getTime() + duration);
+        val runId = "ET-" + DATE_FORMAT.format(executionTime);
         tasks.put(new ExecuteCommand(runId,
                                      executionTime,
                                      topologyId,

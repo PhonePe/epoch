@@ -15,6 +15,7 @@ import java.util.Map;
 public class EpochTopologyRunInfo {
     String topologyId;
     String runId;
+    String upstreamTaskId;
     EpochTopologyRunState state;
     String message;
     Map<String, EpochTaskRunState> taskStates;
