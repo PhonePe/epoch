@@ -33,6 +33,7 @@ class ZkTopologyRunInfoStoreTest extends TestBase {
                 {
                     val executionInfo = new EpochTopologyRunInfo("TID1",
                                                                  "RID1",
+                                                                 "",
                                                                  EpochTopologyRunState.RUNNING,
                                                                  "",
                                                                  Map.of("TT_1", EpochTaskRunState.RUNNING),
@@ -53,6 +54,7 @@ class ZkTopologyRunInfoStoreTest extends TestBase {
                             .forEach(i -> IntStream.rangeClosed(1, 25)
                                     .forEach(j -> ris.save(new EpochTopologyRunInfo("TID-" + i,
                                                                                     "RID-" + j,
+                                                                                    "",
                                                                                     EpochTopologyRunState.RUNNING,
                                                                                     "",
                                                                                     Map.of("TT_1", EpochTaskRunState.RUNNING),

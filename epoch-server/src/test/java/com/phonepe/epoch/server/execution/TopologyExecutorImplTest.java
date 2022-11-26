@@ -9,6 +9,7 @@ import com.phonepe.epoch.models.topology.EpochTopology;
 import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
 import com.phonepe.epoch.models.triggers.EpochTaskTriggerCron;
 import com.phonepe.epoch.server.TestUtils;
+import com.phonepe.epoch.server.remote.TaskExecutionData;
 import com.phonepe.epoch.server.remote.TaskExecutionEngine;
 import com.phonepe.epoch.server.store.InMemoryTopologyRunInfoStore;
 import com.phonepe.epoch.server.store.TopologyStore;
@@ -42,7 +43,7 @@ class TopologyExecutorImplTest {
         when(ts.get(anyString())).thenReturn(Optional.of(detailsFrom(topo)));
         val te = mock(TaskExecutionEngine.class);
         when(te.start(any(), any()))
-                .thenReturn(EpochTaskRunState.STARTING);
+                .thenReturn(new TaskExecutionData("TEST_1", EpochTaskRunState.STARTING));
         when(te.status(any(), any()))
                 .thenReturn(EpochTaskRunState.COMPLETED);
         when(te.cleanup(any(), any())).thenReturn(true);
@@ -73,7 +74,7 @@ class TopologyExecutorImplTest {
         when(ts.get(anyString())).thenReturn(Optional.of(detailsFrom(topo)));
         val te = mock(TaskExecutionEngine.class);
         when(te.start(any(), any()))
-                .thenReturn(EpochTaskRunState.STARTING);
+                .thenReturn(new TaskExecutionData("TEST_1", EpochTaskRunState.STARTING));
         when(te.status(any(), any()))
                 .thenReturn(EpochTaskRunState.COMPLETED);
         when(te.cleanup(any(), any())).thenReturn(true);
@@ -103,7 +104,7 @@ class TopologyExecutorImplTest {
         when(ts.get(anyString())).thenReturn(Optional.of(detailsFrom(topo)));
         val te = mock(TaskExecutionEngine.class);
         when(te.start(any(), any()))
-                .thenReturn(EpochTaskRunState.STARTING);
+                .thenReturn(new TaskExecutionData("TEST_1", EpochTaskRunState.STARTING));
         when(te.status(any(), any()))
                 .thenAnswer((Answer<EpochTaskRunState>) invocationOnMock -> {
                     val cmd = invocationOnMock.getArgument(1, EpochContainerExecutionTask.class);
@@ -140,7 +141,7 @@ class TopologyExecutorImplTest {
         when(ts.get(anyString())).thenReturn(Optional.of(detailsFrom(topo)));
         val te = mock(TaskExecutionEngine.class);
         when(te.start(any(), any()))
-                .thenReturn(EpochTaskRunState.STARTING);
+                .thenReturn(new TaskExecutionData("TEST_1", EpochTaskRunState.STARTING));
         when(te.status(any(), any()))
                 .thenAnswer((Answer<EpochTaskRunState>) invocationOnMock -> {
                     val cmd = invocationOnMock.getArgument(1, EpochContainerExecutionTask.class);

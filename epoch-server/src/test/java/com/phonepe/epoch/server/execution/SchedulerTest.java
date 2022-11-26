@@ -64,6 +64,7 @@ class SchedulerTest {
                     return Optional.of(new EpochTopologyRunInfo(
                             cmd.getTopologyId(),
                             cmd.getRunId(),
+                            "TEST_1",
                             EpochTopologyRunState.SUCCESSFUL,
                             "",
                             Map.of(),
