@@ -1,10 +1,10 @@
 server:
   applicationConnectors:
     - type: http
-      port: 6000
+      port: 6200
   adminConnectors:
     - type: http
-      port: 6001
+      port: 6201
   applicationContextPath: /
   requestLog:
     appenders:

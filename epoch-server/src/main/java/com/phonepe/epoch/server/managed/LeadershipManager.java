@@ -17,7 +17,6 @@ import ru.vyarus.dropwizard.guice.module.installer.order.Order;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.net.URI;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
@@ -81,9 +80,9 @@ public class LeadershipManager extends LeaderSelectorListenerAdapter implements 
     }
 
     @SneakyThrows
-    public Optional<URI> leader() {
+    public Optional<String> leader() {
         return started.get()
-               ? Optional.of(URI.create(selector.getLeader().getId()))
+               ? Optional.of(selector.getLeader().getId())
                : Optional.empty();
     }
 
