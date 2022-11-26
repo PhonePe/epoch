@@ -8,7 +8,7 @@ import com.phonepe.epoch.models.topology.EpochTopologyState;
 import com.phonepe.epoch.models.triggers.EpochTaskTriggerCron;
 import com.phonepe.epoch.server.TestBase;
 import com.phonepe.epoch.server.TestUtils;
-import com.phonepe.epoch.server.managed.LeadershipEnsurer;
+import com.phonepe.epoch.server.managed.LeadershipManager;
 import com.phonepe.epoch.server.utils.ZkUtils;
 import com.phonepe.epoch.server.zookeeper.ZkConfig;
 import io.appform.signals.signals.ConsumingFireForgetSignal;
@@ -36,9 +36,9 @@ class CachingProxyTopologyStoreTest extends TestBase {
             cluster.start();
             try (val cf = ZkUtils.buildCurator(
                     new ZkConfig().setConnectionString(cluster.getConnectString()))) {
-                val le = mock(LeadershipEnsurer.class);
-                val s = new ConsumingFireForgetSignal<Boolean>();
-                when(le.onLeadershipChange()).thenReturn(s);
+                val le = mock(LeadershipManager.class);
+                val s = new ConsumingFireForgetSignal<Void>();
+                when(le.onGainingLeadership()).thenReturn(s);
                 val ts = new CachingProxyTopologyStore(new ZkTopologyStore(cf, MAPPER), le);
 
                 { //Test CRUD
@@ -74,7 +74,7 @@ class CachingProxyTopologyStoreTest extends TestBase {
                     assertEquals(50,
                                  ts.list(x -> Integer.parseInt(x.getTopology().getName().split("\\-")[2]) % 2 == 0)
                                          .size());
-                    s.dispatch(true);
+                    s.dispatch(null);
                     assertEquals(100, ts.list(x -> true).size());
                 }
             }

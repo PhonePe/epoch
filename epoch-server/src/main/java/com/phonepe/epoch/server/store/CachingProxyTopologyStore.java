@@ -3,7 +3,7 @@ package com.phonepe.epoch.server.store;
 import com.phonepe.epoch.models.topology.EpochTopology;
 import com.phonepe.epoch.models.topology.EpochTopologyDetails;
 import com.phonepe.epoch.models.topology.EpochTopologyState;
-import com.phonepe.epoch.server.managed.LeadershipEnsurer;
+import com.phonepe.epoch.server.managed.LeadershipManager;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
@@ -31,9 +31,9 @@ public class CachingProxyTopologyStore implements TopologyStore {
 
     @Inject
     public CachingProxyTopologyStore(@Named("rootTopologyStore") TopologyStore root,
-                                     final LeadershipEnsurer leadershipEnsurer) {
+                                     final LeadershipManager leadershipEnsurer) {
         this.root = root;
-        leadershipEnsurer.onLeadershipChange().connect(leader -> {
+        leadershipEnsurer.onGainingLeadership().connect(leader -> {
             val stamp = lock.writeLock();
             try {
                 cache.clear(); //Nuke the cache and rebuild

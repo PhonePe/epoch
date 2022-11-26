@@ -31,7 +31,7 @@ public class TopologyRecovery implements Managed {
 
     @Inject
     public TopologyRecovery(
-            LeadershipEnsurer leadershipEnsurer,
+            LeadershipManager leadershipManager,
             TopologyStore topologyStore,
             TopologyRunInfoStore runInfoStore,
             Scheduler scheduler) {
@@ -39,11 +39,9 @@ public class TopologyRecovery implements Managed {
         this.runInfoStore = runInfoStore;
         this.scheduler = scheduler;
 
-        leadershipEnsurer.onLeadershipChange().connect(isLeader -> {
-            if (isLeader) {
-                log.info("This node became leader. Will recover topologies");
-                recoverTopologyRuns();
-            }
+        leadershipManager.onGainingLeadership().connect(data -> {
+            log.info("This node became leader. Will recover topologies");
+            recoverTopologyRuns();
         });
     }
 

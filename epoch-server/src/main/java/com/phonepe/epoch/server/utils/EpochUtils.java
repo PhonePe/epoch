@@ -16,6 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
 import javax.ws.rs.core.Response;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.time.Duration;
 import java.util.*;
 
@@ -58,6 +60,24 @@ public class EpochUtils {
         else {
             log.warn("Could not schedule topology {} for execution", topologyDetails.getId());
         }
+    }
+
+    @IgnoreInJacocoGeneratedReport
+    private static String readHostname() {
+        try {
+            return InetAddress.getLocalHost().getCanonicalHostName();
+        }
+        catch (UnknownHostException e) {
+            log.error("Error getting hostname: " + e.getMessage(), e);
+        }
+        return null;
+    }
+
+    @IgnoreInJacocoGeneratedReport
+    public static String hostname() {
+        val hostname = Objects.requireNonNullElseGet(readHostname(), () -> System.getenv("HOST"));
+        Objects.requireNonNull(hostname, "Hostname cannot be empty");
+        return hostname;
     }
 
     public static void configureMapper(ObjectMapper objectMapper) {
