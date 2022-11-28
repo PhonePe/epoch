@@ -51,7 +51,6 @@ public class LeaderRoutingFilter implements ContainerRequestFilter {
         this.manager = manager;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(3))
-                .followRedirects(HttpClient.Redirect.ALWAYS)
                 .build();
     }
 

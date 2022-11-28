@@ -1,6 +1,7 @@
 package com.phonepe.epoch.server.store;
 
 import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
+import com.phonepe.epoch.server.managed.LeadershipManager;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
@@ -19,13 +20,28 @@ import java.util.stream.Collectors;
 @Singleton
 @Slf4j
 public class CachingProxyTopologyRunInfoStore implements TopologyRunInfoStore {
+    private static final int MAX_RUNS = 5;
+
     private final TopologyRunInfoStore root;
+    private final LeadershipManager leadershipEnsurer;
     private final Map<String, Map<String, EpochTopologyRunInfo>> cache = new HashMap<>();
     private final StampedLock lock = new StampedLock();
 
     @Inject
-    public CachingProxyTopologyRunInfoStore(@Named("rootRunInfoStore") TopologyRunInfoStore root) {
+    public CachingProxyTopologyRunInfoStore(
+            @Named("rootRunInfoStore") TopologyRunInfoStore root,
+            final LeadershipManager leadershipEnsurer) {
         this.root = root;
+        this.leadershipEnsurer = leadershipEnsurer;
+        leadershipEnsurer.onGainingLeadership().connect(leader -> {
+            val stamp = lock.writeLock();
+            try {
+                cache.clear(); //Nuke the cache and rebuild
+            }
+            finally {
+                lock.unlock(stamp);
+            }
+        });
     }
 
     @Override
@@ -35,10 +51,9 @@ public class CachingProxyTopologyRunInfoStore implements TopologyRunInfoStore {
             val status = root.save(executionInfo);
             if (status.isPresent()) {
                 cache.compute(executionInfo.getTopologyId(), (tId, old) -> {
-                    val runInfoMap = null != old
-                                     ? old
-                                     : new HashMap<String, EpochTopologyRunInfo>();
-                    runInfoMap.put(executionInfo.getRunId(), executionInfo);
+                    val runId = executionInfo.getRunId();
+                    val runInfoMap = Objects.<Map<String, EpochTopologyRunInfo>>requireNonNullElse(old, new HashMap<>());
+                    runInfoMap.put(runId, executionInfo);
                     return runInfoMap;
                 });
             }

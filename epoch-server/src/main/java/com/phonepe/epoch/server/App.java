@@ -2,6 +2,7 @@ package com.phonepe.epoch.server;
 
 import com.google.inject.Stage;
 import com.phonepe.epoch.server.config.AppConfig;
+import io.appform.functionmetrics.FunctionMetricsManager;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
@@ -47,6 +48,7 @@ public class App extends Application<AppConfig> {
 
     @Override
     public void run(AppConfig appConfig, Environment environment) throws Exception {
+        FunctionMetricsManager.initialize("com.phonepe.epoch", environment.metrics());
         configureMapper(environment.getObjectMapper());
         ((AbstractServerFactory) appConfig.getServerFactory()).setJerseyRootPath("/apis/*");
 

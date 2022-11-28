@@ -21,7 +21,7 @@ import static com.phonepe.epoch.server.utils.EpochUtils.scheduleTopology;
 /**
  *
  */
-@Order(20)
+@Order(30)
 @Singleton
 @Slf4j
 public class TopologyRecovery implements Managed {

@@ -4,8 +4,10 @@ import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.topology.EpochTaskRunState;
 import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
 import com.phonepe.epoch.server.TestBase;
+import com.phonepe.epoch.server.managed.LeadershipManager;
 import com.phonepe.epoch.server.utils.ZkUtils;
 import com.phonepe.epoch.server.zookeeper.ZkConfig;
+import io.appform.signals.signals.ConsumingFireForgetSignal;
 import lombok.SneakyThrows;
 import lombok.val;
 import org.apache.curator.test.TestingCluster;
@@ -16,6 +18,8 @@ import java.util.Map;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  *
@@ -28,7 +32,10 @@ class CachingProxyTopologyRunInfoStoreTest extends TestBase {
             cluster.start();
             try (val curator = ZkUtils.buildCurator(
                     new ZkConfig().setConnectionString(cluster.getConnectString()))) {
-                val ris = new CachingProxyTopologyRunInfoStore(new ZkTopologyRunInfoStore(curator, MAPPER));
+                val lm = mock(LeadershipManager.class);
+                val s = new ConsumingFireForgetSignal<Void>();
+                when(lm.onGainingLeadership()).thenReturn(s);
+                val ris = new CachingProxyTopologyRunInfoStore(new ZkTopologyRunInfoStore(curator, MAPPER), lm);
                 {
                     val executionInfo = new EpochTopologyRunInfo("TID1",
                                                                  "RID1",
