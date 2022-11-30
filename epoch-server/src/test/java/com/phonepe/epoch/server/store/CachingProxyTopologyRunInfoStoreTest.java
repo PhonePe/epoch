@@ -3,6 +3,7 @@ package com.phonepe.epoch.server.store;
 import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.topology.EpochTaskRunState;
 import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
+import com.phonepe.epoch.models.topology.EpochTopologyRunTaskInfo;
 import com.phonepe.epoch.server.TestBase;
 import com.phonepe.epoch.server.managed.LeadershipManager;
 import com.phonepe.epoch.server.utils.ZkUtils;
@@ -39,10 +40,9 @@ class CachingProxyTopologyRunInfoStoreTest extends TestBase {
                 {
                     val executionInfo = new EpochTopologyRunInfo("TID1",
                                                                  "RID1",
-                                                                 "",
                                                                  EpochTopologyRunState.RUNNING,
                                                                  "",
-                                                                 Map.of("TT_1", EpochTaskRunState.RUNNING),
+                                                                 Map.of("TT_1", new EpochTopologyRunTaskInfo().setUpstreamId("").setState(EpochTaskRunState.RUNNING)),
                                                                  new Date(),
                                                                  new Date());
                     assertEquals(executionInfo, ris.save(executionInfo).orElse(null));
@@ -50,7 +50,7 @@ class CachingProxyTopologyRunInfoStoreTest extends TestBase {
                     val runId = executionInfo.getRunId();
                     assertEquals(EpochTaskRunState.COMPLETED,
                                  ris.updateTaskState(topologyId, runId, "TT_1", EpochTaskRunState.COMPLETED)
-                                         .map(d -> d.getTaskStates().get("TT_1"))
+                                         .map(d -> d.getTasks().get("TT_1"))
                                          .orElse(null));
                     assertTrue(ris.delete(topologyId, runId));
                     assertNull(ris.get(topologyId, runId).orElse(null));
@@ -60,10 +60,9 @@ class CachingProxyTopologyRunInfoStoreTest extends TestBase {
                             .forEach(i -> IntStream.rangeClosed(1, 25)
                                     .forEach(j -> ris.save(new EpochTopologyRunInfo("TID-" + i,
                                                                                     "RID-" + j,
-                                                                                    "",
                                                                                     EpochTopologyRunState.RUNNING,
                                                                                     "",
-                                                                                    Map.of("TT_1", EpochTaskRunState.RUNNING),
+                                                                                    Map.of("TT_1", new EpochTopologyRunTaskInfo().setUpstreamId("").setState(EpochTaskRunState.RUNNING)),
                                                                                     new Date(),
                                                                                     new Date()))));
                     IntStream.rangeClosed(1, 100)

@@ -10,6 +10,7 @@ import com.phonepe.drove.models.task.TaskSpec;
 import com.phonepe.drove.models.taskinstance.TaskInfo;
 import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
 import com.phonepe.epoch.models.topology.EpochTaskRunState;
+import com.phonepe.epoch.models.topology.EpochTopologyRunTaskInfo;
 import com.phonepe.epoch.server.managed.DroveClientManager;
 import io.appform.functionmetrics.MonitoredFunction;
 import io.dropwizard.util.Strings;
@@ -55,8 +56,9 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
     @Override
     @SneakyThrows
     @MonitoredFunction
-    public TaskExecutionData start(TaskExecutionContext context, EpochContainerExecutionTask executionTask) {
-        if (!Strings.isNullOrEmpty(context.getUpstreamTaskId())) {
+    public EpochTopologyRunTaskInfo start(TaskExecutionContext context, EpochContainerExecutionTask executionTask) {
+        if (!Strings.isNullOrEmpty(context.getUpstreamTaskId())
+                && !context.getUpstreamTaskId().equalsIgnoreCase(EpochTopologyRunTaskInfo.UNKNOWN_TASK_ID)) {
             log.info("Looks like task {}/{}/{} was already submitted with task ID: {}. Will fetch state only.",
                      context.getTopologyId(),
                      context.getRunId(),
@@ -64,8 +66,11 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
                      context.getUpstreamTaskId());
             val taskState = readTaskData(context,
                                          EpochTaskRunState.STARTING,
-                                         taskInfo -> mapTaskState(context, taskInfo));
-            return new TaskExecutionData(context.getUpstreamTaskId(), taskState);
+                                         taskInfo -> mapTaskState(context, taskInfo),
+                                         e -> EpochTaskRunState.FAILED);
+            return new EpochTopologyRunTaskInfo()
+                    .setUpstreamId(context.getUpstreamTaskId())
+                    .setState(taskState);
         }
         val client = droveClientManager.getClient();
         val config = droveClientManager.getDroveConfig();
@@ -91,13 +96,15 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
                 });
                 if (apiResponse.getStatus().equals(ApiErrorCode.SUCCESS)) {
                     val upstreamTaskID = apiResponse.getData().getOrDefault("taskId",
-                                                                            TaskExecutionData.UNKNOWN_TASK_ID);
+                                                                            EpochTopologyRunTaskInfo.UNKNOWN_TASK_ID);
                     log.info("Task {}/{}/{} started on drove with taskId: {}",
                              context.getTopologyId(),
                              context.getRunId(),
                              context.getTaskName(),
                              upstreamTaskID);
-                    return new TaskExecutionData(upstreamTaskID, EpochTaskRunState.STARTING);
+                    return new EpochTopologyRunTaskInfo()
+                            .setState(EpochTaskRunState.STARTING)
+                            .setUpstreamId(upstreamTaskID);
                 }
             }
             else if (response.statusCode() == 400) {
@@ -105,14 +112,21 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
                 val error = res.at("/data/validationErrors/0");
                 if (error.isTextual() && error.asText().contains("Task already exists ")) {
                     log.info("Fetching data for existing task");
-                    val taskData = readTaskData(context,
-                                                new TaskExecutionData(TaskExecutionData.UNKNOWN_TASK_ID, EpochTaskRunState.STARTING),
-                                                taskInfo -> new TaskExecutionData(taskInfo.getTaskId(), mapTaskState(context, taskInfo)));
+                    val taskData = this.readTaskData(context,
+                                                     new EpochTopologyRunTaskInfo()
+                                                             .setUpstreamId(EpochTopologyRunTaskInfo.UNKNOWN_TASK_ID)
+                                                             .setState(EpochTaskRunState.STARTING),
+                                                     taskInfo -> new EpochTopologyRunTaskInfo()
+                                                             .setUpstreamId(taskInfo.getTaskId())
+                                                             .setState(mapTaskState(context, taskInfo)),
+                                                     e -> new EpochTopologyRunTaskInfo()
+                                                             .setUpstreamId(EpochTopologyRunTaskInfo.UNKNOWN_TASK_ID)
+                                                             .setState(EpochTaskRunState.FAILED));
                     log.info("Task {}/{}/{} already running on drove with taskId: {}",
                              context.getTopologyId(),
                              context.getRunId(),
                              context.getTaskName(),
-                             taskData.upstreamTaskId());
+                             taskData.getUpstreamId());
                     return taskData;
                 }
             }
@@ -120,19 +134,23 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
         }
         catch (IOException e) {
             log.error("Error making http call to " + url + ": " + e.getMessage(), e);
-            throw new IllegalStateException("Error making http call to " + url + ": " + e.getMessage(), e);
+            return new EpochTopologyRunTaskInfo()
+                    .setState(EpochTaskRunState.FAILED)
+                    .setUpstreamId(EpochTopologyRunTaskInfo.UNKNOWN_TASK_ID);
         }
         catch (InterruptedException e) {
             log.error("HTTP Request interrupted");
             Thread.currentThread().interrupt();
         }
-        return new TaskExecutionData(context.getUpstreamTaskId(), EpochTaskRunState.COMPLETED);
+        return new EpochTopologyRunTaskInfo()
+                .setState(EpochTaskRunState.COMPLETED)
+                .setUpstreamId(context.getUpstreamTaskId());
     }
 
     @Override
     @MonitoredFunction
     public EpochTaskRunState status(TaskExecutionContext context, EpochContainerExecutionTask executionTask) {
-        return readTaskData(context, EpochTaskRunState.COMPLETED, taskInfo -> mapTaskState(context, taskInfo));
+        return readTaskData(context, EpochTaskRunState.COMPLETED, taskInfo -> mapTaskState(context, taskInfo), e -> EpochTaskRunState.RUNNING);
     }
 
     private static EpochTaskRunState mapTaskState(TaskExecutionContext context, TaskInfo taskInfo) {
@@ -153,11 +171,10 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
 
     @Override
     @MonitoredFunction
-    public boolean cleanup(TaskExecutionContext context, EpochContainerExecutionTask containerExecution) {
+    public boolean cleanup(String upstreamTaskId) {
         val client = droveClientManager.getClient();
         val config = droveClientManager.getDroveConfig();
-        val instanceId = instanceId(context);
-        val url = client.leader().map(host -> host + "/apis/v1/tasks/" + appName + "/instances/" + instanceId)
+        val url = client.leader().map(host -> host + "/apis/v1/tasks/" + appName + "/instances/" + upstreamTaskId)
                 .orElse(null);
         if (Strings.isNullOrEmpty(url)) {
             throw new IllegalStateException("No leader found for drove cluster");
@@ -191,7 +208,11 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
         return false;
     }
 
-    private <T> T readTaskData(final TaskExecutionContext context, T defaultValue, Function<TaskInfo, T> mutator) {
+    private <T> T readTaskData(
+            final TaskExecutionContext context,
+            T defaultValue,
+            Function<TaskInfo, T> mutator,
+            Function<Exception, T> errorHandler) {
         val client = droveClientManager.getClient();
         val config = droveClientManager.getDroveConfig();
         val instanceId = instanceId(context);
@@ -200,7 +221,7 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
         if (Strings.isNullOrEmpty(url)) {
             throw new IllegalStateException("No leader found for drove cluster");
         }
-        log.trace("Calling: {} for status", url);
+        log.debug("Calling: {} for status", url);
         val requestBuilder = HttpRequest.newBuilder(URI.create(url))
                 .header(HttpHeaders.AUTHORIZATION, "O-Bearer " + config.getDroveAuthToken());
         val request = requestBuilder.GET()
@@ -220,7 +241,7 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
         }
         catch (IOException e) {
             log.error("Error making http call to " + url + ": " + e.getMessage(), e);
-            throw new IllegalStateException("Error making http call to " + url + ": " + e.getMessage(), e);
+            return errorHandler.apply(e);
         }
         catch (InterruptedException e) {
             log.error("HTTP Request interrupted");

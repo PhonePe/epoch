@@ -1,5 +1,6 @@
 package com.phonepe.epoch.server;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.name.Names;
@@ -10,6 +11,7 @@ import com.phonepe.epoch.server.execution.TopologyExecutorImpl;
 import com.phonepe.epoch.server.remote.DroveTaskExecutionEngine;
 import com.phonepe.epoch.server.remote.TaskExecutionEngine;
 import com.phonepe.epoch.server.store.*;
+import com.phonepe.epoch.server.utils.IgnoreInJacocoGeneratedReport;
 import com.phonepe.epoch.server.utils.ZkUtils;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.util.Duration;
@@ -23,6 +25,7 @@ import java.util.concurrent.SynchronousQueue;
 /**
  *
  */
+@IgnoreInJacocoGeneratedReport
 public class EpochModule extends AbstractModule {
 
 
@@ -38,6 +41,12 @@ public class EpochModule extends AbstractModule {
         bind(TopologyRunInfoStore.class)
                 .annotatedWith(Names.named("rootRunInfoStore"))
                 .to(ZkTopologyRunInfoStore.class);
+    }
+
+    @Provides
+    @Singleton
+    public ObjectMapper mapper(final Environment environment) {
+        return environment.getObjectMapper();
     }
 
     @Provides

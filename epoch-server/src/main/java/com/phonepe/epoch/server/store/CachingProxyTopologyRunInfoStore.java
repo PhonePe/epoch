@@ -121,7 +121,7 @@ public class CachingProxyTopologyRunInfoStore implements TopologyRunInfoStore {
                     .values()
                     .stream()
                     .filter(filter)
-                    .sorted(Comparator.comparing(EpochTopologyRunInfo::getUpdated))
+                    .sorted(Comparator.comparing(EpochTopologyRunInfo::getUpdated).reversed())
                     .toList();
         }
         finally {

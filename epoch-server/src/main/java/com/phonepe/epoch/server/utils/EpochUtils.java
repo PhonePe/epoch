@@ -7,9 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import com.phonepe.drove.models.api.ApiResponse;
-import com.phonepe.epoch.models.topology.EpochTopology;
-import com.phonepe.epoch.models.topology.EpochTopologyDetails;
-import com.phonepe.epoch.models.topology.EpochTopologyState;
+import com.phonepe.epoch.models.topology.*;
 import com.phonepe.epoch.server.managed.Scheduler;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +18,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.Duration;
 import java.util.*;
+import java.util.function.Consumer;
 
 /**
  *
@@ -98,5 +97,23 @@ public class EpochUtils {
     public static Duration getOrDefault(final io.dropwizard.util.Duration incoming) {
         return Duration.ofMillis(Objects.requireNonNullElse(incoming, io.dropwizard.util.Duration.seconds(1))
                                          .toMilliseconds());
+    }
+
+    public static Map<String, EpochTopologyRunTaskInfo> addUpstreamId(final EpochTopologyRunInfo old, String taskName, String upstreamId) {
+        return updateTaskInfo(old, taskName, info -> info.setUpstreamId(upstreamId));
+    }
+
+    public static Map<String, EpochTopologyRunTaskInfo> addTaskState(final EpochTopologyRunInfo old, String taskName, EpochTaskRunState state) {
+        return updateTaskInfo(old, taskName, info -> info.setState(state));
+    }
+    public static Map<String, EpochTopologyRunTaskInfo> updateTaskInfo(final EpochTopologyRunInfo old, String taskName, Consumer<EpochTopologyRunTaskInfo> updater) {
+        val ids = Objects.<Map<String, EpochTopologyRunTaskInfo>>requireNonNullElse(
+                old.getTasks(), new HashMap<>());
+        ids.compute(taskName, (tName, existing) -> {
+            val info = Objects.requireNonNullElse(existing, new EpochTopologyRunTaskInfo());
+            updater.accept(info);
+            return info;
+        });
+        return ids;
     }
 }

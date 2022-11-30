@@ -7,9 +7,9 @@ import com.phonepe.epoch.models.tasks.EpochTask;
 import com.phonepe.epoch.models.topology.EpochTaskRunState;
 import com.phonepe.epoch.models.topology.EpochTopology;
 import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
+import com.phonepe.epoch.models.topology.EpochTopologyRunTaskInfo;
 import com.phonepe.epoch.models.triggers.EpochTaskTriggerCron;
 import com.phonepe.epoch.server.TestUtils;
-import com.phonepe.epoch.server.remote.TaskExecutionData;
 import com.phonepe.epoch.server.remote.TaskExecutionEngine;
 import com.phonepe.epoch.server.store.InMemoryTopologyRunInfoStore;
 import com.phonepe.epoch.server.store.TopologyStore;
@@ -17,7 +17,9 @@ import lombok.val;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
 
-import java.util.*;
+import java.util.Date;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.IntStream;
 
 import static com.phonepe.epoch.server.utils.EpochUtils.detailsFrom;
@@ -43,7 +45,7 @@ class TopologyExecutorImplTest {
         when(ts.get(anyString())).thenReturn(Optional.of(detailsFrom(topo)));
         val te = mock(TaskExecutionEngine.class);
         when(te.start(any(), any()))
-                .thenReturn(new TaskExecutionData("TEST_1", EpochTaskRunState.STARTING));
+                .thenReturn(new EpochTopologyRunTaskInfo().setUpstreamId("TEST_1").setState(EpochTaskRunState.STARTING));
         when(te.status(any(), any()))
                 .thenReturn(EpochTaskRunState.COMPLETED);
         when(te.cleanup(any(), any())).thenReturn(true);
@@ -56,7 +58,7 @@ class TopologyExecutorImplTest {
                      res.map(EpochTopologyRunInfo::getState).orElse(EpochTopologyRunState.FAILED));
         val tri = tis.get(topoName, runId).orElse(null);
         assertNotNull(tri);
-        assertEquals(EpochTaskRunState.COMPLETED, tri.getTaskStates().get("test-task-1"));
+        assertEquals(EpochTaskRunState.COMPLETED, tri.getTasks().get("test-task-1"));
     }
 
 
@@ -74,7 +76,7 @@ class TopologyExecutorImplTest {
         when(ts.get(anyString())).thenReturn(Optional.of(detailsFrom(topo)));
         val te = mock(TaskExecutionEngine.class);
         when(te.start(any(), any()))
-                .thenReturn(new TaskExecutionData("TEST_1", EpochTaskRunState.STARTING));
+                .thenReturn(new EpochTopologyRunTaskInfo().setUpstreamId("TEST_1").setState(EpochTaskRunState.STARTING));
         when(te.status(any(), any()))
                 .thenReturn(EpochTaskRunState.COMPLETED);
         when(te.cleanup(any(), any())).thenReturn(true);
@@ -88,7 +90,7 @@ class TopologyExecutorImplTest {
         val tri = tis.get(topoName, runId).orElse(null);
         assertNotNull(tri);
         IntStream.rangeClosed(1, 10)
-                .forEach(i -> assertEquals(EpochTaskRunState.COMPLETED, tri.getTaskStates().get("test-task-" + i)));
+                .forEach(i -> assertEquals(EpochTaskRunState.COMPLETED, tri.getTasks().get("test-task-" + i)));
     }
 
     @Test
@@ -104,7 +106,7 @@ class TopologyExecutorImplTest {
         when(ts.get(anyString())).thenReturn(Optional.of(detailsFrom(topo)));
         val te = mock(TaskExecutionEngine.class);
         when(te.start(any(), any()))
-                .thenReturn(new TaskExecutionData("TEST_1", EpochTaskRunState.STARTING));
+                .thenReturn(new EpochTopologyRunTaskInfo().setUpstreamId("TEST_1").setState(EpochTaskRunState.STARTING));
         when(te.status(any(), any()))
                 .thenAnswer((Answer<EpochTaskRunState>) invocationOnMock -> {
                     val cmd = invocationOnMock.getArgument(1, EpochContainerExecutionTask.class);
@@ -122,10 +124,10 @@ class TopologyExecutorImplTest {
                      res.map(EpochTopologyRunInfo::getState).orElse(EpochTopologyRunState.FAILED));
         val tri = tis.get(topoName, runId).orElse(null);
         assertNotNull(tri);
-        assertEquals(EpochTaskRunState.COMPLETED, tri.getTaskStates().get("test-task-1"));
-        assertEquals(EpochTaskRunState.FAILED, tri.getTaskStates().get("test-task-2"));
+        assertEquals(EpochTaskRunState.COMPLETED, tri.getTasks().get("test-task-1"));
+        assertEquals(EpochTaskRunState.FAILED, tri.getTasks().get("test-task-2"));
         IntStream.rangeClosed(3, 10)
-                .forEach(i -> assertEquals(EpochTaskRunState.PENDING, tri.getTaskStates().get("test-task-" + i)));
+                .forEach(i -> assertEquals(EpochTaskRunState.PENDING, tri.getTasks().get("test-task-" + i)));
     }
 
     @Test
@@ -141,7 +143,7 @@ class TopologyExecutorImplTest {
         when(ts.get(anyString())).thenReturn(Optional.of(detailsFrom(topo)));
         val te = mock(TaskExecutionEngine.class);
         when(te.start(any(), any()))
-                .thenReturn(new TaskExecutionData("TEST_1", EpochTaskRunState.STARTING));
+                .thenReturn(new EpochTopologyRunTaskInfo().setUpstreamId("TEST_1").setState(EpochTaskRunState.STARTING));
         when(te.status(any(), any()))
                 .thenAnswer((Answer<EpochTaskRunState>) invocationOnMock -> {
                     val cmd = invocationOnMock.getArgument(1, EpochContainerExecutionTask.class);
@@ -161,7 +163,7 @@ class TopologyExecutorImplTest {
         assertNotNull(tri);
         IntStream.rangeClosed(3, 10)
                 .forEach(i -> assertEquals(i == 10 ? EpochTaskRunState.COMPLETED : EpochTaskRunState.FAILED,
-                                           tri.getTaskStates().get("test-task-" + i)));
+                                           tri.getTasks().get("test-task-" + i)));
     }
 
 
