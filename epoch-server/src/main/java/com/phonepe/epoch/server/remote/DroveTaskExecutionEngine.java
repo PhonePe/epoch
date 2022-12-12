@@ -69,6 +69,7 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
                                          taskInfo -> mapTaskState(context, taskInfo),
                                          e -> EpochTaskRunState.FAILED);
             return new EpochTopologyRunTaskInfo()
+                    .setTaskId(instanceId(context))
                     .setUpstreamId(context.getUpstreamTaskId())
                     .setState(taskState);
         }
@@ -103,6 +104,7 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
                              context.getTaskName(),
                              upstreamTaskID);
                     return new EpochTopologyRunTaskInfo()
+                            .setTaskId(instanceId(context))
                             .setState(EpochTaskRunState.STARTING)
                             .setUpstreamId(upstreamTaskID);
                 }
@@ -114,12 +116,15 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
                     log.info("Fetching data for existing task");
                     val taskData = this.readTaskData(context,
                                                      new EpochTopologyRunTaskInfo()
+                                                             .setTaskId(instanceId(context))
                                                              .setUpstreamId(EpochTopologyRunTaskInfo.UNKNOWN_TASK_ID)
                                                              .setState(EpochTaskRunState.STARTING),
                                                      taskInfo -> new EpochTopologyRunTaskInfo()
+                                                             .setTaskId(instanceId(context))
                                                              .setUpstreamId(taskInfo.getTaskId())
                                                              .setState(mapTaskState(context, taskInfo)),
                                                      e -> new EpochTopologyRunTaskInfo()
+                                                             .setTaskId(instanceId(context))
                                                              .setUpstreamId(EpochTopologyRunTaskInfo.UNKNOWN_TASK_ID)
                                                              .setState(EpochTaskRunState.FAILED));
                     log.info("Task {}/{}/{} already running on drove with taskId: {}",
@@ -135,6 +140,7 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
         catch (IOException e) {
             log.error("Error making http call to " + url + ": " + e.getMessage(), e);
             return new EpochTopologyRunTaskInfo()
+                    .setTaskId(instanceId(context))
                     .setState(EpochTaskRunState.FAILED)
                     .setUpstreamId(EpochTopologyRunTaskInfo.UNKNOWN_TASK_ID);
         }
@@ -143,6 +149,7 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
             Thread.currentThread().interrupt();
         }
         return new EpochTopologyRunTaskInfo()
+                .setTaskId(instanceId(context))
                 .setState(EpochTaskRunState.COMPLETED)
                 .setUpstreamId(context.getUpstreamTaskId());
     }

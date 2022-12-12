@@ -2,6 +2,7 @@ package com.phonepe.epoch.server;
 
 import com.google.inject.Stage;
 import com.phonepe.epoch.server.config.AppConfig;
+import com.phonepe.epoch.server.ui.HandlebarsViewRenderer;
 import io.appform.functionmetrics.FunctionMetricsManager;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
@@ -13,6 +14,7 @@ import lombok.SneakyThrows;
 import lombok.val;
 import ru.vyarus.dropwizard.guice.GuiceBundle;
 import ru.vyarus.dropwizard.guice.module.installer.feature.health.HealthCheckInstaller;
+import ru.vyarus.guicey.gsp.ServerPagesBundle;
 
 import static com.phonepe.epoch.server.utils.EpochUtils.configureMapper;
 
@@ -35,13 +37,13 @@ public class App extends Application<AppConfig> {
                                           "com.phonepe.epoch.server.errorhandlers")
                         .modules(new EpochModule())
                         .installers(HealthCheckInstaller.class)
-/*                        .bundles(ServerPagesBundle.builder()
+                        .bundles(ServerPagesBundle.builder()
                                          .addViewRenderers(new HandlebarsViewRenderer())
                                          .build())
                         .bundles(ServerPagesBundle.app("ui", "/assets/", "/")
                                          .mapViews("/ui")
                                          .requireRenderers("handlebars")
-                                         .build())*/
+                                         .build())
                         .printDiagnosticInfo()
                         .build(Stage.PRODUCTION));
     }

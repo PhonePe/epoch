@@ -1,0 +1,336 @@
+{{#partial "content"}}
+    <section>
+        <div class="row">
+            <div class="col-sm-12 col-md-6 col-lg-8">
+                <div class="row">
+                    <div class="col-sm-10">
+                        <h3>Topologies</h3>
+                    </div>
+                    <div class="col-sm-2">
+                        <button class="btn btn-light float-right" id="refresh-topologies">
+                            <i class="fa-solid fa-rotate" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <table class="table table-bordered" title="topologies" id="topologies">
+                            <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Task Type</th>
+                                <th>Trigger</th>
+                                <th>State</th>
+                                <th>Created</th>
+                                <th></th>
+                                <th></th>
+                                <th></th>
+                            </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-12 col-md-6 col-lg-4" style="border-left-color: lightgray;border-left-style: solid;border-left-width: 2px;">
+                <div class="row">
+                    <div class="col">
+                        <h3>Create New Topology</h3>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <section>
+                            <div class="row">
+                                <div class="col">
+                                    <form class="mt-2" id="topology-form">
+                                        <div class="form-group row">
+                                            <label for="name" class="col-sm-2 col-form-label">Name</label>
+                                            <div class="col-sm-10">
+                                                <input type="text" class="form-control" id="name" name="name" placeholder="Topology Name" pattern="[0-9a-zA-Z_-]+" required>
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <label for="name" class="col-sm-2 col-form-label">Cron Pattern</label>
+                                            <div class="col-sm-10">
+                                                <input type="text" class="form-control" id="cron" name="cron" placeholder="Cron Expression" required>
+                                            </div>
+                                        </div>
+                                        <div class="task-row card m-2">
+                                            <div class="card-header">Task</div>
+                                            <div class="card-body text-primary">
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <div class="form-group row">
+                                                            <label for="docker" class="col-md-4 col-form-label">Docker Container</label>
+                                                            <div class="col-md-8">
+                                                                <input type="text" class="form-control" id="docker" name="docker" placeholder="Docker Container tag (URL)"
+                                                                       pattern="^(?:(?=[^:\/]{4,253})(?!-)[a-zA-Z0-9-]{1,63}(?<!-)(?:\.(?!-)[a-zA-Z0-9-]{1,63}(?<!-))*(?::[0-9]{1,5})?/)?((?![._-])(?:[a-z0-9._-]*)(?<![._-])(?:/(?![._-])[a-z0-9._-]*(?<![._-]))*)(?::(?![.-])[a-zA-Z0-9_.-]{1,128})?$" required>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row">
+                                                            <label for="cpus" class="col-md-4 col-form-label">Number of CPUs</label>
+                                                            <div class="col-md-6">
+                                                                <input type="range" class="form-control" id="cpus" name="cpus"
+                                                                       value="1" min="1" max="40"
+                                                                       oninput="document.getElementById('cpu-value').textContent = this.value" required>
+                                                            </div>
+                                                            <div class="col-sm-2">
+                                                                <small id="cpu-value">1</small>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row">
+                                                            <label for="memory" class="col-md-4 col-form-label">Memory (MB)</label>
+                                                            <div class="col-md-6">
+                                                                <input type="range" class="form-control" id="memory" name="memory"
+                                                                       value="1024" min="128" max="10240"
+                                                                       oninput="document.getElementById('memory-value').textContent = this.value" required>
+                                                            </div>
+                                                            <div class="col-sm-2">
+                                                                <small id="memory-value">1024</small>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row p-2">
+                                                            <div class="col">
+                                                                <div class="row mb-1">
+                                                                    <div class="col-sm-10">
+                                                                        <h5>Environment Variables</h5>
+                                                                    </div>
+                                                                    <div class="col-sm-2">
+                                                                        <button type="button" class="btn btn-success px-3 env-add">
+                                                                            <i class="fa-regular fa-plus" aria-hidden="true"></i>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="row">
+                                                                    <div class="col env-vars">
+                                                                        <div class="form-group row env-row-prototype close-row d-none">
+                                                                            <div class="col-sm-4">
+                                                                                <input type="text" class="form-control env-name" placeholder="Variable Name" required>
+                                                                            </div>
+                                                                            <div class="col-sm-6">
+                                                                                <input type="text" class="form-control env-val" placeholder="Variable Value" required>
+                                                                            </div>
+                                                                            <div class="col-sm-2">
+                                                                                <button type="button" class="btn btn-outline-danger px-3 env-delete">
+                                                                                    <i class="fa-regular fa-trash-can" aria-hidden="true"></i>
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row p-2">
+                                                            <div class="col">
+                                                                <div class="row mb-1">
+                                                                    <div class="col-sm-10">
+                                                                        <h5>Volumes</h5>
+                                                                    </div>
+                                                                    <div class="col-sm-2">
+                                                                        <button type="button" class="btn btn-success px-3 vol-add">
+                                                                            <i class="fa-regular fa-plus" aria-hidden="true"></i>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="row">
+                                                                    <div class="col volumes">
+                                                                        <div class="form-group row vol-row-prototype close-row d-none">
+                                                                            <div class="col-sm-4">
+                                                                                <input type="text" class="form-control vol-host-path" placeholder="Host Path" required>
+                                                                            </div>
+                                                                            <div class="col-sm-4">
+                                                                                <input type="text" class="form-control vol-cont-path" placeholder="Docker Path" required>
+                                                                            </div>
+                                                                            <div class="col-sm-2">
+                                                                                <select class="form-control vol-mode">
+                                                                                    <option value="RO">RO</option>
+                                                                                    <option value="RW">RW</option>
+                                                                                </select>
+                                                                            </div>
+                                                                            <div class="col-sm-2">
+                                                                                <button type="button" class="btn btn-outline-danger px-3 vol-delete">
+                                                                                    <i class="fa-regular fa-trash-can" aria-hidden="true"></i>
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                        <button type="submit" id="form-sub" name="form-sub" class="btn btn-primary m-2 float-right">Create</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
+            </div>
+            </div>
+    </section>
+{{/partial}}
+
+{{#partial "page_js_includes"}}
+    <script src="/js/jquery.validate.min.js"></script>
+{{/partial}}
+
+{{#partial "page_js"}}
+    function pauseUnpause(data, type, row, meta) {
+        if(row.state == 'ACTIVE') {
+        return `
+        <form class="confirmed-form" action="/topologies/` + data + `/pause" method="POST"
+              data-cnf-title="Pause Topology" data-cnf-text="Are you sure you want to pause this topology?">
+            <button type="submit" class="btn btn-outline-warning">
+                <i class="fa-regular fa-circle-pause" aria-hidden="true"></i>
+            </button>
+        </form>`;
+        }
+        return `
+        <form class="confirmed-form" action="/topologies/` + data + `/unpause" method="POST"
+              data-cnf-title="Reactivate Topology" data-cnf-text="Are you sure you want to reactivate this topology?">
+            <button type="submit" class="btn btn-outline-success">
+                <i class="fa-regular fa-circle-play" aria-hidden="true"></i>
+            </button>
+        </form>`;
+    }
+
+    function deleteTopology(data) {
+        return `
+            <form class="confirmed-form" action="/topologies/` + data + `/delete" method="POST"
+                  data-cnf-title="Delete Topology" data-cnf-text="Are you sure you want to delete this topology? You will not be able to undo this.">
+                <button type="submit" class="btn btn-outline-danger">
+                    <i class="fa-regular fa-trash-can" aria-hidden="true"></i>
+                </button>
+            </form>`;
+    }
+    function topologyInfo(data) {
+        return `
+            <a href="/topologies/` + data + `" class="btn btn-primary" role="button">
+                <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+            </a>`;
+    }
+
+    var topologies = $('#topologies').DataTable({
+        'processing' : true,
+        'paging' : true,
+        'ajax': {
+            'url' : '/apis/v1/topologies',
+            'dataSrc': function(res) { return res.data ? res.data : []; }
+        },
+        'paging': false,
+        'searching' : false,
+        'ordering' : false,
+        'info' : false,
+        'columnDefs': [ {'className': 'text-center', 'targets': '_all'} ],
+        'columns' : [
+            { 'data' : 'id' },
+            { 'data' : 'topology',
+                'render' : function(data, type, row, meta) {
+                    return data.name;
+                }
+            },
+            { 'data' : 'topology',
+                'render' : function(data, type, row, meta) {
+                    return data.task.type;
+                }
+            },
+            { 'data' : 'topology',
+                'render' : function(data, type, row, meta) {
+                    return data.trigger.type == "AT"
+                        ? "At " + new Date(data.trigger.time).toLocaleString()
+                        : "Cron: " + "<code>" + data.trigger.timeSpec + "</code>";
+                }
+            },
+            { 'data' : 'state', 'render' : renderTopologyState },
+            { 'data' : 'created', 'render' : localDate },
+            { 'data' : 'id', 'render': topologyInfo },
+            { 'data' : 'id', 'render': pauseUnpause },
+            { 'data' : 'id', 'render': deleteTopology }
+        ]
+    });
+
+    $('#refresh-topologies').click(e => {
+        topologies.ajax.reload(null, false);
+    });
+
+    $(document).on('click', '.env-add', e => {
+        const newRow = $(document).find('.env-row-prototype')
+            .clone()
+            .removeClass('env-row-prototype')
+            .removeClass('d-none')
+            .addClass('env-row');
+        newRow.find('.env-name').attr('name', 'env-name');
+        newRow.find('.env-val').attr('name', 'env-val');
+        $('.env-vars').append(newRow);
+    });
+    $(document).on('click', '.env-delete', e => {
+        $(e.target).closest('.env-row').remove();
+    });
+    $(document).on('click', '.vol-add', e => {
+        const newRow = $(document).find('.vol-row-prototype')
+            .clone()
+            .removeClass('vol-row-prototype')
+            .removeClass('d-none')
+            .addClass('vol-row');
+        newRow.find('.vol-host-path').attr('name', 'vol-host-path');
+        newRow.find('.vol-cont-path').attr('name', 'vol-cont-path');
+        newRow.find('.vol-mode').attr('name', 'vol-mode');
+        $('.volumes').append(newRow);
+    });
+    $(document).on('click', '.vol-delete', e => {
+        $(e.target).closest('.vol-row').remove();
+    });
+
+    $('#topology-form').validate({
+        submitHandler: createTopology
+    });
+
+    function createTopology(form, e) {
+        e.preventDefault();
+        const inputs = new FormData(form);
+        var tdef = {};
+        tdef['name'] = inputs.get('name');
+        tdef['cron'] = inputs.get('cron');
+        tdef['docker'] = inputs.get('docker');
+        tdef['cpus'] = parseInt(inputs.get('cpus'));
+        tdef['memory'] = parseInt(inputs.get('memory'));
+        const envNames = inputs.getAll('env-name');
+        const envValues = inputs.getAll('env-val');
+        var env = {};
+        for(i = 0; i < envNames.length; i++) {
+            env[envNames[i]] = envValues[i];
+        }
+        tdef['env'] = env;
+        var volumes = [];
+        const hostPaths = inputs.getAll('vol-host-path');
+        const contPaths = inputs.getAll('vol-cont-path');
+        const mModes = inputs.getAll('vol-mode');
+        for(i = 0; i < hostPaths.length; i++) {
+            var volDef = {};
+            volDef['pathOnHost'] = hostPaths[i];
+            volDef['pathInContainer'] = contPaths[i] ? contPaths[i] : hostPaths[i];
+            volDef['mode'] = mModes[i];
+            volumes.push(volDef);
+        }
+        tdef['volumes'] = volumes;
+        console.log(JSON.stringify(tdef));
+        $.ajax({
+            type: 'post',
+            url: '/topologies/create',
+            data: JSON.stringify(tdef),
+            contentType: "application/json; charset=utf-8",
+            traditional: true,
+            success: function (data) {
+                window.location.replace("/");
+            }
+        });
+    }
+{{/partial}}
+
+{{> common/base}}

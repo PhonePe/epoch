@@ -37,6 +37,7 @@ public class LeadershipManager extends LeaderSelectorListenerAdapter implements 
     private final LeaderSelector selector;
 
     private AtomicBoolean started = new AtomicBoolean();
+    private AtomicBoolean leader = new AtomicBoolean();
     private final AtomicBoolean stopped = new AtomicBoolean();
     private final Lock stopLock = new ReentrantLock();
     private final Condition stopCondition = stopLock.newCondition();
@@ -65,8 +66,8 @@ public class LeadershipManager extends LeaderSelectorListenerAdapter implements 
             stopLock.unlock();
         }
         stopCondition.signalAll();
-        log.debug("Waiting 5 seconds before stopping selector");
-        Thread.sleep(5_000);
+/*        log.debug("Waiting 5 seconds before stopping selector");
+        Thread.sleep(5_000);*/
         this.selector.close();
         log.debug("Shut down {}", this.getClass().getSimpleName());
     }
@@ -76,12 +77,12 @@ public class LeadershipManager extends LeaderSelectorListenerAdapter implements 
     }
 
     public boolean isLeader() {
-        return started.get() && selector.hasLeadership();
+        return started.get() && leader.get();
     }
 
     @SneakyThrows
     public Optional<String> leader() {
-        return started.get()
+        return started.get() && leader.get()
                ? Optional.of(selector.getLeader().getId())
                : Optional.empty();
     }
@@ -91,6 +92,7 @@ public class LeadershipManager extends LeaderSelectorListenerAdapter implements 
         log.info("This node became leader. Notifying everyone");
         gainedLeadership.dispatch(null);
         stopLock.lock();
+        leader.set(true);
         try {
             while (!stopped.get()) {
                 stopCondition.await();
@@ -98,6 +100,7 @@ public class LeadershipManager extends LeaderSelectorListenerAdapter implements 
             log.info("Stop called, leadership relinquished");
         }
         finally {
+            leader.set(false);
             stopLock.unlock();
         }
     }

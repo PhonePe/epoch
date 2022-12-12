@@ -11,6 +11,12 @@
 
     <artifactId>epoch-server</artifactId>
 
+    <properties>
+        <guicey-server-pages.version>5.5.0-1</guicey-server-pages.version>
+        <handlebars.version>4.3.0</handlebars.version>
+        <handlebars-guava-cache.version>4.3.0</handlebars-guava-cache.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.dropwizard</groupId>
@@ -56,6 +62,30 @@
             <groupId>ru.vyarus</groupId>
             <artifactId>dropwizard-guicey</artifactId>
             <version>${dw-guicey.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dropwizard</groupId>
+            <artifactId>dropwizard-views</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ru.vyarus.guicey</groupId>
+            <artifactId>guicey-server-pages</artifactId>
+            <version>${guicey-server-pages.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.jknack</groupId>
+            <artifactId>handlebars</artifactId>
+            <version>${handlebars.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.jknack</groupId>
+            <artifactId>handlebars-jackson2</artifactId>
+            <version>${handlebars.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.jknack</groupId>
+            <artifactId>handlebars-guava-cache</artifactId>
+            <version>${handlebars-guava-cache.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.curator</groupId>

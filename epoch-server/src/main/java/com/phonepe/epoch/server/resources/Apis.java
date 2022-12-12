@@ -48,9 +48,7 @@ public class Apis {
             return ApiResponse.failure("Topology " + topology.getName() + " already exists with ID: " + topologyId);
         }
         val saved = topologyStore.save(topology);
-        if (saved.isPresent()) {
-            scheduleTopology(saved.get(), scheduler, new Date());
-        }
+        saved.ifPresent(epochTopologyDetails -> scheduleTopology(epochTopologyDetails, scheduler, new Date()));
         return saved
                 .map(ApiResponse::success)
                 .orElseGet(() -> ApiResponse.failure("Could not create topology"));
@@ -67,7 +65,7 @@ public class Apis {
     public ApiResponse<EpochTopologyDetails> getTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
         return topologyStore.get(topologyId)
                 .map(ApiResponse::success)
-                .orElseGet(() -> ApiResponse.failure("No such topology: " + topologyId));
+                .orElseGet(() -> ApiResponse.failure(noTopoError(topologyId)));
     }
 
     @PUT
@@ -75,7 +73,7 @@ public class Apis {
     public ApiResponse<EpochTopologyDetails> pauseTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
         return topologyStore.updateState(topologyId, EpochTopologyState.PAUSED)
                 .map(ApiResponse::success)
-                .orElseGet(() -> ApiResponse.failure("No such topology: " + topologyId));
+                .orElseGet(() -> ApiResponse.failure(noTopoError(topologyId)));
     }
 
     @PUT
@@ -83,7 +81,7 @@ public class Apis {
     public ApiResponse<EpochTopologyDetails> unpauseTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
         return topologyStore.updateState(topologyId, EpochTopologyState.ACTIVE)
                 .map(ApiResponse::success)
-                .orElseGet(() -> ApiResponse.failure("No such topology: " + topologyId));
+                .orElseGet(() -> ApiResponse.failure(noTopoError(topologyId)));
     }
 
     @DELETE
@@ -112,4 +110,9 @@ public class Apis {
                 .map(ApiResponse::success)
                 .orElse(ApiResponse.failure("Not run exists for " + topologyId + "/" + runId));
     }
+
+    private static String noTopoError(String topologyId) {
+        return "No such topology: " + topologyId;
+    }
+
 }

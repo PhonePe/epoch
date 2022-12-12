@@ -31,16 +31,18 @@ public interface TopologyRunInfoStore {
             String taskName,
             EpochTopologyRunTaskInfo taskInfo) {
         return get(topologyId, runId)
-                .flatMap(old -> save(new EpochTopologyRunInfo(topologyId,
-                                                              runId,
-                                                              old.getState(),
-                                                              old.getMessage(),
-                                                              EpochUtils.updateTaskInfo(old,
-                                                                                        taskName,
-                                                                                        existing -> existing.setState(taskInfo.getState())
-                                                                                                .setUpstreamId(taskInfo.getUpstreamId())),
-                                                              old.getCreated(),
-                                                              new Date())));
+                .flatMap(old -> save(new EpochTopologyRunInfo(
+                        topologyId,
+                        runId,
+                        old.getState(),
+                        old.getMessage(),
+                        EpochUtils.updateTaskInfo(old,
+                                                  taskName,
+                                                  existing -> existing.setTaskId(taskInfo.getTaskId())
+                                                                  .setState(taskInfo.getState())
+                                                                  .setUpstreamId(taskInfo.getUpstreamId())),
+                        old.getCreated(),
+                        new Date())));
     }
 
     default Optional<EpochTopologyRunInfo> updateTaskState(
@@ -50,11 +52,11 @@ public interface TopologyRunInfoStore {
             EpochTaskRunState state) {
         return get(topologyId, runId)
                 .flatMap(old -> save(new EpochTopologyRunInfo(topologyId,
-                                                          runId,
-                                                          old.getState(),
-                                                          old.getMessage(),
-                                                          EpochUtils.addTaskState(old, taskName, state),
-                                                          old.getCreated(),
-                                                          new Date())));
+                                                              runId,
+                                                              old.getState(),
+                                                              old.getMessage(),
+                                                              EpochUtils.addTaskState(old, taskName, state),
+                                                              old.getCreated(),
+                                                              new Date())));
     }
 }

@@ -63,7 +63,7 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
                         rId,
                         currState,
                         "Job started",
-                        new TaskStateElaborator().states(task),
+                        new TaskStateElaborator().states(executeCommand, task),
                         new Date(),
                         new Date()))
                 .orElse(null);

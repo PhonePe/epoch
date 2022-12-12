@@ -1,0 +1,112 @@
+{{#partial "content"}}
+    <div class="row">
+        <div class="col-md-4 col-sm-12">
+            <div class="row">
+                <div class="col"><h2>Topology Specification</h2></div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <pre id="topologySpecJSON" class="code-display">{{{detailsJSON}}}</pre>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8 col-sm-12">
+            <div class="row">
+                <div class="col-sm-10">
+                    <h3>Runs</h3>
+                </div>
+                <div class="col-sm-2">
+                    <button class="btn btn-light float-right" id="reload-runs">
+                        <i class="fa-solid fa-rotate" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <table class="table table-bordered" title="topologies" id="runs">
+                        <thead>
+                        <tr>
+                            <th></th>
+                            <th>Run ID</th>
+                            <th>State</th>
+                            <th>Error Message</th>
+                            <th>Started</th>
+                            <th>Elapsed Time</th>
+                        </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+{{/partial}}
+
+{{#partial "page_js"}}
+    function formatTasks(row) {
+        var str = `<table class="table table-bordered">
+            <tr>
+                <th>Task Name</th>
+                <th>State</th>
+                <th>Task Id</th>
+                <th>Logs</th>
+            </tr>`;
+        for(const [id, task] of Object.entries(row.tasks)) {
+            str += '<tr>';
+            str += '<td>' + id + '</td>';
+            str += '<td>' + renderTaskRunState(task.state) + '</td>';
+            str += '<td>' + task.taskId + '</td>';
+            str += '<td>/tasks/local-epoch/' + task.taskId + '</td>';
+            str += '</tr>';
+        }
+        str += '</tr>';
+        return (str);
+    }
+
+    var runs = $('#runs').DataTable({
+    'processing' : true,
+    'paging' : true,
+    'ajax': {
+            'url' : '/apis/v1/topologies/{{#with details}}{{id}}{{/with}}/runs',
+            'dataSrc': function(res) { return res.data ? res.data : [];
+        }
+    },
+    'paging': false,
+    'searching' : false,
+    'ordering' : false,
+    'info' : false,
+    'columnDefs': [ {'className': 'text-center', 'targets': '_all'} ],
+    'columns' : [
+        {
+            'className': 'dt-control',
+            'orderable': false,
+            'data': null,
+            'defaultContent': '',
+        },
+        { 'data' : 'runId' },
+        { 'data' : 'state', 'render' : renderTopologyRunState },
+        { 'data' : 'message' },
+        { 'data' : 'created', 'render' : localDate },
+        { 'data' : 'created', 'render' : lifetime }
+    ]
+    });
+
+    $('#runs tbody').on('click', 'td.dt-control', function () {
+        var tr = $(this).closest('tr');
+        var row = runs.row(tr);
+
+        if (row.child.isShown()) {
+            // This row is already open - close it
+            row.child.hide();
+        tr.removeClass('shown');
+        }
+        else {
+            // Open this row
+            row.child(formatTasks(row.data())).show();
+            tr.addClass('shown');
+        }
+    });
+    $('#reload-runs').on('click', () => runs.ajax.reload(null, false));
+{{/partial}}
+
+{{> common/base}}

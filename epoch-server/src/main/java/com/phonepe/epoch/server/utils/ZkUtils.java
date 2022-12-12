@@ -31,6 +31,7 @@ public class ZkUtils {
                 .connectString(config.getConnectionString())
                 .namespace(Objects.requireNonNullElse(config.getNameSpace(), DEFAULT_NAMESPACE))
                 .retryPolicy(new RetryForever(1000))
+                .sessionTimeoutMs(1000)
                 .build();
         curator.start();
         return curator;

@@ -99,10 +99,6 @@ public class EpochUtils {
                                          .toMilliseconds());
     }
 
-    public static Map<String, EpochTopologyRunTaskInfo> addUpstreamId(final EpochTopologyRunInfo old, String taskName, String upstreamId) {
-        return updateTaskInfo(old, taskName, info -> info.setUpstreamId(upstreamId));
-    }
-
     public static Map<String, EpochTopologyRunTaskInfo> addTaskState(final EpochTopologyRunInfo old, String taskName, EpochTaskRunState state) {
         return updateTaskInfo(old, taskName, info -> info.setState(state));
     }
