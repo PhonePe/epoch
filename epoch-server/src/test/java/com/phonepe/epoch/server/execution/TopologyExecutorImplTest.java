@@ -10,6 +10,7 @@ import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
 import com.phonepe.epoch.models.topology.EpochTopologyRunTaskInfo;
 import com.phonepe.epoch.models.triggers.EpochTaskTriggerCron;
 import com.phonepe.epoch.server.TestUtils;
+import com.phonepe.epoch.server.event.EpochEventBus;
 import com.phonepe.epoch.server.remote.TaskExecutionEngine;
 import com.phonepe.epoch.server.store.InMemoryTopologyRunInfoStore;
 import com.phonepe.epoch.server.store.TopologyStore;
@@ -50,7 +51,8 @@ class TopologyExecutorImplTest {
                 .thenReturn(EpochTaskRunState.COMPLETED);
         when(te.cleanup(any(), any())).thenReturn(true);
         val tis = new InMemoryTopologyRunInfoStore();
-        val exec = new TopologyExecutorImpl(te, ts, tis);
+        val eventBus = mock(EpochEventBus.class);
+        val exec = new TopologyExecutorImpl(te, ts, tis, eventBus);
 
         val runId = UUID.randomUUID().toString();
         val res = exec.execute(new ExecuteCommand(runId, new Date(), topoName, false));
@@ -81,7 +83,8 @@ class TopologyExecutorImplTest {
                 .thenReturn(EpochTaskRunState.COMPLETED);
         when(te.cleanup(any(), any())).thenReturn(true);
         val tis = new InMemoryTopologyRunInfoStore();
-        val exec = new TopologyExecutorImpl(te, ts, tis);
+        val eventBus = mock(EpochEventBus.class);
+        val exec = new TopologyExecutorImpl(te, ts, tis, eventBus);
 
         val runId = UUID.randomUUID().toString();
         val res = exec.execute(new ExecuteCommand(runId, new Date(), topoName, false));
@@ -116,7 +119,8 @@ class TopologyExecutorImplTest {
                 });
         when(te.cleanup(any(), any())).thenReturn(true);
         val tis = new InMemoryTopologyRunInfoStore();
-        val exec = new TopologyExecutorImpl(te, ts, tis);
+        val eventBus = mock(EpochEventBus.class);
+        val exec = new TopologyExecutorImpl(te, ts, tis, eventBus);
 
         val runId = UUID.randomUUID().toString();
         val res = exec.execute(new ExecuteCommand(runId, new Date(), topoName, false));
@@ -153,7 +157,8 @@ class TopologyExecutorImplTest {
                 });
         when(te.cleanup(any(), any())).thenReturn(true);
         val tis = new InMemoryTopologyRunInfoStore();
-        val exec = new TopologyExecutorImpl(te, ts, tis);
+        val eventBus = mock(EpochEventBus.class);
+        val exec = new TopologyExecutorImpl(te, ts, tis, eventBus);
 
         val runId = UUID.randomUUID().toString();
         val res = exec.execute(new ExecuteCommand(runId, new Date(), topoName, false));

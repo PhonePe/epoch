@@ -12,6 +12,10 @@ import com.phonepe.epoch.models.topology.EpochTopology;
 import com.phonepe.epoch.models.topology.EpochTopologyState;
 import com.phonepe.epoch.models.topology.SimpleTopologyCreateRequest;
 import com.phonepe.epoch.models.triggers.EpochTaskTriggerCron;
+import com.phonepe.epoch.server.event.EpochEventBus;
+import com.phonepe.epoch.server.event.EpochEventType;
+import com.phonepe.epoch.server.event.EpochStateChangeEvent;
+import com.phonepe.epoch.server.event.StateChangeEventDataTag;
 import com.phonepe.epoch.server.managed.Scheduler;
 import com.phonepe.epoch.server.store.TopologyRunInfoStore;
 import com.phonepe.epoch.server.store.TopologyStore;
@@ -48,15 +52,18 @@ public class UI {
     private final TopologyStore topologyStore;
     private final TopologyRunInfoStore topologyRunInfoStore;
     private final Scheduler scheduler;
+    private final EpochEventBus eventBus;
+
     private final ObjectMapper mapper;
 
     @Inject
     public UI(TopologyStore topologyStore, TopologyRunInfoStore topologyRunInfoStore,
               Scheduler scheduler,
-              ObjectMapper mapper) {
+              EpochEventBus eventBus, ObjectMapper mapper) {
         this.topologyStore = topologyStore;
         this.topologyRunInfoStore = topologyRunInfoStore;
         this.scheduler = scheduler;
+        this.eventBus = eventBus;
         this.mapper = mapper;
     }
 
@@ -103,11 +110,15 @@ public class UI {
     public Response deleteTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
         if (topologyStore.delete(topologyId)) {
             topologyRunInfoStore.deleteAll(topologyId);
+            eventBus.publish(EpochStateChangeEvent.builder()
+                                     .type(EpochEventType.TOPOLOGY_STATE_CHANGED)
+                                     .metadata(Map.of(StateChangeEventDataTag.TOPOLOGY_ID, topologyId,
+                                                      StateChangeEventDataTag.NEW_STATE, EpochTopologyState.DELETED))
+                                     .build());
             log.info("Topology {} has been deleted", topologyId);
         }
         else {
             log.warn("Delete called on invalid topology {}", topologyId);
-
         }
         return redirectToHome();
     }
@@ -121,7 +132,7 @@ public class UI {
     public Response createSimpleTopology(@Valid final SimpleTopologyCreateRequest request) {
         val topology = new EpochTopology(
                 request.getName(),
-                new EpochContainerExecutionTask(request.getName() + "-docker-task",
+                new EpochContainerExecutionTask("docker-task",
                                                 new DockerCoordinates(request.getDocker(), Duration.seconds(120)),
                                                 List.of(new CPURequirement(request.getCpus()),
                                                         new MemoryRequirement(request.getMemory())),
@@ -136,17 +147,30 @@ public class UI {
             return redirectToHome();
         }
         val saved = topologyStore.save(topology);
-        saved.ifPresent(epochTopologyDetails -> scheduleTopology(epochTopologyDetails, scheduler, new Date()));
+        saved.ifPresent(epochTopologyDetails -> {
+            scheduleTopology(epochTopologyDetails, scheduler, new Date());
+            eventBus.publish(EpochStateChangeEvent.builder()
+                                     .type(EpochEventType.TOPOLOGY_STATE_CHANGED)
+                                     .metadata(Map.of(StateChangeEventDataTag.TOPOLOGY_ID, topologyId,
+                                                      StateChangeEventDataTag.NEW_STATE, EpochTopologyState.ACTIVE))
+                                     .build());
+
+        });
         return redirectToHome();
     }
 
     private Response setTopoState(String topologyId, EpochTopologyState topoState) {
         val topology = topologyStore.updateState(topologyId, topoState).orElse(null);
         if (null == topology) {
-            log.warn("Pause called for invalid topolgy id: {}", topologyId);
+            log.warn("Pause called for invalid topology id: {}", topologyId);
         }
         else {
-            log.info("Pause completed. Topology {} has been chnaged to stage: {}",
+            eventBus.publish(EpochStateChangeEvent.builder()
+                                     .type(EpochEventType.TOPOLOGY_STATE_CHANGED)
+                                     .metadata(Map.of(StateChangeEventDataTag.TOPOLOGY_ID, topologyId,
+                                                      StateChangeEventDataTag.NEW_STATE, topoState))
+                                     .build());
+            log.info("Pause completed. Topology {} has been changed to stage: {}",
                      topologyId, topology.getState());
 
         }
