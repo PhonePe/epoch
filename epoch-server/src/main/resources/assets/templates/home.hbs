@@ -26,6 +26,7 @@
                                 <th></th>
                                 <th></th>
                                 <th></th>
+                                <th></th>
                             </tr>
                             </thead>
                         </table>
@@ -181,15 +182,24 @@
 {{/partial}}
 
 {{#partial "page_js"}}
-    function pauseUnpause(data, type, row, meta) {
-        if(row.state == 'ACTIVE') {
+    function runNow(data, type, row, meta) {
         return `
-        <form class="confirmed-form" action="/topologies/` + data + `/pause" method="POST"
-              data-cnf-title="Pause Topology" data-cnf-text="Are you sure you want to pause this topology?">
-            <button type="submit" class="btn btn-outline-warning">
-                <i class="fa-regular fa-circle-pause" aria-hidden="true"></i>
+        <form class="confirmed-form" action="/topologies/` + data + `/run" method="POST"
+              data-cnf-title="Instant Run Topology" data-cnf-text="Are you sure you want to run this topology right now?">
+            <button type="submit" class="btn btn-outline-success">
+                <i class="fa-solid fa-forward" aria-hidden="true"></i>
             </button>
         </form>`;
+    }
+    function pauseUnpause(data, type, row, meta) {
+        if(row.state == 'ACTIVE') {
+            return `
+            <form class="confirmed-form" action="/topologies/` + data + `/pause" method="POST"
+                  data-cnf-title="Pause Topology" data-cnf-text="Are you sure you want to pause this topology?">
+                <button type="submit" class="btn btn-outline-warning">
+                    <i class="fa-regular fa-circle-pause" aria-hidden="true"></i>
+                </button>
+            </form>`;
         }
         return `
         <form class="confirmed-form" action="/topologies/` + data + `/unpause" method="POST"
@@ -250,6 +260,7 @@
             { 'data' : 'state', 'render' : renderTopologyState },
             { 'data' : 'created', 'render' : localDate },
             { 'data' : 'id', 'render': topologyInfo },
+            { 'data' : 'id', 'render': runNow },
             { 'data' : 'id', 'render': pauseUnpause },
             { 'data' : 'id', 'render': deleteTopology }
         ]

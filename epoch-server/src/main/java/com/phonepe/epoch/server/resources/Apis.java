@@ -69,6 +69,16 @@ public class Apis {
     }
 
     @PUT
+    @Path("/topologies/{topologyId}/run")
+    public ApiResponse<EpochTopologyRunInfo> runTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
+        return topologyStore.get(topologyId)
+                .flatMap(topology -> runInfoStore.get(topologyId,
+                                                      scheduler.scheduleNow(topologyId))
+                         .map(ApiResponse::success))
+                .orElseGet(() -> ApiResponse.failure(noTopoError(topologyId)));
+    }
+
+    @PUT
     @Path("/topologies/{topologyId}/pause")
     public ApiResponse<EpochTopologyDetails> pauseTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
         return topologyStore.updateState(topologyId, EpochTopologyState.PAUSED)

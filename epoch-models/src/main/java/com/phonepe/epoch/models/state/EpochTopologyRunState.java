@@ -7,5 +7,6 @@ public enum EpochTopologyRunState {
     RUNNING,
     COMPLETED,
     SUCCESSFUL,
+    SKIPPED,
     FAILED
 }

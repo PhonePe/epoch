@@ -22,6 +22,7 @@ import com.phonepe.epoch.server.store.TopologyStore;
 import com.phonepe.epoch.server.ui.views.HomeView;
 import com.phonepe.epoch.server.ui.views.TopologyDetailsView;
 import io.dropwizard.util.Duration;
+import io.dropwizard.util.Strings;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import ru.vyarus.guicey.gsp.views.template.Template;
@@ -91,6 +92,22 @@ public class UI {
             throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
         }
         return details;
+    }
+
+    @POST
+    @Path("/topologies/{topologyId}/run")
+    public Response runTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
+        val runId = topologyStore.get(topologyId)
+                .map(topology -> scheduler.scheduleNow(topologyId))
+                .orElse(null);
+        if(Strings.isNullOrEmpty(runId)) {
+            log.error("Could not start a run for topology {}", topologyId);
+        }
+        else {
+            log.info("An instant run was started for topology {}", topologyId);
+
+        }
+        return redirectToHome();
     }
 
     @POST

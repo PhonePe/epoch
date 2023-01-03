@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Singleton
 @Order(40)
 public final class Scheduler implements Managed {
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS");
+    private static final String DATE_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS";
 
 
     private final ExecutorService executorService;
@@ -49,10 +49,10 @@ public final class Scheduler implements Managed {
     private Future<?> monitorFuture = null;
 
     public void cancelAll() {
-
+        //TODO::IMPLEMENT
     }
 
-    public record TaskData(String topologyId, EpochTopologyRunInfo runInfo, boolean inRecoveryContext) { }
+    public record TaskData(String topologyId, EpochTopologyRunInfo runInfo, boolean nextRunNeeded) { }
 
     @Inject
     public Scheduler(@Named("taskPool") ExecutorService executorService,
@@ -93,11 +93,7 @@ public final class Scheduler implements Managed {
             return false;
         }
         val executionTime = new Date(currTime.getTime() + duration);
-        val runId = "ET-" + DATE_FORMAT.format(executionTime);
-        tasks.put(new ExecuteCommand(runId,
-                                     executionTime,
-                                     topologyId,
-                                     false));
+        val runId = scheduleForExecutionAtTime(topologyId, executionTime, true, false);
         log.debug("Scheduled task {}/{} with delay of {} ms at {}. Reference time: {}",
                   topologyId,
                   runId,
@@ -107,11 +103,16 @@ public final class Scheduler implements Managed {
         return true;
     }
 
+    public String scheduleNow(String topologyId) {
+        return scheduleForExecutionAtTime(topologyId, new Date(), false, true);
+    }
+
     public boolean recover(String topologyId, String runId, Date currTime, long duration) {
         tasks.put(new ExecuteCommand(runId,
                                      new Date(currTime.getTime() + duration),
                                      topologyId,
-                                     true));
+                                     true,
+                                     false));
         log.trace("Scheduled task {}/{} with delay of {} at {}",
                   topologyId,
                   runId,
@@ -120,20 +121,29 @@ public final class Scheduler implements Managed {
         return true;
     }
 
+    private String scheduleForExecutionAtTime(String topologyId, Date executionTime, boolean nextRunNeeded, boolean instantRun) {
+        val runId = (instantRun? "EIR-" : "ESR-") + new SimpleDateFormat(DATE_FORMAT).format(executionTime);
+        tasks.put(new ExecuteCommand(runId,
+                                     executionTime,
+                                     topologyId,
+                                     nextRunNeeded,
+                                     instantRun));
+        return runId;
+    }
+
     private void check() {
-        var done = false;
-        while (!done) {
+        while (true) {
             try {
                 Thread.sleep(1000);
             }
             catch (InterruptedException e) {
                 log.warn("Monitor thread interrupted");
                 Thread.currentThread().interrupt();
-                return;
+                stopped.set(true);
             }
             if (stopped.get()) {
                 log.info("Stop called. Exiting monitor thread");
-                return;
+                break;
             }
             processQueuedTask();
         }
@@ -168,8 +178,10 @@ public final class Scheduler implements Managed {
                 executorService.submit(() -> taskCompleted.dispatch(
                         new TaskData(executeCommand.getTopologyId(),
                                      topologyExecutor.execute(executeCommand).orElse(null),
-                                     executeCommand.isInRecoveryContext())));
-                tasks.remove(executeCommand);
+                                     executeCommand.isNextRunNeeded())));
+                val status = tasks.remove(executeCommand);
+                log.trace("Run {}/{} submitted for execution wit status {}",
+                          executeCommand.getTopologyId(), executeCommand.getRunId(), status);
             }
             catch (Exception e) {
                 log.error("Error scheduling topology task: ", e);
@@ -182,8 +194,8 @@ public final class Scheduler implements Managed {
         val rId = taskData.runInfo().getRunId();
 
         val result = taskData.runInfo().getState();
-        if(taskData.inRecoveryContext()) {
-            log.info("Run was recovered. Run {}/{} finished with state: {}", tId, rId, result);
+        if(!taskData.nextRunNeeded()) {
+            log.info("Run {}/{} finished with state: {}. No more runs needed.", tId, rId, result);
             return;
         }
         if (result == EpochTopologyRunState.COMPLETED) {

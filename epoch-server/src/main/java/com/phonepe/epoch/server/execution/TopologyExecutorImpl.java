@@ -111,13 +111,13 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
             String rId,
             EpochTopologyRunInfo runInfo) {
         return switch (topologyDetails.getState()) {
-            case ACTIVE -> {
-                log.debug("Execution planned for active topology run {}/{}", topologyName, rId);
-                yield executeTopology(executeCommand, topologyDetails, runInfo);
-            }
+            case ACTIVE -> startTopologyRun(executeCommand, topologyDetails, topologyName, rId, runInfo);
             case PAUSED -> {
+                if(executeCommand.isInstantRun()) {
+                    yield startTopologyRun(executeCommand, topologyDetails, topologyName, rId, runInfo);
+                }
                 log.warn("Execution skipped for paused topology run {}/{}", topologyName, rId);
-                yield EpochTopologyRunState.SUCCESSFUL;
+                yield EpochTopologyRunState.SKIPPED;
             }
             case DELETED -> {
                 log.warn("Execution skipped for deleted topology run {}/{}. Will be marked as completed",
@@ -127,10 +127,13 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
         };
     }
 
-    private EpochTopologyRunState executeTopology(
-            final ExecuteCommand executeCommand,
+    private EpochTopologyRunState startTopologyRun(
+            ExecuteCommand executeCommand,
             EpochTopologyDetails topologyDetails,
-            final EpochTopologyRunInfo runInfo) {
+            String topologyName,
+            String rId,
+            EpochTopologyRunInfo runInfo) {
+        log.debug("Execution planned for active topology run {}/{}", topologyName, rId);
         val task = topologyDetails
                 .getTopology()
                 .getTask();
@@ -138,8 +141,8 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
 
         val allTaskRunState = task.accept(new TaskExecutor(runId, runInfo, taskEngine, runInfoStore, this));
         return allTaskRunState == EpochTaskRunState.COMPLETED
-                     ? EpochTopologyRunState.SUCCESSFUL
-                     : EpochTopologyRunState.FAILED;
+               ? EpochTopologyRunState.SUCCESSFUL
+               : EpochTopologyRunState.FAILED;
     }
 
     private static final class TaskExecutor implements EpochTaskVisitor<EpochTaskRunState> {

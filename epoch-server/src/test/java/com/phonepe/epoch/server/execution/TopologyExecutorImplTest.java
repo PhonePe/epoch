@@ -28,8 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  *
@@ -51,7 +50,7 @@ class TopologyExecutorImplTest {
                 .thenReturn(EpochTaskRunState.COMPLETED);
         when(te.cleanup(any(), any())).thenReturn(true);
         val tis = new InMemoryTopologyRunInfoStore();
-        val eventBus = mock(EpochEventBus.class);
+        val eventBus = new EpochEventBus();
         val exec = new TopologyExecutorImpl(te, ts, tis, eventBus);
 
         val runId = UUID.randomUUID().toString();
@@ -60,7 +59,7 @@ class TopologyExecutorImplTest {
                      res.map(EpochTopologyRunInfo::getState).orElse(EpochTopologyRunState.FAILED));
         val tri = tis.get(topoName, runId).orElse(null);
         assertNotNull(tri);
-        assertEquals(EpochTaskRunState.COMPLETED, tri.getTasks().get("test-task-1"));
+        assertEquals(EpochTaskRunState.COMPLETED, tri.getTasks().get("test-task-1").getState());
     }
 
 
@@ -83,7 +82,7 @@ class TopologyExecutorImplTest {
                 .thenReturn(EpochTaskRunState.COMPLETED);
         when(te.cleanup(any(), any())).thenReturn(true);
         val tis = new InMemoryTopologyRunInfoStore();
-        val eventBus = mock(EpochEventBus.class);
+        val eventBus = new EpochEventBus();
         val exec = new TopologyExecutorImpl(te, ts, tis, eventBus);
 
         val runId = UUID.randomUUID().toString();
@@ -93,7 +92,7 @@ class TopologyExecutorImplTest {
         val tri = tis.get(topoName, runId).orElse(null);
         assertNotNull(tri);
         IntStream.rangeClosed(1, 10)
-                .forEach(i -> assertEquals(EpochTaskRunState.COMPLETED, tri.getTasks().get("test-task-" + i)));
+                .forEach(i -> assertEquals(EpochTaskRunState.COMPLETED, tri.getTasks().get("test-task-" + i).getState()));
     }
 
     @Test
@@ -119,7 +118,7 @@ class TopologyExecutorImplTest {
                 });
         when(te.cleanup(any(), any())).thenReturn(true);
         val tis = new InMemoryTopologyRunInfoStore();
-        val eventBus = mock(EpochEventBus.class);
+        val eventBus = new EpochEventBus();
         val exec = new TopologyExecutorImpl(te, ts, tis, eventBus);
 
         val runId = UUID.randomUUID().toString();
@@ -128,10 +127,10 @@ class TopologyExecutorImplTest {
                      res.map(EpochTopologyRunInfo::getState).orElse(EpochTopologyRunState.FAILED));
         val tri = tis.get(topoName, runId).orElse(null);
         assertNotNull(tri);
-        assertEquals(EpochTaskRunState.COMPLETED, tri.getTasks().get("test-task-1"));
-        assertEquals(EpochTaskRunState.FAILED, tri.getTasks().get("test-task-2"));
+        assertEquals(EpochTaskRunState.COMPLETED, tri.getTasks().get("test-task-1").getState());
+        assertEquals(EpochTaskRunState.FAILED, tri.getTasks().get("test-task-2").getState());
         IntStream.rangeClosed(3, 10)
-                .forEach(i -> assertEquals(EpochTaskRunState.PENDING, tri.getTasks().get("test-task-" + i)));
+                .forEach(i -> assertEquals(EpochTaskRunState.PENDING, tri.getTasks().get("test-task-" + i).getState()));
     }
 
     @Test
@@ -157,7 +156,7 @@ class TopologyExecutorImplTest {
                 });
         when(te.cleanup(any(), any())).thenReturn(true);
         val tis = new InMemoryTopologyRunInfoStore();
-        val eventBus = mock(EpochEventBus.class);
+        val eventBus = new EpochEventBus();
         val exec = new TopologyExecutorImpl(te, ts, tis, eventBus);
 
         val runId = UUID.randomUUID().toString();
@@ -168,7 +167,7 @@ class TopologyExecutorImplTest {
         assertNotNull(tri);
         IntStream.rangeClosed(3, 10)
                 .forEach(i -> assertEquals(i == 10 ? EpochTaskRunState.COMPLETED : EpochTaskRunState.FAILED,
-                                           tri.getTasks().get("test-task-" + i)));
+                                           tri.getTasks().get("test-task-" + i).getState()));
     }
 
 
