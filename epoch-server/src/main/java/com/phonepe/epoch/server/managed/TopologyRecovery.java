@@ -68,7 +68,8 @@ public class TopologyRecovery implements Managed {
                         t.getId(),
                         run.getRunId(),
                         new Date(),
-                        0);
+                        0,
+                        run.getRunType());
                 if (status) {
                     log.info("Scheduled topology {} for execution", t.getId());
                 }

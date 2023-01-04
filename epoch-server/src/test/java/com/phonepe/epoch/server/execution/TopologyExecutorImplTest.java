@@ -4,10 +4,7 @@ import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.tasks.EpochCompositeTask;
 import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
 import com.phonepe.epoch.models.tasks.EpochTask;
-import com.phonepe.epoch.models.topology.EpochTaskRunState;
-import com.phonepe.epoch.models.topology.EpochTopology;
-import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
-import com.phonepe.epoch.models.topology.EpochTopologyRunTaskInfo;
+import com.phonepe.epoch.models.topology.*;
 import com.phonepe.epoch.models.triggers.EpochTaskTriggerCron;
 import com.phonepe.epoch.server.TestUtils;
 import com.phonepe.epoch.server.event.EpochEventBus;
@@ -54,7 +51,7 @@ class TopologyExecutorImplTest {
         val exec = new TopologyExecutorImpl(te, ts, tis, eventBus);
 
         val runId = UUID.randomUUID().toString();
-        val res = exec.execute(new ExecuteCommand(runId, new Date(), topoName, false));
+        val res = exec.execute(new ExecuteCommand(runId, new Date(), topoName, false, EpochTopologyRunType.SCHEDULED));
         assertEquals(EpochTopologyRunState.SUCCESSFUL,
                      res.map(EpochTopologyRunInfo::getState).orElse(EpochTopologyRunState.FAILED));
         val tri = tis.get(topoName, runId).orElse(null);
@@ -86,7 +83,7 @@ class TopologyExecutorImplTest {
         val exec = new TopologyExecutorImpl(te, ts, tis, eventBus);
 
         val runId = UUID.randomUUID().toString();
-        val res = exec.execute(new ExecuteCommand(runId, new Date(), topoName, false));
+        val res = exec.execute(new ExecuteCommand(runId, new Date(), topoName, false, EpochTopologyRunType.SCHEDULED));
         assertEquals(EpochTopologyRunState.SUCCESSFUL,
                      res.map(EpochTopologyRunInfo::getState).orElse(EpochTopologyRunState.FAILED));
         val tri = tis.get(topoName, runId).orElse(null);
@@ -122,7 +119,7 @@ class TopologyExecutorImplTest {
         val exec = new TopologyExecutorImpl(te, ts, tis, eventBus);
 
         val runId = UUID.randomUUID().toString();
-        val res = exec.execute(new ExecuteCommand(runId, new Date(), topoName, false));
+        val res = exec.execute(new ExecuteCommand(runId, new Date(), topoName, false, EpochTopologyRunType.SCHEDULED));
         assertEquals(EpochTopologyRunState.FAILED,
                      res.map(EpochTopologyRunInfo::getState).orElse(EpochTopologyRunState.FAILED));
         val tri = tis.get(topoName, runId).orElse(null);
@@ -160,7 +157,7 @@ class TopologyExecutorImplTest {
         val exec = new TopologyExecutorImpl(te, ts, tis, eventBus);
 
         val runId = UUID.randomUUID().toString();
-        val res = exec.execute(new ExecuteCommand(runId, new Date(), topoName, false));
+        val res = exec.execute(new ExecuteCommand(runId, new Date(), topoName, false, EpochTopologyRunType.SCHEDULED));
         assertEquals(EpochTopologyRunState.SUCCESSFUL,
                      res.map(EpochTopologyRunInfo::getState).orElse(EpochTopologyRunState.FAILED));
         val tri = tis.get(topoName, runId).orElse(null);

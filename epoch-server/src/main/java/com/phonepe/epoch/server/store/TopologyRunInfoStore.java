@@ -41,6 +41,7 @@ public interface TopologyRunInfoStore {
                                                   existing -> existing.setTaskId(taskInfo.getTaskId())
                                                                   .setState(taskInfo.getState())
                                                                   .setUpstreamId(taskInfo.getUpstreamId())),
+                        old.getRunType(),
                         old.getCreated(),
                         new Date())));
     }
@@ -56,6 +57,7 @@ public interface TopologyRunInfoStore {
                                                               old.getState(),
                                                               old.getMessage(),
                                                               EpochUtils.addTaskState(old, taskName, state),
+                                                              old.getRunType(),
                                                               old.getCreated(),
                                                               new Date())));
     }

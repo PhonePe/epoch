@@ -23,11 +23,12 @@
             </div>
             <div class="row">
                 <div class="col">
-                    <table class="table table-bordered" title="topologies" id="runs">
+                    <table class="table table-bordered" title="runs" id="runs">
                         <thead>
                         <tr>
                             <th></th>
                             <th>Run ID</th>
+                            <th>Type</th>
                             <th>State</th>
                             <th>Error Message</th>
                             <th>Started</th>
@@ -84,6 +85,7 @@
             'defaultContent': '',
         },
         { 'data' : 'runId' },
+        { 'data' : 'runType', 'render': renderTopologyRunType },
         { 'data' : 'state', 'render' : renderTopologyRunState },
         { 'data' : 'message' },
         { 'data' : 'created', 'render' : localDate },

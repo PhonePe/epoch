@@ -2,6 +2,7 @@ package com.phonepe.epoch.server.managed;
 
 import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
+import com.phonepe.epoch.models.topology.EpochTopologyRunType;
 import com.phonepe.epoch.models.triggers.EpochTaskTrigger;
 import com.phonepe.epoch.server.execution.ExecuteCommand;
 import com.phonepe.epoch.server.execution.ExecutionTimeCalculator;
@@ -52,7 +53,11 @@ public final class Scheduler implements Managed {
         //TODO::IMPLEMENT
     }
 
-    public record TaskData(String topologyId, EpochTopologyRunInfo runInfo, boolean nextRunNeeded) { }
+    public record TaskData(
+            String topologyId,
+            EpochTopologyRunInfo runInfo,
+            EpochTopologyRunType runType
+    ) { }
 
     @Inject
     public Scheduler(@Named("taskPool") ExecutorService executorService,
@@ -93,7 +98,7 @@ public final class Scheduler implements Managed {
             return false;
         }
         val executionTime = new Date(currTime.getTime() + duration);
-        val runId = scheduleForExecutionAtTime(topologyId, executionTime, true, false);
+        val runId = scheduleForExecutionAtTime(topologyId, executionTime, EpochTopologyRunType.SCHEDULED);
         log.debug("Scheduled task {}/{} with delay of {} ms at {}. Reference time: {}",
                   topologyId,
                   runId,
@@ -104,15 +109,11 @@ public final class Scheduler implements Managed {
     }
 
     public String scheduleNow(String topologyId) {
-        return scheduleForExecutionAtTime(topologyId, new Date(), false, true);
+        return scheduleForExecutionAtTime(topologyId, new Date(), EpochTopologyRunType.INSTANT);
     }
 
-    public boolean recover(String topologyId, String runId, Date currTime, long duration) {
-        tasks.put(new ExecuteCommand(runId,
-                                     new Date(currTime.getTime() + duration),
-                                     topologyId,
-                                     true,
-                                     false));
+    public boolean recover(String topologyId, String runId, Date currTime, long duration, EpochTopologyRunType runType) {
+        tasks.put(new ExecuteCommand(runId, new Date(currTime.getTime() + duration), topologyId, runType));
         log.trace("Scheduled task {}/{} with delay of {} at {}",
                   topologyId,
                   runId,
@@ -121,13 +122,9 @@ public final class Scheduler implements Managed {
         return true;
     }
 
-    private String scheduleForExecutionAtTime(String topologyId, Date executionTime, boolean nextRunNeeded, boolean instantRun) {
-        val runId = (instantRun? "EIR-" : "ESR-") + new SimpleDateFormat(DATE_FORMAT).format(executionTime);
-        tasks.put(new ExecuteCommand(runId,
-                                     executionTime,
-                                     topologyId,
-                                     nextRunNeeded,
-                                     instantRun));
+    private String scheduleForExecutionAtTime(String topologyId, Date executionTime, EpochTopologyRunType runType) {
+        val runId = (runType == EpochTopologyRunType.INSTANT ? "EIR-" : "ESR-") + new SimpleDateFormat(DATE_FORMAT).format(executionTime);
+        tasks.put(new ExecuteCommand(runId, executionTime, topologyId, runType));
         return runId;
     }
 
@@ -178,10 +175,10 @@ public final class Scheduler implements Managed {
                 executorService.submit(() -> taskCompleted.dispatch(
                         new TaskData(executeCommand.getTopologyId(),
                                      topologyExecutor.execute(executeCommand).orElse(null),
-                                     executeCommand.isNextRunNeeded())));
+                                     executeCommand.getRunType())));
                 val status = tasks.remove(executeCommand);
-                log.trace("Run {}/{} submitted for execution wit status {}",
-                          executeCommand.getTopologyId(), executeCommand.getRunId(), status);
+                log.trace("{} run {}/{} submitted for execution with status {}",
+                          executeCommand.getRunType(), executeCommand.getTopologyId(), executeCommand.getRunId(), status);
             }
             catch (Exception e) {
                 log.error("Error scheduling topology task: ", e);
@@ -194,8 +191,8 @@ public final class Scheduler implements Managed {
         val rId = taskData.runInfo().getRunId();
 
         val result = taskData.runInfo().getState();
-        if(!taskData.nextRunNeeded()) {
-            log.info("Run {}/{} finished with state: {}. No more runs needed.", tId, rId, result);
+        if(taskData.runType() == EpochTopologyRunType.INSTANT) {
+            log.info("Run {}/{} finished with state: {}. No more runs needed as this was an instant run.", tId, rId, result);
             return;
         }
         if (result == EpochTopologyRunState.COMPLETED) {

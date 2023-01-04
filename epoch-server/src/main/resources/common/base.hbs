@@ -134,6 +134,13 @@ $(document).ready(function() {
         }
     }
 
+    function renderTopologyRunType(data, type, row, meta) {
+        switch(data) {
+            case 'SCHEDULED' : return '<span class="font-weight-bold text-normal">Scheduled</span>';
+            case 'INSTANT' : return '<span class="font-weight-bold text-info">Instant</span>';
+        }
+    }
+
     function renderTaskRunState(data, type, row, meta) {
         switch(data) {
             case 'PENDING' : return '<span class="font-weight-bold text-secondary">Pending</span>';

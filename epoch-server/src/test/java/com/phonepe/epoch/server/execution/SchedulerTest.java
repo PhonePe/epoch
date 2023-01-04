@@ -3,6 +3,7 @@ package com.phonepe.epoch.server.execution;
 import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.topology.EpochTopology;
 import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
+import com.phonepe.epoch.models.topology.EpochTopologyRunType;
 import com.phonepe.epoch.models.triggers.EpochTaskTriggerCron;
 import com.phonepe.epoch.server.managed.Scheduler;
 import com.phonepe.epoch.server.store.TopologyStore;
@@ -67,6 +68,7 @@ class SchedulerTest {
                             EpochTopologyRunState.SUCCESSFUL,
                             "",
                             Map.of(),
+                            EpochTopologyRunType.SCHEDULED,
                             new Date(),
                             new Date()
                     ));

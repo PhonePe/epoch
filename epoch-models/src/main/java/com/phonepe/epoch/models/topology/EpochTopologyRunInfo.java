@@ -18,6 +18,7 @@ public class EpochTopologyRunInfo {
     EpochTopologyRunState state;
     String message;
     Map<String, EpochTopologyRunTaskInfo> tasks;
+    EpochTopologyRunType runType;
     Date created;
     Date updated;
 }

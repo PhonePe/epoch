@@ -4,6 +4,7 @@ import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.topology.EpochTaskRunState;
 import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
 import com.phonepe.epoch.models.topology.EpochTopologyRunTaskInfo;
+import com.phonepe.epoch.models.topology.EpochTopologyRunType;
 import com.phonepe.epoch.server.TestBase;
 import com.phonepe.epoch.server.utils.ZkUtils;
 import com.phonepe.epoch.server.zookeeper.ZkConfig;
@@ -37,6 +38,7 @@ class ZkTopologyRunInfoStoreTest extends TestBase {
                                                                  EpochTopologyRunState.RUNNING,
                                                                  "",
                                                                  Map.of("TT_1", new EpochTopologyRunTaskInfo().setUpstreamId("").setState(EpochTaskRunState.RUNNING)),
+                                                                 EpochTopologyRunType.SCHEDULED,
                                                                  new Date(),
                                                                  new Date());
                     assertEquals(executionInfo, ris.save(executionInfo).orElse(null));
@@ -57,6 +59,7 @@ class ZkTopologyRunInfoStoreTest extends TestBase {
                                                                                     EpochTopologyRunState.RUNNING,
                                                                                     "",
                                                                                     Map.of("TT_1", new EpochTopologyRunTaskInfo().setUpstreamId("").setState(EpochTaskRunState.RUNNING)),
+                                                                                    EpochTopologyRunType.SCHEDULED,
                                                                                     new Date(),
                                                                                     new Date()))));
                     IntStream.rangeClosed(1, 100)
