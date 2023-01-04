@@ -22,7 +22,7 @@ import static com.cronutils.model.CronType.QUARTZ;
  */
 public class ExecutionTimeCalculator {
     public Optional<Duration> executionTime(final EpochTaskTrigger trigger, final Date currTime) {
-        return trigger.accept(new EpochTriggerVisitor<Optional<Duration>>() {
+        return trigger.accept(new EpochTriggerVisitor<>() {
             @Override
             public Optional<Duration> visit(EpochTaskTriggerAt at) {
                 if (currTime.after(at.getTime())) {
@@ -37,7 +37,8 @@ public class ExecutionTimeCalculator {
                 val cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(QUARTZ);
                 val parser = new CronParser(cronDefinition);
                 val executionTime = ExecutionTime.forCron(parser.parse(cron.getTimeSpec()));
-                return executionTime.timeToNextExecution(ZonedDateTime.ofInstant(currTime.toInstant(), ZoneId.systemDefault()));
+                return executionTime.timeToNextExecution(ZonedDateTime.ofInstant(currTime.toInstant(),
+                                                                                 ZoneId.systemDefault()));
             }
         });
     }

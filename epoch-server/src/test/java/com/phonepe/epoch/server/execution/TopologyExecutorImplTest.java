@@ -51,7 +51,7 @@ class TopologyExecutorImplTest {
         val exec = new TopologyExecutorImpl(te, ts, tis, eventBus);
 
         val runId = UUID.randomUUID().toString();
-        val res = exec.execute(new ExecuteCommand(runId, new Date(), topoName, false, EpochTopologyRunType.SCHEDULED));
+        val res = exec.execute(new ExecuteCommand(runId, new Date(), topoName, EpochTopologyRunType.SCHEDULED));
         assertEquals(EpochTopologyRunState.SUCCESSFUL,
                      res.map(EpochTopologyRunInfo::getState).orElse(EpochTopologyRunState.FAILED));
         val tri = tis.get(topoName, runId).orElse(null);
@@ -83,7 +83,7 @@ class TopologyExecutorImplTest {
         val exec = new TopologyExecutorImpl(te, ts, tis, eventBus);
 
         val runId = UUID.randomUUID().toString();
-        val res = exec.execute(new ExecuteCommand(runId, new Date(), topoName, false, EpochTopologyRunType.SCHEDULED));
+        val res = exec.execute(new ExecuteCommand(runId, new Date(), topoName, EpochTopologyRunType.SCHEDULED));
         assertEquals(EpochTopologyRunState.SUCCESSFUL,
                      res.map(EpochTopologyRunInfo::getState).orElse(EpochTopologyRunState.FAILED));
         val tri = tis.get(topoName, runId).orElse(null);
@@ -119,7 +119,7 @@ class TopologyExecutorImplTest {
         val exec = new TopologyExecutorImpl(te, ts, tis, eventBus);
 
         val runId = UUID.randomUUID().toString();
-        val res = exec.execute(new ExecuteCommand(runId, new Date(), topoName, false, EpochTopologyRunType.SCHEDULED));
+        val res = exec.execute(new ExecuteCommand(runId, new Date(), topoName, EpochTopologyRunType.SCHEDULED));
         assertEquals(EpochTopologyRunState.FAILED,
                      res.map(EpochTopologyRunInfo::getState).orElse(EpochTopologyRunState.FAILED));
         val tri = tis.get(topoName, runId).orElse(null);
@@ -157,7 +157,7 @@ class TopologyExecutorImplTest {
         val exec = new TopologyExecutorImpl(te, ts, tis, eventBus);
 
         val runId = UUID.randomUUID().toString();
-        val res = exec.execute(new ExecuteCommand(runId, new Date(), topoName, false, EpochTopologyRunType.SCHEDULED));
+        val res = exec.execute(new ExecuteCommand(runId, new Date(), topoName, EpochTopologyRunType.SCHEDULED));
         assertEquals(EpochTopologyRunState.SUCCESSFUL,
                      res.map(EpochTopologyRunInfo::getState).orElse(EpochTopologyRunState.FAILED));
         val tri = tis.get(topoName, runId).orElse(null);
