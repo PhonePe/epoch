@@ -14,6 +14,7 @@
 
 package com.phonepe.epoch.server.ui.views;
 
+import com.phonepe.epoch.server.auth.models.EpochUserRole;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.Value;
@@ -26,8 +27,10 @@ import ru.vyarus.guicey.gsp.views.template.TemplateView;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class HomeView extends TemplateView {
+    EpochUserRole userRole;
 
-    public HomeView() {
+    public HomeView(EpochUserRole userRole) {
         super("templates/home.hbs");
+        this.userRole = userRole;
     }
 }

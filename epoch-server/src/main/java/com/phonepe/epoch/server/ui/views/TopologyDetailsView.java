@@ -15,6 +15,7 @@
 package com.phonepe.epoch.server.ui.views;
 
 import com.phonepe.epoch.models.topology.EpochTopologyDetails;
+import com.phonepe.epoch.server.auth.models.EpochUserRole;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.Value;
@@ -27,11 +28,17 @@ import ru.vyarus.guicey.gsp.views.template.TemplateView;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class TopologyDetailsView extends TemplateView {
-    private final EpochTopologyDetails details;
-    private final String detailsJSON;
+    EpochUserRole userRole;
+    String topologyId;
+    EpochTopologyDetails details;
+    String detailsJSON;
 
-    public TopologyDetailsView(EpochTopologyDetails details, String detailsJSON) {
+    public TopologyDetailsView(
+            EpochUserRole userRole,
+            String topologyId, EpochTopologyDetails details, String detailsJSON) {
         super("templates/topologydetails.hbs");
+        this.userRole = userRole;
+        this.topologyId = topologyId;
         this.details = details;
         this.detailsJSON = detailsJSON;
     }

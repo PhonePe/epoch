@@ -14,49 +14,28 @@
 
 package com.phonepe.epoch.server.ui;
 
-import com.google.common.base.Joiner;
-import com.phonepe.drove.models.info.resources.allocation.CPUAllocation;
-import com.phonepe.drove.models.info.resources.allocation.MemoryAllocation;
-import com.phonepe.drove.models.info.resources.allocation.ResourceAllocation;
-import com.phonepe.drove.models.info.resources.allocation.ResourceAllocationVisitor;
+import com.github.jknack.handlebars.Options;
+import com.github.jknack.handlebars.TagType;
 import com.phonepe.epoch.server.utils.IgnoreInJacocoGeneratedReport;
+import lombok.val;
+
+import java.io.IOException;
+import java.util.Objects;
 
 /**
  *
  */
 @IgnoreInJacocoGeneratedReport
 public class CustomHelpers {
-
-    public CharSequence resourceRepr(final ResourceAllocation resource) {
-
-        return resource.accept(new ResourceAllocationVisitor<CharSequence>() {
-            @Override
-            public CharSequence visit(CPUAllocation cpu) {
-                return Joiner.on("<br>")
-                        .join(cpu.getCores()
-                                      .entrySet()
-                                      .stream()
-                                      .map(entry -> String.format("<b>NUMA Node: </b> <span class=\"badge badge-info\">%s</span> &nbsp; &nbsp;<b>Allocated Cores:</b> %s",
-                                                                  entry.getKey(),
-                                                                  Joiner.on("&nbsp;")
-                                                                          .join(entry.getValue()
-                                                                          .stream()
-                                                                          .map(value -> "<span class=\"badge badge-primary\">" + value + "</span>")
-                                                                          .toList())))
-                                      .toList());
-            }
-
-            @Override
-            public CharSequence visit(MemoryAllocation memory) {
-                return Joiner.on("<br")
-                        .join(memory.getMemoryInMB()
-                                      .entrySet()
-                                      .stream()
-                                      .map(e -> String.format("<b>NUMA Node:</b> <span class=\"badge badge-info\">%s</span>  &nbsp; &nbsp;<b>Allocated Memory:</b> %d MB",
-                                                              e.getKey(),
-                                                              e.getValue()))
-                                      .toList());
-            }
-        });
+    public static Object eqstr(Object lhs, Options options) throws IOException {
+        val rhs = options.param(0, null);
+        boolean result = Objects.equals(Objects.toString(lhs), Objects.toString(rhs));
+        if (options.tagType == TagType.SECTION) {
+            return result ? options.fn() : options.inverse();
+        }
+        return result
+               ? options.hash("yes", true)
+               : options.hash("no", false);
     }
+
 }

@@ -252,6 +252,8 @@ $(document).ready(function() {
 	    });
 	});
 
+    $('[data-toggle="tooltip"]').tooltip()
+
     $(document).on('submit', 'form.confirmed-form', (e, params) => {
         var localParams = params || {};
 

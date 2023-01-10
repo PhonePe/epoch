@@ -3,12 +3,15 @@ package com.phonepe.epoch.server.resources;
 import com.phonepe.drove.models.api.ApiResponse;
 import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.topology.*;
+import com.phonepe.epoch.server.auth.models.EpochUserRole;
 import com.phonepe.epoch.server.managed.Scheduler;
 import com.phonepe.epoch.server.store.TopologyRunInfoStore;
 import com.phonepe.epoch.server.store.TopologyStore;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
+import javax.annotation.security.PermitAll;
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
@@ -27,6 +30,7 @@ import static com.phonepe.epoch.server.utils.EpochUtils.topologyId;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Slf4j
+@PermitAll
 public class Apis {
     private final TopologyStore topologyStore;
     private final TopologyRunInfoStore runInfoStore;
@@ -42,6 +46,7 @@ public class Apis {
 
     @POST
     @Path("/topologies")
+    @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
     public ApiResponse<EpochTopologyDetails> save(@NotNull @Valid final EpochTopology topology) {
         val topologyId = topologyId(topology);
         if (topologyStore.get(topologyId).isPresent()) {
@@ -70,6 +75,7 @@ public class Apis {
 
     @PUT
     @Path("/topologies/{topologyId}/run")
+    @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
     public ApiResponse<EpochTopologyRunInfo> runTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
         return topologyStore.get(topologyId)
                 .flatMap(topology -> runInfoStore.get(topologyId,
@@ -80,6 +86,7 @@ public class Apis {
 
     @PUT
     @Path("/topologies/{topologyId}/pause")
+    @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
     public ApiResponse<EpochTopologyDetails> pauseTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
         return topologyStore.updateState(topologyId, EpochTopologyState.PAUSED)
                 .map(ApiResponse::success)
@@ -88,6 +95,7 @@ public class Apis {
 
     @PUT
     @Path("/topologies/{topologyId}/unpause")
+    @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
     public ApiResponse<EpochTopologyDetails> unpauseTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
         return topologyStore.updateState(topologyId, EpochTopologyState.ACTIVE)
                 .map(ApiResponse::success)
@@ -96,6 +104,7 @@ public class Apis {
 
     @DELETE
     @Path("/topologies/{topologyId}")
+    @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
     public ApiResponse<Boolean> deleteTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
         return ApiResponse.success(topologyStore.delete(topologyId) && runInfoStore.deleteAll(topologyId));
     }

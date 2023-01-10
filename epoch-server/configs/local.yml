@@ -30,3 +30,14 @@ zookeeper:
 drove:
   endpoints:
   - http://localhost:10000
+
+userAuth:
+  enabled: true
+  users:
+  - username: admin
+    password: admin
+    role: READ_WRITE
+
+  - username: guest
+    password: guest
+    role: READ_ONLY

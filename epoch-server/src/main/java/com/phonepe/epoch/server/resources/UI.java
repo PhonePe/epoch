@@ -12,6 +12,8 @@ import com.phonepe.epoch.models.topology.EpochTopology;
 import com.phonepe.epoch.models.topology.EpochTopologyState;
 import com.phonepe.epoch.models.topology.SimpleTopologyCreateRequest;
 import com.phonepe.epoch.models.triggers.EpochTaskTriggerCron;
+import com.phonepe.epoch.server.auth.models.EpochUser;
+import com.phonepe.epoch.server.auth.models.EpochUserRole;
 import com.phonepe.epoch.server.event.EpochEventBus;
 import com.phonepe.epoch.server.event.EpochEventType;
 import com.phonepe.epoch.server.event.EpochStateChangeEvent;
@@ -21,15 +23,16 @@ import com.phonepe.epoch.server.store.TopologyRunInfoStore;
 import com.phonepe.epoch.server.store.TopologyStore;
 import com.phonepe.epoch.server.ui.views.HomeView;
 import com.phonepe.epoch.server.ui.views.TopologyDetailsView;
+import io.dropwizard.auth.Auth;
 import io.dropwizard.util.Duration;
-import io.dropwizard.util.Strings;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import ru.vyarus.guicey.gsp.views.template.Template;
 
+import javax.annotation.security.PermitAll;
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -48,6 +51,7 @@ import static com.phonepe.epoch.server.utils.EpochUtils.topologyId;
 @Path("/ui")
 @Template
 @Produces({MediaType.TEXT_HTML, MediaType.APPLICATION_JSON})
+@PermitAll
 public class UI {
 
     private final TopologyStore topologyStore;
@@ -69,17 +73,19 @@ public class UI {
     }
 
     @GET
-    public HomeView home() {
-        return new HomeView();
+    public HomeView home(@Auth final EpochUser user) {
+        return new HomeView(user.getRole());
     }
 
     @GET
     @Path("/topologies/{topologyId}")
-    public TopologyDetailsView topologyDetails(@PathParam("topologyId") final String topologyId) {
+    public TopologyDetailsView topologyDetails(
+            @PathParam("topologyId") final String topologyId,
+            @Auth final EpochUser user) {
         val details = topologyStore.get(topologyId)
                 .map(topologyDetails -> {
                     try {
-                        return new TopologyDetailsView(topologyDetails,
+                        return new TopologyDetailsView(user.getRole(), topologyId, topologyDetails,
                                                        mapper.writerWithDefaultPrettyPrinter()
                                                                .writeValueAsString(topologyDetails));
                     }
@@ -94,58 +100,13 @@ public class UI {
         return details;
     }
 
-    @POST
-    @Path("/topologies/{topologyId}/run")
-    public Response runTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
-        val runId = topologyStore.get(topologyId)
-                .map(topology -> scheduler.scheduleNow(topologyId))
-                .orElse(null);
-        if(Strings.isNullOrEmpty(runId)) {
-            log.error("Could not start a run for topology {}", topologyId);
-        }
-        else {
-            log.info("An instant run was started for topology {}", topologyId);
-
-        }
-        return redirectToHome();
-    }
-
-    @POST
-    @Path("/topologies/{topologyId}/pause")
-    public Response pauseTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
-        return setTopoState(topologyId, EpochTopologyState.PAUSED);
-    }
-
-    @POST
-    @Path("/topologies/{topologyId}/unpause")
-    public Response unpauseTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
-        return setTopoState(topologyId, EpochTopologyState.ACTIVE);
-    }
-
-    @POST
-    @Path("/topologies/{topologyId}/delete")
-    public Response deleteTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
-        if (topologyStore.delete(topologyId)) {
-            topologyRunInfoStore.deleteAll(topologyId);
-            eventBus.publish(EpochStateChangeEvent.builder()
-                                     .type(EpochEventType.TOPOLOGY_STATE_CHANGED)
-                                     .metadata(Map.of(StateChangeEventDataTag.TOPOLOGY_ID, topologyId,
-                                                      StateChangeEventDataTag.NEW_STATE, EpochTopologyState.DELETED))
-                                     .build());
-            log.info("Topology {} has been deleted", topologyId);
-        }
-        else {
-            log.warn("Delete called on invalid topology {}", topologyId);
-        }
-        return redirectToHome();
-    }
-
     private static Response redirectToHome() {
         return Response.seeOther(URI.create("/")).build();
     }
 
     @POST
     @Path("/topologies/create")
+    @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
     public Response createSimpleTopology(@Valid final SimpleTopologyCreateRequest request) {
         val topology = new EpochTopology(
                 request.getName(),
@@ -173,24 +134,6 @@ public class UI {
                                      .build());
 
         });
-        return redirectToHome();
-    }
-
-    private Response setTopoState(String topologyId, EpochTopologyState topoState) {
-        val topology = topologyStore.updateState(topologyId, topoState).orElse(null);
-        if (null == topology) {
-            log.warn("Pause called for invalid topology id: {}", topologyId);
-        }
-        else {
-            eventBus.publish(EpochStateChangeEvent.builder()
-                                     .type(EpochEventType.TOPOLOGY_STATE_CHANGED)
-                                     .metadata(Map.of(StateChangeEventDataTag.TOPOLOGY_ID, topologyId,
-                                                      StateChangeEventDataTag.NEW_STATE, topoState))
-                                     .build());
-            log.info("Pause completed. Topology {} has been changed to stage: {}",
-                     topologyId, topology.getState());
-
-        }
         return redirectToHome();
     }
 }
