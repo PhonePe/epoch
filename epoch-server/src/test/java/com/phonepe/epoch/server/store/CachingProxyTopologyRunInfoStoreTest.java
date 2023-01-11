@@ -16,6 +16,7 @@ import org.apache.curator.test.TestingCluster;
 import org.junit.jupiter.api.Test;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.IntStream;
 
@@ -43,7 +44,10 @@ class CachingProxyTopologyRunInfoStoreTest extends TestBase {
                                                                  "RID1",
                                                                  EpochTopologyRunState.RUNNING,
                                                                  "",
-                                                                 Map.of("TT_1", new EpochTopologyRunTaskInfo().setUpstreamId("").setState(EpochTaskRunState.RUNNING)),
+                                                                 new HashMap<>(Map.of("TT_1",
+                                                                        new EpochTopologyRunTaskInfo()
+                                                                                .setUpstreamId("")
+                                                                                .setState(EpochTaskRunState.RUNNING))),
                                                                  EpochTopologyRunType.SCHEDULED,
                                                                  new Date(),
                                                                  new Date());
@@ -53,6 +57,7 @@ class CachingProxyTopologyRunInfoStoreTest extends TestBase {
                     assertEquals(EpochTaskRunState.COMPLETED,
                                  ris.updateTaskState(topologyId, runId, "TT_1", EpochTaskRunState.COMPLETED)
                                          .map(d -> d.getTasks().get("TT_1"))
+                                         .map(EpochTopologyRunTaskInfo::getState)
                                          .orElse(null));
                     assertTrue(ris.delete(topologyId, runId));
                     assertNull(ris.get(topologyId, runId).orElse(null));
@@ -64,7 +69,11 @@ class CachingProxyTopologyRunInfoStoreTest extends TestBase {
                                                                                     "RID-" + j,
                                                                                     EpochTopologyRunState.RUNNING,
                                                                                     "",
-                                                                                    Map.of("TT_1", new EpochTopologyRunTaskInfo().setUpstreamId("").setState(EpochTaskRunState.RUNNING)),
+                                                                                    Map.of("TT_1",
+                                                                                           new EpochTopologyRunTaskInfo().setUpstreamId(
+                                                                                                           "")
+                                                                                                   .setState(
+                                                                                                           EpochTaskRunState.RUNNING)),
                                                                                     EpochTopologyRunType.SCHEDULED,
                                                                                     new Date(),
                                                                                     new Date()))));
