@@ -46,6 +46,7 @@ public class App extends Application<AppConfig> {
                 GuiceBundle.builder()
                         .enableAutoConfig("com.phonepe.epoch.server.resources",
                                           "com.phonepe.epoch.server.managed",
+                                          "com.phonepe.epoch.server.healthchecks",
                                           "com.phonepe.epoch.server.leadership",
                                           "com.phonepe.epoch.server.errorhandlers")
                         .modules(new EpochModule())
