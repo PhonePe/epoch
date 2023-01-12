@@ -84,13 +84,28 @@
             str += '<td>' + id + '</td>';
             str += '<td>' + renderTaskRunState(task.state) + '</td>';
             str += '<td>' + task.taskId + '</td>';
-            str += '<td>/tasks/local-epoch/' + task.taskId + '</td>';
+        str += '<td><a class="log-link" data-topology-id="' + row.topologyId + '" data-run-id="' + row.runId + '" data-task-id="' + id + '">View Log</a></td>';
             str += '</tr>';
         }
         str += '</tr>';
         return (str);
     }
 
+    $(document).on('click', 'a.log-link',
+        e => {
+            const link = $(e.target);
+            const tId = link.attr('data-topology-id');
+            const rId = link.attr('data-run-id');
+            const tsId = link.attr('data-task-id');
+            $.get('/apis/v1/topologies/' + tId + '/runs/' + rId + '/tasks/' + tsId + '/log',
+                res => {
+                    if(res.data) {
+                        window.open(res.data, '_blank', 'noopener,noreferrer');
+                    }
+                }
+            );
+        }
+    );
     var runs = $('#runs').DataTable({
     'processing' : true,
     'paging' : true,
@@ -148,7 +163,7 @@
         if (row.child.isShown()) {
             // This row is already open - close it
             row.child.hide();
-        tr.removeClass('shown');
+            tr.removeClass('shown');
         }
         else {
             // Open this row

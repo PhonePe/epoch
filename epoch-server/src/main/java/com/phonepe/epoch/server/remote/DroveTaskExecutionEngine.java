@@ -5,13 +5,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.phonepe.drove.models.api.ApiErrorCode;
 import com.phonepe.drove.models.api.ApiResponse;
 import com.phonepe.drove.models.operation.ClusterOpSpec;
+import com.phonepe.drove.models.operation.TaskOperationVisitor;
 import com.phonepe.drove.models.operation.taskops.TaskCreateOperation;
+import com.phonepe.drove.models.operation.taskops.TaskKillOperation;
 import com.phonepe.drove.models.task.TaskSpec;
 import com.phonepe.drove.models.taskinstance.TaskInfo;
 import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
 import com.phonepe.epoch.models.topology.EpochTaskRunState;
 import com.phonepe.epoch.models.topology.EpochTopologyRunTaskInfo;
 import com.phonepe.epoch.server.managed.DroveClientManager;
+import com.phonepe.epoch.server.utils.EpochUtils;
 import io.appform.functionmetrics.MonitoredFunction;
 import io.dropwizard.util.Strings;
 import lombok.SneakyThrows;
@@ -49,8 +52,7 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
     public DroveTaskExecutionEngine(DroveClientManager droveClientManager, ObjectMapper mapper) {
         this.droveClientManager = droveClientManager;
         this.mapper = mapper;
-        this.appName = Objects.requireNonNull(System.getenv("DROVE_APP_NAME"),
-                                              "Provide app name in DROVE_APP_NAME env variable");
+        this.appName = EpochUtils.appName();
     }
 
     @Override
@@ -84,8 +86,10 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
         val requestBuilder = HttpRequest.newBuilder(URI.create(url))
                 .header(HttpHeaders.AUTHORIZATION, "O-Bearer " + config.getDroveAuthToken())
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        val request = requestBuilder.POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(
-                        taskCreateOperation(context, executionTask))))
+        val createOperation = taskCreateOperation(context, executionTask);
+        val taskId = taskId(createOperation);
+        val request = requestBuilder.POST(
+                        HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(createOperation)))
                 .timeout(getOrDefault(config.getOperationTimeout()))
                 .build();
         try {
@@ -96,17 +100,18 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
                 val apiResponse = mapper.readValue(body, new TypeReference<ApiResponse<Map<String, String>>>() {
                 });
                 if (apiResponse.getStatus().equals(ApiErrorCode.SUCCESS)) {
-                    val upstreamTaskID = apiResponse.getData().getOrDefault("taskId",
+                    val droveInternalId = apiResponse.getData().getOrDefault("taskId",
                                                                             EpochTopologyRunTaskInfo.UNKNOWN_TASK_ID);
-                    log.info("Task {}/{}/{} started on drove with taskId: {}",
+                    log.info("Task {}/{}/{} started on drove with taskId: {} and drove internal ID: {}",
                              context.getTopologyId(),
                              context.getRunId(),
                              context.getTaskName(),
-                             upstreamTaskID);
+                             taskId,
+                             droveInternalId);
                     return new EpochTopologyRunTaskInfo()
                             .setTaskId(instanceId(context))
                             .setState(EpochTaskRunState.STARTING)
-                            .setUpstreamId(upstreamTaskID);
+                            .setUpstreamId(taskId);
                 }
             }
             else if (response.statusCode() == 400) {
@@ -154,10 +159,14 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
                 .setUpstreamId(context.getUpstreamTaskId());
     }
 
+
     @Override
     @MonitoredFunction
     public EpochTaskRunState status(TaskExecutionContext context, EpochContainerExecutionTask executionTask) {
-        return readTaskData(context, EpochTaskRunState.COMPLETED, taskInfo -> mapTaskState(context, taskInfo), e -> EpochTaskRunState.RUNNING);
+        return readTaskData(context,
+                            EpochTaskRunState.COMPLETED,
+                            taskInfo -> mapTaskState(context, taskInfo),
+                            e -> EpochTaskRunState.RUNNING);
     }
 
     private static EpochTaskRunState mapTaskState(TaskExecutionContext context, TaskInfo taskInfo) {
@@ -213,6 +222,20 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
             Thread.currentThread().interrupt();
         }
         return false;
+    }
+
+    private static String taskId(TaskCreateOperation createOperation) {
+        return createOperation.accept(new TaskOperationVisitor<>() {
+            @Override
+            public String visit(TaskCreateOperation create) {
+                return create.getSpec().getTaskId();
+            }
+
+            @Override
+            public String visit(TaskKillOperation kill) {
+                return null;
+            }
+        });
     }
 
     private <T> T readTaskData(

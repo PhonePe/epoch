@@ -38,4 +38,7 @@ public class CustomHelpers {
                : options.hash("no", false);
     }
 
+    public static CharSequence env(final String envVar) {
+        return System.getenv(envVar);
+    }
 }

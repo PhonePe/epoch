@@ -35,7 +35,9 @@ public class TopologyDetailsView extends TemplateView {
 
     public TopologyDetailsView(
             EpochUserRole userRole,
-            String topologyId, EpochTopologyDetails details, String detailsJSON) {
+            String topologyId,
+            EpochTopologyDetails details,
+            String detailsJSON) {
         super("templates/topologydetails.hbs");
         this.userRole = userRole;
         this.topologyId = topologyId;

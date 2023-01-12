@@ -4,6 +4,7 @@ import com.phonepe.drove.models.api.ApiResponse;
 import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.topology.*;
 import com.phonepe.epoch.server.auth.models.EpochUserRole;
+import com.phonepe.epoch.server.managed.DroveClientManager;
 import com.phonepe.epoch.server.managed.Scheduler;
 import com.phonepe.epoch.server.store.TopologyRunInfoStore;
 import com.phonepe.epoch.server.store.TopologyStore;
@@ -18,10 +19,10 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import java.net.URI;
 import java.util.*;
 
-import static com.phonepe.epoch.server.utils.EpochUtils.scheduleTopology;
-import static com.phonepe.epoch.server.utils.EpochUtils.topologyId;
+import static com.phonepe.epoch.server.utils.EpochUtils.*;
 
 /**
  *
@@ -36,12 +37,15 @@ public class Apis {
     private final TopologyRunInfoStore runInfoStore;
 
     private final Scheduler scheduler;
+    private final DroveClientManager clientManager;
 
     @Inject
-    public Apis(TopologyStore topologyStore, TopologyRunInfoStore runInfoStore, Scheduler scheduler) {
+    public Apis(TopologyStore topologyStore, TopologyRunInfoStore runInfoStore, Scheduler scheduler,
+                DroveClientManager clientManager) {
         this.topologyStore = topologyStore;
         this.runInfoStore = runInfoStore;
         this.scheduler = scheduler;
+        this.clientManager = clientManager;
     }
 
     @POST
@@ -128,6 +132,25 @@ public class Apis {
         return runInfoStore.get(topologyId, runId)
                 .map(ApiResponse::success)
                 .orElse(ApiResponse.failure("Not run exists for " + topologyId + "/" + runId));
+    }
+
+    @GET
+    @Path("/topologies/{topologyId}/runs/{runId}/tasks/{taskId}/log")
+    public ApiResponse<URI> logLink(
+            @NotEmpty @PathParam("topologyId") final String topologyId,
+            @NotEmpty @PathParam("runId") final String runId,
+            @NotEmpty @PathParam("taskId") final String taskId) {
+        return runInfoStore.get(topologyId, runId)
+                .flatMap(runInfo -> {
+                    val task = runInfo.getTasks().get(taskId);
+                    if(task == null) {
+                        return Optional.empty();
+                    }
+                    return clientManager.getClient().leader()
+                            .map(leader -> URI.create(leader + "/tasks/" + appName() + "/" + task.getUpstreamId() ));
+                })
+                .map(ApiResponse::success)
+                .orElse(ApiResponse.failure("Not log exists for " + topologyId + "/" + runId + "/" + taskId));
     }
 
     private static String noTopoError(String topologyId) {

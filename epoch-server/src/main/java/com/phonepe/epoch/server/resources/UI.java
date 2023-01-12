@@ -18,6 +18,7 @@ import com.phonepe.epoch.server.event.EpochEventBus;
 import com.phonepe.epoch.server.event.EpochEventType;
 import com.phonepe.epoch.server.event.EpochStateChangeEvent;
 import com.phonepe.epoch.server.event.StateChangeEventDataTag;
+import com.phonepe.epoch.server.managed.DroveClientManager;
 import com.phonepe.epoch.server.managed.Scheduler;
 import com.phonepe.epoch.server.store.TopologyStore;
 import com.phonepe.epoch.server.ui.views.HomeView;
@@ -57,15 +58,17 @@ public class UI {
     private final Scheduler scheduler;
     private final EpochEventBus eventBus;
 
+    private final DroveClientManager clientManager;
     private final ObjectMapper mapper;
 
     @Inject
     public UI(TopologyStore topologyStore,
               Scheduler scheduler,
-              EpochEventBus eventBus, ObjectMapper mapper) {
+              EpochEventBus eventBus, DroveClientManager clientManager, ObjectMapper mapper) {
         this.topologyStore = topologyStore;
         this.scheduler = scheduler;
         this.eventBus = eventBus;
+        this.clientManager = clientManager;
         this.mapper = mapper;
     }
 
