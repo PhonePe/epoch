@@ -20,6 +20,8 @@ import io.dropwizard.util.Strings;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -29,6 +31,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -92,13 +96,19 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
                         HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(createOperation)))
                 .timeout(getOrDefault(config.getOperationTimeout()))
                 .build();
+        val retryPolicy = new RetryPolicy<HttpResponse<String>>()
+                .withDelay(Duration.ofSeconds(3))
+                .withMaxRetries(3)
+                .handle(Exception.class)
+                .handleResultIf(Objects::isNull);
+        var errorMessage = "";
         try {
-            val response = client.getHttpClient()
-                    .send(request, HttpResponse.BodyHandlers.ofString());
+            val response = Failsafe.with(List.of(retryPolicy))
+                    .get(() -> client.getHttpClient()
+                    .send(request, HttpResponse.BodyHandlers.ofString()));
             val body = response.body();
             if (response.statusCode() == 200) {
-                val apiResponse = mapper.readValue(body, new TypeReference<ApiResponse<Map<String, String>>>() {
-                });
+                val apiResponse = mapper.readValue(body, new TypeReference<ApiResponse<Map<String, String>>>() {});
                 if (apiResponse.getStatus().equals(ApiErrorCode.SUCCESS)) {
                     val droveInternalId = apiResponse.getData().getOrDefault("taskId",
                                                                             EpochTopologyRunTaskInfo.UNKNOWN_TASK_ID);
@@ -140,23 +150,17 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
                     return taskData;
                 }
             }
-            throw new IllegalStateException("Received error from api: [" + response.statusCode() + "] " + body);
+            errorMessage = "Received error from api: [" + response.statusCode() + "] " + body;
         }
         catch (IOException e) {
             log.error("Error making http call to " + url + ": " + e.getMessage(), e);
-            return new EpochTopologyRunTaskInfo()
-                    .setTaskId(instanceId(context))
-                    .setState(EpochTaskRunState.FAILED)
-                    .setUpstreamId(EpochTopologyRunTaskInfo.UNKNOWN_TASK_ID);
-        }
-        catch (InterruptedException e) {
-            log.error("HTTP Request interrupted");
-            Thread.currentThread().interrupt();
+            errorMessage = "Error making http call to " + url + ": " + e.getMessage();
         }
         return new EpochTopologyRunTaskInfo()
                 .setTaskId(instanceId(context))
-                .setState(EpochTaskRunState.COMPLETED)
-                .setUpstreamId(context.getUpstreamTaskId());
+                .setState(EpochTaskRunState.FAILED)
+                .setUpstreamId(EpochTopologyRunTaskInfo.UNKNOWN_TASK_ID)
+                .setErrorMessage(errorMessage);
     }
 
 

@@ -207,14 +207,9 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
                 val topologyName = topologyExecutionInfo.getTopologyId();
                 val taskName = containerExecution.getTaskName();
                 var status = EpochTaskRunState.FAILED;
-                val retryPolicy = new RetryPolicy<EpochTopologyRunTaskInfo>()
-                        .withDelay(Duration.ofSeconds(3))
-                        .withMaxRetries(3)
-                        .handle(Exception.class)
-                        .handleResultIf(Objects::isNull);
+
                 try {
-                    val taskData = Failsafe.with(List.of(retryPolicy))
-                            .get(() -> taskEngine.start(context, containerExecution));
+                    val taskData = taskEngine.start(context, containerExecution);
                     status = taskData.getState();
                     context.setUpstreamTaskId(taskData.getUpstreamId());
                     runInfoStore.updateTaskInfo(topologyName, runId, taskName, taskData);
