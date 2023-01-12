@@ -38,9 +38,11 @@ public interface TopologyRunInfoStore {
                         old.getMessage(),
                         EpochUtils.updateTaskInfo(old,
                                                   taskName,
-                                                  existing -> existing.setTaskId(taskInfo.getTaskId())
-                                                                  .setState(taskInfo.getState())
-                                                                  .setUpstreamId(taskInfo.getUpstreamId())),
+                                                  existing -> existing
+                                                          .setTaskId(taskInfo.getTaskId())
+                                                          .setState(taskInfo.getState())
+                                                          .setUpstreamId(taskInfo.getUpstreamId())
+                                                          .setErrorMessage(taskInfo.getErrorMessage())),
                         old.getRunType(),
                         old.getCreated(),
                         new Date())));

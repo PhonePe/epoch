@@ -73,21 +73,28 @@
 {{#partial "page_js"}}
     function formatTasks(row) {
         var str = `<table class="table table-bordered">
+            <thead>
             <tr>
                 <th>Task Name</th>
                 <th>State</th>
                 <th>Task Id</th>
+                <td>Error Message</td>
                 <th>Logs</th>
-            </tr>`;
+            </tr>
+            </thead>
+            <tbody>`;
         for(const [id, task] of Object.entries(row.tasks)) {
             str += '<tr>';
             str += '<td>' + id + '</td>';
             str += '<td>' + renderTaskRunState(task.state) + '</td>';
             str += '<td>' + task.taskId + '</td>';
+            str += '<td>' + (task.errorMessage ? task.errorMessage : '') + '</td>';
         str += '<td><a class="log-link" data-topology-id="' + row.topologyId + '" data-run-id="' + row.runId + '" data-task-id="' + id + '">View Log</a></td>';
             str += '</tr>';
         }
-        str += '</tr>';
+        str += `
+            </tbody>
+        </table>`;
         return (str);
     }
 

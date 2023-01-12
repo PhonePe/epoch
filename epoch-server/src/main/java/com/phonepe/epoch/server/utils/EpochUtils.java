@@ -6,9 +6,11 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import com.google.common.base.CaseFormat;
 import com.phonepe.drove.models.api.ApiResponse;
 import com.phonepe.epoch.models.topology.*;
 import com.phonepe.epoch.server.managed.Scheduler;
+import io.dropwizard.util.Strings;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -116,5 +118,15 @@ public class EpochUtils {
             return info;
         });
         return ids;
+    }
+
+    public static String errorMessage(Throwable t) {
+        var root = t;
+        while (null != root.getCause()) {
+            root = root.getCause();
+        }
+        return Strings.isNullOrEmpty(root.getMessage())
+                ? CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, root.getClass().getSimpleName())
+               : root.getMessage();
     }
 }

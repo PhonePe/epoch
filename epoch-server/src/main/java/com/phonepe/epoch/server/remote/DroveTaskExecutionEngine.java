@@ -152,9 +152,10 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
             }
             errorMessage = "Received error from api: [" + response.statusCode() + "] " + body;
         }
-        catch (IOException e) {
-            log.error("Error making http call to " + url + ": " + e.getMessage(), e);
-            errorMessage = "Error making http call to " + url + ": " + e.getMessage();
+        catch (Exception e) {
+            val message = EpochUtils.errorMessage(e);
+            log.error("Error making http call to " + url + ": " + message, e);
+            errorMessage = "Error making http call to " + url + ": " + message;
         }
         return new EpochTopologyRunTaskInfo()
                 .setTaskId(instanceId(context))
