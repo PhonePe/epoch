@@ -237,20 +237,27 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
                 val retryPolicy = new RetryPolicy<EpochTaskRunState>()
                         .withDelay(Duration.ofSeconds(3))
                         .withMaxRetries(-1)
-                        .handle(Exception.class)
+                        .onFailedAttempt(attempt -> log.debug("Attempt {}: {}", attempt.getAttemptCount(), attempt))
+                        .handleIf(e -> true)
                         .handleResultIf(result -> null == result || !EpochTaskRunState.TERMINAL_STATES.contains(result));
                 try {
                     return Failsafe.with(List.of(retryPolicy))
                             .get(() -> {
                                 val status = taskEngine.status(context, containerExecution);
-                                try {
-                                    runInfoStore.updateTaskState(context.getTopologyId(),
-                                                                 context.getRunId(),
-                                                                 context.getTaskName(),
-                                                                 status);
+                                if(null == status) {
+                                    log.debug("No status received. Task has probably not started yet..");
                                 }
-                                catch (Exception e) {
-                                    log.error("Error updating state: ", e);
+                                else {
+                                    try {
+                                        runInfoStore.updateTaskState(context.getTopologyId(),
+                                                                     context.getRunId(),
+                                                                     context.getTaskName(),
+                                                                     status);
+                                    }
+                                    catch (Exception e) {
+                                        log.error("Error fetching state: ", e);
+                                        throw e;
+                                    }
                                 }
                                 return status;
                             });

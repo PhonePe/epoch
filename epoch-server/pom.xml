@@ -107,6 +107,11 @@
             <version>${drove.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.phonepe.drove</groupId>
+            <artifactId>drove-client-httpcomponent-transport</artifactId>
+            <version>${drove.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-test</artifactId>
             <version>${curator.version}</version>
