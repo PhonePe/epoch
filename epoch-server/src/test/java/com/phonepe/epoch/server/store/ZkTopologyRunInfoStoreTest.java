@@ -47,7 +47,7 @@ class ZkTopologyRunInfoStoreTest extends TestBase {
                     val topologyId = executionInfo.getTopologyId();
                     val runId = executionInfo.getRunId();
                     assertEquals(EpochTaskRunState.COMPLETED,
-                                 ris.updateTaskState(topologyId, runId, "TT_1", EpochTaskRunState.COMPLETED)
+                                 ris.updateTaskState(topologyId, runId, "TT_1", EpochTaskRunState.COMPLETED, "")
                                          .map(d -> d.getTasks().get("TT_1"))
                                          .map(EpochTopologyRunTaskInfo::getState)
                                          .orElse(null));

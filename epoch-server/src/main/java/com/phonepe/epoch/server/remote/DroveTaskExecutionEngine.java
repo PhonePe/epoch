@@ -14,6 +14,7 @@ import com.phonepe.drove.models.taskinstance.TaskInfo;
 import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
 import com.phonepe.epoch.models.topology.EpochTaskRunState;
 import com.phonepe.epoch.models.topology.EpochTopologyRunTaskInfo;
+import com.phonepe.epoch.server.execution.TaskStatusData;
 import com.phonepe.epoch.server.managed.DroveClientManager;
 import com.phonepe.epoch.server.utils.EpochUtils;
 import io.appform.functionmetrics.MonitoredFunction;
@@ -75,7 +76,8 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
             return new EpochTopologyRunTaskInfo()
                     .setTaskId(instanceId)
                     .setUpstreamId(context.getUpstreamTaskId())
-                    .setState(taskState);
+                    .setState(taskState.state())
+                    .setErrorMessage(taskState.errorMessage());
         }
         val client = droveClientManager.getClient();
 
@@ -121,7 +123,9 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
                     val retryPolicy = new RetryPolicy<EpochTopologyRunTaskInfo>()
                             .withDelay(Duration.ofSeconds(3))
                             .withMaxRetries(10)
-                            .onFailedAttempt(attempt -> log.debug("Status read attempt {}: {}", attempt.getAttemptCount(), attempt))
+                            .onFailedAttempt(attempt -> log.debug("Status read attempt {}: {}",
+                                                                  attempt.getAttemptCount(),
+                                                                  attempt))
                             .handle(Exception.class)
                             .handleResultIf(r -> r == null
                                     || Strings.isNullOrEmpty(r.getUpstreamId())
@@ -138,7 +142,7 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
                                                     taskInfo -> new EpochTopologyRunTaskInfo()
                                                             .setTaskId(instanceId)
                                                             .setUpstreamId(taskInfo.getTaskId())
-                                                            .setState(mapTaskState(context, taskInfo))
+                                                            .setState(mapTaskState(context, taskInfo).state())
                                                             .setErrorMessage(taskInfo.getErrorMessage()),
                                                     e -> new EpochTopologyRunTaskInfo()
                                                             .setTaskId(instanceId)
@@ -168,43 +172,54 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
                 .setErrorMessage(errorMessage.get());
     }
 
-    private EpochTaskRunState readExistingTaskState(TaskExecutionContext context) {
-        val retryPolicy = new RetryPolicy<EpochTaskRunState>()
+    private TaskStatusData readExistingTaskState(TaskExecutionContext context) {
+        val retryPolicy = new RetryPolicy<TaskStatusData>()
                 .withDelay(Duration.ofSeconds(3))
                 .withMaxRetries(3)
                 .handle(Exception.class)
                 .handleResultIf(Objects::isNull);
         return Failsafe.with(List.of(retryPolicy))
                 .get(() -> readTaskData(context,
-                                        EpochTaskRunState.STARTING,
+                                        new TaskStatusData(EpochTaskRunState.STARTING, ""),
                                         taskInfo -> mapTaskState(context, taskInfo),
-                                        e -> EpochTaskRunState.FAILED));
+                                        e -> new TaskStatusData(EpochTaskRunState.FAILED,
+                                                                "Error getting state: " + e.getMessage())));
     }
 
 
     @Override
     @MonitoredFunction
-    public EpochTaskRunState status(TaskExecutionContext context, EpochContainerExecutionTask executionTask) {
+    public TaskStatusData status(TaskExecutionContext context, EpochContainerExecutionTask executionTask) {
         return readTaskData(context,
                             null,
                             taskInfo -> mapTaskState(context, taskInfo),
-                            e -> EpochTaskRunState.RUNNING);
+                            e -> new TaskStatusData(EpochTaskRunState.RUNNING, ""));
     }
 
-    private static EpochTaskRunState mapTaskState(TaskExecutionContext context, TaskInfo taskInfo) {
+    private static TaskStatusData mapTaskState(TaskExecutionContext context, TaskInfo taskInfo) {
         val currState = taskInfo.getState();
         log.debug("State for task {}/{}/{} is: {}",
                   context.getTopologyId(),
                   context.getRunId(),
                   context.getTaskName(),
                   currState);
-        return switch (currState) {
+        val state = switch (currState) {
             case PENDING, PROVISIONING, STARTING -> EpochTaskRunState.STARTING;
             case RUNNING, RUN_COMPLETED, DEPROVISIONING -> EpochTaskRunState.RUNNING;
             case PROVISIONING_FAILED, LOST -> EpochTaskRunState.FAILED;
-            case STOPPED -> EpochTaskRunState.COMPLETED;
+            case STOPPED -> {
+                val taskResult = taskInfo.getTaskResult();
+                if (taskResult == null) {
+                    yield EpochTaskRunState.COMPLETED;
+                }
+                yield switch (taskResult.getStatus()) {
+                    case SUCCESSFUL -> EpochTaskRunState.COMPLETED;
+                    case TIMED_OUT, CANCELLED, FAILED, LOST -> EpochTaskRunState.FAILED;
+                };
+            }
             case UNKNOWN -> null;
         };
+        return new TaskStatusData(state, taskInfo.getErrorMessage());
     }
 
     @Override

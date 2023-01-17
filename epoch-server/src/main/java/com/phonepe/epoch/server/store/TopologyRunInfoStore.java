@@ -52,12 +52,13 @@ public interface TopologyRunInfoStore {
             String topologyId,
             String runId,
             String taskName,
-            EpochTaskRunState state) {
+            EpochTaskRunState state,
+            String errorMessage) {
         return get(topologyId, runId)
                 .flatMap(old -> save(new EpochTopologyRunInfo(topologyId,
                                                               runId,
                                                               old.getState(),
-                                                              old.getMessage(),
+                                                              errorMessage,
                                                               EpochUtils.addTaskState(old, taskName, state),
                                                               old.getRunType(),
                                                               old.getCreated(),

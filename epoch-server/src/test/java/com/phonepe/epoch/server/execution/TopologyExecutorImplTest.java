@@ -44,7 +44,7 @@ class TopologyExecutorImplTest {
         when(te.start(any(), any()))
                 .thenReturn(new EpochTopologyRunTaskInfo().setUpstreamId("TEST_1").setState(EpochTaskRunState.STARTING));
         when(te.status(any(), any()))
-                .thenReturn(EpochTaskRunState.COMPLETED);
+                .thenReturn(new TaskStatusData(EpochTaskRunState.COMPLETED, ""));
         when(te.cleanup(any(), any())).thenReturn(true);
         val tis = new InMemoryTopologyRunInfoStore();
         val eventBus = new EpochEventBus();
@@ -76,7 +76,7 @@ class TopologyExecutorImplTest {
         when(te.start(any(), any()))
                 .thenReturn(new EpochTopologyRunTaskInfo().setUpstreamId("TEST_1").setState(EpochTaskRunState.STARTING));
         when(te.status(any(), any()))
-                .thenReturn(EpochTaskRunState.COMPLETED);
+                .thenReturn(new TaskStatusData(EpochTaskRunState.COMPLETED, ""));
         when(te.cleanup(any(), any())).thenReturn(true);
         val tis = new InMemoryTopologyRunInfoStore();
         val eventBus = new EpochEventBus();
@@ -107,11 +107,11 @@ class TopologyExecutorImplTest {
         when(te.start(any(), any()))
                 .thenReturn(new EpochTopologyRunTaskInfo().setUpstreamId("TEST_1").setState(EpochTaskRunState.STARTING));
         when(te.status(any(), any()))
-                .thenAnswer((Answer<EpochTaskRunState>) invocationOnMock -> {
+                .thenAnswer((Answer<TaskStatusData>) invocationOnMock -> {
                     val cmd = invocationOnMock.getArgument(1, EpochContainerExecutionTask.class);
                     val parts = cmd.getTaskName().split("-");
                     val idx = Integer.parseInt(parts[parts.length -1]);
-                    return idx % 2 == 1 ? EpochTaskRunState.COMPLETED : EpochTaskRunState.FAILED;
+                    return new TaskStatusData(idx % 2 == 1 ? EpochTaskRunState.COMPLETED : EpochTaskRunState.FAILED, "");
                 });
         when(te.cleanup(any(), any())).thenReturn(true);
         val tis = new InMemoryTopologyRunInfoStore();
@@ -145,11 +145,11 @@ class TopologyExecutorImplTest {
         when(te.start(any(), any()))
                 .thenReturn(new EpochTopologyRunTaskInfo().setUpstreamId("TEST_1").setState(EpochTaskRunState.STARTING));
         when(te.status(any(), any()))
-                .thenAnswer((Answer<EpochTaskRunState>) invocationOnMock -> {
+                .thenAnswer((Answer<TaskStatusData>) invocationOnMock -> {
                     val cmd = invocationOnMock.getArgument(1, EpochContainerExecutionTask.class);
                     val parts = cmd.getTaskName().split("-");
                     val idx = Integer.parseInt(parts[parts.length -1]);
-                    return idx == 10 ? EpochTaskRunState.COMPLETED : EpochTaskRunState.FAILED;
+                    return new TaskStatusData(idx == 10 ? EpochTaskRunState.COMPLETED : EpochTaskRunState.FAILED, "");
                 });
         when(te.cleanup(any(), any())).thenReturn(true);
         val tis = new InMemoryTopologyRunInfoStore();

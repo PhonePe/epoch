@@ -252,14 +252,15 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
                                         runInfoStore.updateTaskState(context.getTopologyId(),
                                                                      context.getRunId(),
                                                                      context.getTaskName(),
-                                                                     status);
+                                                                     status.state(),
+                                                                     status.errorMessage());
                                     }
                                     catch (Exception e) {
                                         log.error("Error fetching state: ", e);
                                         throw e;
                                     }
                                 }
-                                return status;
+                                return status.state();
                             });
                 }
                 catch (Exception e) {
