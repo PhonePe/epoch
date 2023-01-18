@@ -24,7 +24,7 @@ public interface TaskExecutionEngine {
         return runInfo.getTasks()
                 .values()
                 .stream()
-                .map(info -> info.getUpstreamId())
+                .map(EpochTopologyRunTaskInfo::getUpstreamId)
                 .allMatch(this::cleanup);
     }
 

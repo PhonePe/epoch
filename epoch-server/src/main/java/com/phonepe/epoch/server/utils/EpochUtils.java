@@ -50,7 +50,6 @@ public class EpochUtils {
     }
 
     public static String topologyId(final String topologyName) {
-//        return UUID.nameUUIDFromBytes(topologyName.getBytes()).toString();
         return topologyName;
     }
 

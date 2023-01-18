@@ -66,8 +66,6 @@ public class LeadershipManager extends LeaderSelectorListenerAdapter implements 
             stopLock.unlock();
         }
         stopCondition.signalAll();
-/*        log.debug("Waiting 5 seconds before stopping selector");
-        Thread.sleep(5_000);*/
         this.selector.close();
         log.debug("Shut down {}", this.getClass().getSimpleName());
     }

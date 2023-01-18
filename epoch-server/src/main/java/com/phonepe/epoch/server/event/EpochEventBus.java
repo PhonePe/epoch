@@ -8,6 +8,7 @@ import javax.inject.Singleton;
 /**
  *
  */
+@SuppressWarnings("java:S3740") //Params are knowingly omitted, we want to accept any event only and not random types
 @Singleton
 public class EpochEventBus {
     private final ConsumingFireForgetSignal<EpochEvent> eventGenerated = new ConsumingFireForgetSignal<>();

@@ -47,12 +47,12 @@ public class TopologyRecovery implements Managed {
 
     @Override
     public void start() throws Exception {
-
+        //Nothing to do here
     }
 
     @Override
     public void stop() throws Exception {
-
+        //Nothing to do here
     }
 
     private void recoverTopologyRuns() {
@@ -77,13 +77,6 @@ public class TopologyRecovery implements Managed {
                     log.warn("Could not schedule topology {} for execution", t.getId());
                 }
             });
-/*
-            val lastRunStartTime = activeRuns.stream()
-                    .findFirst()
-                    .map(EpochTopologyRunInfo::getCreated)
-                    .orElse(new Date());
-            scheduleTopology(t, scheduler, lastRunStartTime);
-*/
             scheduleTopology(t, scheduler, new Date());
         });
     }

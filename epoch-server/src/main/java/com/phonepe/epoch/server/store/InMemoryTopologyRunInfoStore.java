@@ -53,6 +53,7 @@ public class InMemoryTopologyRunInfoStore implements TopologyRunInfoStore {
         return data.remove(topologyId) != null;
     }
 
+    @SuppressWarnings("java:S3958") //Sonar bug
     @Override
     public Collection<EpochTopologyRunInfo> list(String topologyId, Predicate<EpochTopologyRunInfo> filter) {
         return data.getOrDefault(topologyId, new HashMap<>()).values()

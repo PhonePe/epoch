@@ -47,6 +47,7 @@ public class EpochContainerExecutionTask extends EpochTask {
 
     Map<String, String> env;
 
+    @SuppressWarnings("java:S107") //Model class needs required params
     public EpochContainerExecutionTask(
             String taskName,
             ExecutableCoordinates executable,

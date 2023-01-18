@@ -2,6 +2,7 @@ package com.phonepe.epoch.models.topology;
 
 import com.phonepe.drove.models.application.MountedVolume;
 import lombok.Value;
+import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.Range;
 
 import javax.validation.constraints.NotEmpty;
@@ -25,6 +26,8 @@ public class SimpleTopologyCreateRequest {
     @Pattern(regexp = "^(?:(?=[^:\\/]{4,253})(?!-)[a-zA-Z0-9-]{1,63}(?<!-)(?:\\.(?!-)[a-zA-Z0-9-]{1,63}(?<!-))*" +
             "(?::[0-9]{1,5})?/)?((?![._-])(?:[a-z0-9._-]*)(?<![._-])(?:/(?![._-])[a-z0-9._-]*(?<![._-]))*)(?::(?![" +
             ".-])[a-zA-Z0-9_.-]{1,128})?$")
+    @SuppressWarnings({"java:S5843", "java:S5998"}) //Regex complexity and size ... it is what it is ... such is life
+    @Length(max = 2048)
     String docker;
 
     @Range(min = 1, max = 40)

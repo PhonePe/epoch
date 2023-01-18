@@ -247,6 +247,7 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
             return new TaskStatusData(EpochTaskRunState.FAILED, "Unknown task state");
         }
 
+        @SuppressWarnings("ava:S1874") //Sonar bug ... unable to detect overload
         private TaskStatusData pollTillTerminalState(
                 final TaskExecutionContext context,
                 final EpochContainerExecutionTask containerExecution) {

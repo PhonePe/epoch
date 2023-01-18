@@ -75,7 +75,7 @@ public class HandlebarsViewRenderer implements ViewRenderer {
             .registerHelper("gte", ConditionalHelpers.gte)
             .registerHelper("lt", ConditionalHelpers.lt)
             .registerHelper("lte", ConditionalHelpers.lte)
-            .registerHelpers(new CustomHelpers())
+            .registerHelpers(CustomHelpers.class)
             ;
 
     public HandlebarsViewRenderer() {

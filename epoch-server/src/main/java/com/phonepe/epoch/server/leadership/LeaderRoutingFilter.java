@@ -90,7 +90,7 @@ public class LeaderRoutingFilter implements ContainerRequestFilter {
         }
         catch (InterruptedException e) {
             log.error("Error proxying request to " + uri + ": " + e.getMessage(), e);
-            requestContext.abortWith(Response.seeOther(uri).build());
+            Thread.currentThread().interrupt();
         }
         log.info("Routed to: {}", uri);
         requestContext.abortWith(Response.seeOther(uri).build());

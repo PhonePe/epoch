@@ -65,6 +65,7 @@ public class CachingProxyTopologyStore implements TopologyStore {
         return list(d -> d.getId().equals(id)).stream().findFirst();
     }
 
+    @SuppressWarnings("java:S3958") //Sonar bug
     @Override
     public List<EpochTopologyDetails> list(Predicate<EpochTopologyDetails> filter) {
         var stamp = lock.readLock();

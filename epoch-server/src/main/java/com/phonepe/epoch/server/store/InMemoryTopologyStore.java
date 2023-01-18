@@ -39,12 +39,12 @@ public class InMemoryTopologyStore implements TopologyStore {
         return Optional.ofNullable(data.get(id));
     }
 
+    @SuppressWarnings("java:S3958") //Sonar bug
     @Override
     public List<EpochTopologyDetails> list(Predicate<EpochTopologyDetails> filter) {
-        return data.entrySet()
+        return data.values()
                 .stream()
-                .filter(e -> filter.test(e.getValue()))
-                .map(Map.Entry::getValue)
+                .filter(filter)
                 .toList();
     }
 

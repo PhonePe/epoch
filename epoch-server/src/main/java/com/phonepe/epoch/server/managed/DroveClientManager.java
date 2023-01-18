@@ -44,7 +44,7 @@ public class DroveClientManager implements Managed {
 
     @Override
     public void start() throws Exception {
-
+        //Nothing to do here ... start is implicit
     }
 
     @Override

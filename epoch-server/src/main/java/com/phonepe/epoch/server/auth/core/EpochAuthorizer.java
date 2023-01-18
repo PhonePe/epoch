@@ -9,7 +9,7 @@ import io.dropwizard.auth.Authorizer;
 public class EpochAuthorizer implements Authorizer<EpochUser> {
 
     @Override
-    public boolean authorize(EpochUser EpochUser, String role) {
-        return EpochUser.getRole().getValue().equals(role);
+    public boolean authorize(EpochUser epochUser, String role) {
+        return epochUser.getRole().getValue().equals(role);
     }
 }

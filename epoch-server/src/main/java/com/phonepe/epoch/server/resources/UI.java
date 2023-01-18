@@ -87,7 +87,8 @@ public class UI {
                                                                .writeValueAsString(topologyDetails));
                     }
                     catch (JsonProcessingException e) {
-                        throw new RuntimeException(e);
+                        log.error("Error creating topology details view for topology " + topologyId + ": " + e.getMessage(), e);
+                        return null;
                     }
                 })
                 .orElse(null);

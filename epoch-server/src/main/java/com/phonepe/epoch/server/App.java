@@ -76,6 +76,7 @@ public class App extends Application<AppConfig> {
         app.run(args);
     }
 
+    @SuppressWarnings("java:S1905") //Sonar bug does not identify base casting for var
     private void setupAuth(AppConfig appConfig, Environment environment, JerseyEnvironment jersey) {
         val basicAuthConfig = Objects.requireNonNullElse(appConfig.getUserAuth(), BasicAuthConfig.DEFAULT);
         var authFilter = (AuthFilter<?, EpochUser>)new DummyAuthFilter.Builder()

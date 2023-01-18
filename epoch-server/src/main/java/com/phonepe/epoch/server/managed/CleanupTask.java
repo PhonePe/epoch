@@ -2,6 +2,7 @@ package com.phonepe.epoch.server.managed;
 
 import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.topology.EpochTopologyDetails;
+import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
 import com.phonepe.epoch.models.topology.EpochTopologyState;
 import com.phonepe.epoch.server.config.EpochOptionsConfig;
 import com.phonepe.epoch.server.remote.TaskExecutionEngine;
@@ -16,6 +17,7 @@ import ru.vyarus.dropwizard.guice.module.installer.order.Order;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.Collection;
 import java.util.Objects;
 
 /**
@@ -25,6 +27,8 @@ import java.util.Objects;
 @Singleton
 @Order(50)
 public class CleanupTask implements Managed {
+
+    private static final String CLEANUP_HANDLER_NAME = "CLEANUP_HANDLER";
 
     private static final Duration DEFAULT_CLEANUP_INTERVAL = Duration.minutes(5);
     private static final int DEFAULT_NUM_RUNS_PER_JOB = 5;
@@ -55,7 +59,7 @@ public class CleanupTask implements Managed {
 
     @Override
     public void start() throws Exception {
-        cleanupJobRunner.connect("CLEANUP_HANDLER", time -> {
+        cleanupJobRunner.connect(CLEANUP_HANDLER_NAME, time -> {
             if (!leadershipManager.isLeader()) {
                 log.debug("NOOP for cleanup as i'm not the leader");
                 return;
@@ -71,31 +75,38 @@ public class CleanupTask implements Managed {
                                       topologyId, runs.size(), maxRuns);
                             return;
                         }
-                        try {
-                        runs.stream()
-                                .skip(maxRuns)
-                                .forEach(run -> {
-                                    val runId = run.getRunId();
-                                    val status = topologyRunInfoStore.delete(topologyId, runId);
-                                    log.info("Deletion status for {}/{}: {}", topologyId, runId, status);
-                                    if(status) {
-                                        if (taskEngine.cleanup(run)) {
-                                            log.debug("Task clean up complete for {}/{}", topologyId, runId);
-                                        }
-                                        else {
-                                            log.warn("Task cleanup failed for {}/{}", topologyId, runId);
-                                        }
-                                    }
-                                });
-                        } catch (Exception e) {
-                            log.info("Error deleting topology runs for topology " + topologyId + ": " + e.getMessage(), e);
-                        }
+                        cleanupRuns(topologyId, runs);
                     });
         });
     }
 
+
     @Override
     public void stop() throws Exception {
-
+        cleanupJobRunner.disconnect(CLEANUP_HANDLER_NAME);
+        cleanupJobRunner.close();
     }
+
+    private void cleanupRuns(String topologyId, Collection<EpochTopologyRunInfo> runs) {
+        try {
+        runs.stream()
+                .skip(maxRuns)
+                .forEach(run -> {
+                    val runId = run.getRunId();
+                    val status = topologyRunInfoStore.delete(topologyId, runId);
+                    log.info("Deletion status for {}/{}: {}", topologyId, runId, status);
+                    if(status) {
+                        if (taskEngine.cleanup(run)) {
+                            log.debug("Task clean up complete for {}/{}", topologyId, runId);
+                        }
+                        else {
+                            log.warn("Task cleanup failed for {}/{}", topologyId, runId);
+                        }
+                    }
+                });
+        } catch (Exception e) {
+            log.info("Error deleting topology runs for topology " + topologyId + ": " + e.getMessage(), e);
+        }
+    }
+
 }

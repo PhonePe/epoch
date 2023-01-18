@@ -66,6 +66,7 @@ public class ZkUtils {
         return false;
     }
 
+    @SuppressWarnings("java:S3958") //Sonar bug
     public static <T> List<T> readChildrenNodes(
             CuratorFramework curatorFramework,
             String parentPath,

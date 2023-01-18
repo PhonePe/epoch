@@ -20,10 +20,8 @@ import java.util.stream.Collectors;
 @Singleton
 @Slf4j
 public class CachingProxyTopologyRunInfoStore implements TopologyRunInfoStore {
-    private static final int MAX_RUNS = 5;
 
     private final TopologyRunInfoStore root;
-    private final LeadershipManager leadershipEnsurer;
     private final Map<String, Map<String, EpochTopologyRunInfo>> cache = new HashMap<>();
     private final StampedLock lock = new StampedLock();
 
@@ -32,7 +30,6 @@ public class CachingProxyTopologyRunInfoStore implements TopologyRunInfoStore {
             @Named("rootRunInfoStore") TopologyRunInfoStore root,
             final LeadershipManager leadershipEnsurer) {
         this.root = root;
-        this.leadershipEnsurer = leadershipEnsurer;
         leadershipEnsurer.onGainingLeadership().connect(leader -> {
             val stamp = lock.writeLock();
             try {
@@ -109,6 +106,7 @@ public class CachingProxyTopologyRunInfoStore implements TopologyRunInfoStore {
         }
     }
 
+    @SuppressWarnings("java:S3958") //Sonar bug
     @Override
     public Collection<EpochTopologyRunInfo> list(String topologyId, Predicate<EpochTopologyRunInfo> filter) {
         var stamp = lock.readLock();

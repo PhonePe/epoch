@@ -17,6 +17,7 @@ package com.phonepe.epoch.server.ui;
 import com.github.jknack.handlebars.Options;
 import com.github.jknack.handlebars.TagType;
 import com.phonepe.epoch.server.utils.IgnoreInJacocoGeneratedReport;
+import lombok.experimental.UtilityClass;
 import lombok.val;
 
 import java.io.IOException;
@@ -26,6 +27,7 @@ import java.util.Objects;
  *
  */
 @IgnoreInJacocoGeneratedReport
+@UtilityClass
 public class CustomHelpers {
     public static Object eqstr(Object lhs, Options options) throws IOException {
         val rhs = options.param(0, null);
