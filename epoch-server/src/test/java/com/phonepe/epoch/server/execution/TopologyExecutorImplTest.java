@@ -6,6 +6,7 @@ import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
 import com.phonepe.epoch.models.tasks.EpochTask;
 import com.phonepe.epoch.models.topology.*;
 import com.phonepe.epoch.models.triggers.EpochTaskTriggerCron;
+import com.phonepe.epoch.server.TestBase;
 import com.phonepe.epoch.server.TestUtils;
 import com.phonepe.epoch.server.event.EpochEventBus;
 import com.phonepe.epoch.server.remote.TaskExecutionEngine;
@@ -30,7 +31,7 @@ import static org.mockito.Mockito.*;
 /**
  *
  */
-class TopologyExecutorImplTest {
+class TopologyExecutorImplTest extends TestBase {
 
     @Test
     void checkSingleTask() {

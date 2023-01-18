@@ -158,12 +158,15 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
                         .filter(stateData -> stateData.state() == EpochTaskRunState.COMPLETED)
                         .findFirst()
                         .orElse(null);
-                case ALL -> composite.getTasks()
-                        .stream()
-                        .map(task -> task.accept(this))
-                        .filter(stateData -> stateData.state() == EpochTaskRunState.FAILED)
-                        .findFirst()
-                        .orElse(null);
+                case ALL -> {
+                    val failed = composite.getTasks()
+                            .stream()
+                            .map(task -> task.accept(this))
+                            .filter(stateData -> stateData.state() == EpochTaskRunState.FAILED)
+                            .findFirst()
+                            .orElse(null);
+                    yield Objects.requireNonNullElse(failed, new TaskStatusData(EpochTaskRunState.COMPLETED, ""));
+                }
             };
             return Objects.requireNonNullElse(status,
                                               new TaskStatusData(EpochTaskRunState.FAILED,
