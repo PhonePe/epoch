@@ -106,8 +106,8 @@ public class EpochUtils {
                                          .toMilliseconds());
     }
 
-    public static Map<String, EpochTopologyRunTaskInfo> addTaskState(final EpochTopologyRunInfo old, String taskName, EpochTaskRunState state) {
-        return updateTaskInfo(old, taskName, info -> info.setState(state));
+    public static Map<String, EpochTopologyRunTaskInfo> addTaskState(final EpochTopologyRunInfo old, String taskName, EpochTaskRunState state, String errorMessage) {
+        return updateTaskInfo(old, taskName, info -> info.setState(state).setErrorMessage(errorMessage));
     }
     public static Map<String, EpochTopologyRunTaskInfo> updateTaskInfo(final EpochTopologyRunInfo old, String taskName, Consumer<EpochTopologyRunTaskInfo> updater) {
         val ids = Objects.<Map<String, EpochTopologyRunTaskInfo>>requireNonNullElse(

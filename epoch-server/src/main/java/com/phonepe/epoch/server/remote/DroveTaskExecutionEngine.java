@@ -112,6 +112,7 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
                     return new EpochTopologyRunTaskInfo()
                             .setTaskId(instanceId)
                             .setState(EpochTaskRunState.STARTING)
+                            .setErrorMessage("")
                             .setUpstreamId(taskId);
                 }
             }
@@ -138,7 +139,8 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
                                                     new EpochTopologyRunTaskInfo()
                                                             .setTaskId(instanceId)
                                                             .setUpstreamId(EpochTopologyRunTaskInfo.UNKNOWN_TASK_ID)
-                                                            .setState(EpochTaskRunState.STARTING),
+                                                            .setState(EpochTaskRunState.STARTING)
+                                                            .setErrorMessage(""),
                                                     taskInfo -> new EpochTopologyRunTaskInfo()
                                                             .setTaskId(instanceId)
                                                             .setUpstreamId(taskInfo.getTaskId())

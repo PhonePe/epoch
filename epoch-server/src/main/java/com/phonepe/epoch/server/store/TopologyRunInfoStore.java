@@ -58,8 +58,8 @@ public interface TopologyRunInfoStore {
                 .flatMap(old -> save(new EpochTopologyRunInfo(topologyId,
                                                               runId,
                                                               old.getState(),
-                                                              errorMessage,
-                                                              EpochUtils.addTaskState(old, taskName, state),
+                                                              old.getMessage(),
+                                                              EpochUtils.addTaskState(old, taskName, state, errorMessage),
                                                               old.getRunType(),
                                                               old.getCreated(),
                                                               new Date())));
