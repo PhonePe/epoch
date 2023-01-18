@@ -11,6 +11,10 @@
 
     <artifactId>epoch-models</artifactId>
 
+    <properties>
+        <sonar.skip>true</sonar.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.phonepe.drove</groupId>
