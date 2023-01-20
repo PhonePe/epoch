@@ -1,5 +1,6 @@
 package com.phonepe.epoch.server.store;
 
+import com.phonepe.epoch.models.topology.EpochTaskRunState;
 import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
 import lombok.val;
 
@@ -41,7 +42,7 @@ public class InMemoryTopologyRunInfoStore implements TopologyRunInfoStore {
                                     return null;
                                 }
                                 old.remove(runId);
-                                if(old.isEmpty()) {
+                                if (old.isEmpty()) {
                                     return null;
                                 }
                                 return old;
@@ -60,5 +61,17 @@ public class InMemoryTopologyRunInfoStore implements TopologyRunInfoStore {
                 .stream()
                 .filter(filter)
                 .toList();
+    }
+
+    public Optional<EpochTopologyRunInfo> forceTaskState(String topologyId, String runId, String taskId, EpochTaskRunState state) {
+        return Optional.ofNullable(data.computeIfPresent(topologyId,
+                              (key, runMap) -> {
+                                  runMap.computeIfPresent(runId, (runKey, run) -> {
+                                      run.getTasks().computeIfPresent(taskId, (taskKey, task) -> task.setState(state));
+                                      return run;
+                                  });
+                                  return runMap;
+                              }))
+                .flatMap(runMap -> Optional.ofNullable(runMap.get(runId)));
     }
 }

@@ -54,6 +54,7 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
 
         val topologyDetails = topologyStore.get(executeCommand.getTopologyId()).orElse(null);
         if (null == topologyDetails) {
+            log.error("Could not get details for topology {}. Cannot proceed.", executeCommand.getTopologyId());
             return Optional.empty();
         }
         val topologyName = topologyDetails.getTopology().getName();
@@ -74,6 +75,7 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
                         new Date()))
                 .orElse(null);
         if (null == runInfo) {
+            log.error("Could not save run info for {}/{}. Cannot proceed.", topologyName, rId);
             return Optional.empty();
         }
         generateRunStateChangedEvent(runInfo);
@@ -177,7 +179,6 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
         public TaskStatusData visit(EpochContainerExecutionTask containerExecution) {
             val topologyName = topologyExecutionInfo.getTopologyId();
             val taskName = containerExecution.getTaskName();
-            var status = new TaskStatusData(EpochTaskRunState.FAILED, "Unknown task state");
             val taskInfo = topologyExecutionInfo.getTasks().get(taskName);
             val existingUpstreamTaskId =
                     Objects.requireNonNullElse(taskInfo.getUpstreamId(),
@@ -189,32 +190,30 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
                                                    existingUpstreamTaskId);
             try {
                 val currState = taskInfo.getState();
-                status = switch (currState) {
+                val status = switch (currState) {
                     case PENDING -> {
                         log.info("Task {}/{}/{} will be executed", topologyName, runId, taskName);
                         yield runTask(context, containerExecution);
                     }
-                    case STARTING, RUNNING -> {
-                        log.info("Task {}/{}/{} was already running. Will be recovered", topologyName, runId, taskName);
+                    default -> {
+                        log.info("Task {}/{}/{} was already running. Current state is {}. Will be recovered",
+                                 topologyName, runId, taskName, currState);
                         yield pollTillTerminalState(context, containerExecution);
-
                     }
-                    default -> new TaskStatusData(taskInfo.getState(), taskInfo.getErrorMessage());
                 };
-            }
-            catch (Exception e) {
-                log.error("Task " + topologyName + "/" + runId + "/" + taskName + " failed with error: " + e.getMessage(),
-                          e);
-            }
-            finally {
                 topologyExecutionInfo.getTasks()
                         .get(taskName)
                         .setState(status.state())
                         .setErrorMessage(status.errorMessage());
                 log.info("Task {}/{}/{} completed with status {}", topologyName, runId, taskName, status);
+                executor.generateRunTaskStateChangedEvent(context, status);
+                return status;
             }
-            executor.generateRunTaskStateChangedEvent(context, status);
-            return status;
+            catch (Exception e) {
+                log.error("Task " + topologyName + "/" + runId + "/" + taskName + " failed with error: " + e.getMessage(),
+                          e);
+                throw e;
+            }
         }
 
         private TaskStatusData runTask(
@@ -232,12 +231,12 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
                 log.trace("Current data state: {}", data);
                 val taskStatusData = new TaskStatusData(taskData.getState(), taskData.getErrorMessage());
                 executor.generateRunTaskStateChangedEvent(context, taskStatusData);
-                if (status.equals(EpochTaskRunState.STARTING) || status.equals(EpochTaskRunState.RUNNING)) {
-                    return pollTillTerminalState(context, containerExecution);
-                }
-                else {
+                if (EpochTaskRunState.TERMINAL_STATES.contains(status)) {
                     log.warn("Task {}/{}/{} is already finished with status {}", topologyName, runId, taskName, status);
                     return taskStatusData;
+                }
+                else {
+                    return pollTillTerminalState(context, containerExecution);
                 }
             }
             catch (Exception e) {
@@ -256,7 +255,18 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
             val retryPolicy = new RetryPolicy<TaskStatusData>()
                     .withDelay(Duration.ofSeconds(3))
                     .withMaxRetries(-1)
-                    .onFailedAttempt(attempt -> log.debug("Attempt {}: {}", attempt.getAttemptCount(), attempt))
+                    .onFailedAttempt(attempt -> {
+                        if (null != attempt.getLastFailure()) {
+                            log.error("Task status fetch attempt " + attempt.getAttemptCount()
+                                              + " for " + context.printId()
+                                              + " failed with error: " + attempt.getLastFailure()
+                                    .getMessage(), attempt.getLastFailure());
+                        }
+                        else {
+                            log.debug("Task status fetch attempt {}  for {} returned non-terminal state : {}",
+                                      attempt.getAttemptCount(), context.printId(), attempt.getLastResult());
+                        }
+                    })
                     .handleIf(e -> true)
                     .handleResultIf(result -> null == result || !EpochTaskRunState.TERMINAL_STATES.contains(result.state()));
             try {
@@ -268,19 +278,13 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
                                 return null;
                             }
                             else {
-                                try {
-                                    val data = runInfoStore.updateTaskState(context.getTopologyId(),
-                                                                 context.getRunId(),
-                                                                 context.getTaskName(),
-                                                                 status.state(),
-                                                                 status.errorMessage())
-                                            .orElse(null);
-                                    log.trace("Data state while polling: {}", data);
-                                }
-                                catch (Exception e) {
-                                    log.error("Error fetching state: ", e);
-                                    throw e;
-                                }
+                                val data = runInfoStore.updateTaskState(context.getTopologyId(),
+                                                                        context.getRunId(),
+                                                                        context.getTaskName(),
+                                                                        status.state(),
+                                                                        status.errorMessage())
+                                        .orElse(null);
+                                log.trace("Data state while polling: {}", data);
                             }
                             return status;
                         });
@@ -288,8 +292,8 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
             catch (Exception e) {
                 log.error("Error determining task status " + topologyName + "/" + runId + "/" + taskName + ": " + e.getMessage(),
                           e);
+                throw e;
             }
-            return new TaskStatusData(EpochTaskRunState.FAILED, "Status is unknown");
         }
     }
 

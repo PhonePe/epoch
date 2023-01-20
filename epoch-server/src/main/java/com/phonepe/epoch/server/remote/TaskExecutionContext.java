@@ -15,4 +15,8 @@ public class TaskExecutionContext{
     String taskName;
     EpochTopologyRunType runType;
     String upstreamTaskId;
+
+    public String printId() {
+        return topologyId + "/" + runId + "/" + taskName;
+    }
 }
