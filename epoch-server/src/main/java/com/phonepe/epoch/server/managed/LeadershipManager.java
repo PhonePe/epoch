@@ -61,11 +61,11 @@ public class LeadershipManager extends LeaderSelectorListenerAdapter implements 
         stopLock.lock();
         try {
             stopped.set(true);
+            stopCondition.signalAll();
         }
         finally {
             stopLock.unlock();
         }
-        stopCondition.signalAll();
         this.selector.close();
         log.debug("Shut down {}", this.getClass().getSimpleName());
     }

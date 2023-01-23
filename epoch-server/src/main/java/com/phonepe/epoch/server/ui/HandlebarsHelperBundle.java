@@ -23,7 +23,7 @@ import io.dropwizard.setup.Environment;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@IgnoreInJacocoGeneratedReport
+@IgnoreInJacocoGeneratedReport(reason = "Standard helper function copied from upstream for dw version compatibility")
 public abstract class HandlebarsHelperBundle<C extends Configuration> implements ConfiguredBundle<C> {
 
     protected abstract void configureHandlebars(C configuration);

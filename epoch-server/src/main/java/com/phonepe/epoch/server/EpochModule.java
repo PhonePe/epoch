@@ -25,7 +25,7 @@ import java.util.concurrent.SynchronousQueue;
 /**
  *
  */
-@IgnoreInJacocoGeneratedReport
+@IgnoreInJacocoGeneratedReport(reason = "guava module .. nothing to test")
 public class EpochModule extends AbstractModule {
 
 

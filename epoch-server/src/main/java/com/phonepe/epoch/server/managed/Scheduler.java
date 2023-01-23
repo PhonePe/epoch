@@ -9,6 +9,7 @@ import com.phonepe.epoch.server.execution.ExecutionTimeCalculator;
 import com.phonepe.epoch.server.execution.TopologyExecutor;
 import com.phonepe.epoch.server.store.TopologyStore;
 import io.appform.signals.signals.ConsumingFireForgetSignal;
+import io.appform.signals.signals.ScheduledSignal;
 import io.dropwizard.lifecycle.Managed;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -22,9 +23,7 @@ import java.time.Duration;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  *
@@ -35,23 +34,22 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class Scheduler implements Managed {
     private static final String DATE_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS";
 
+    private static final String HANDLER_NAME = "TASK_POLLER";
 
+    private final ScheduledSignal signalGenerator = ScheduledSignal.builder()
+            .errorHandler(e -> log.error("Error running scheduled poll: " + e.getMessage(), e))
+            .interval(Duration.ofSeconds(1))
+            .build();
     private final ExecutorService executorService;
     private final TopologyStore topologyStore;
     private final TopologyExecutor topologyExecutor;
+    private final LeadershipManager leadershipManager;
 
     private final PriorityBlockingQueue<ExecuteCommand> tasks
             = new PriorityBlockingQueue<>(1024, Comparator.comparing(ExecuteCommand::getNextExecutionTime));
     private final ExecutionTimeCalculator timeCalculator = new ExecutionTimeCalculator();
 
-    private final AtomicBoolean stopped = new AtomicBoolean();
     private final ConsumingFireForgetSignal<TaskData> taskCompleted = new ConsumingFireForgetSignal<>();
-
-    private Future<?> monitorFuture = null;
-
-    public void cancelAll() {
-        //TODO::IMPLEMENT
-    }
 
     public record TaskData(
             String topologyId,
@@ -62,26 +60,31 @@ public final class Scheduler implements Managed {
     @Inject
     public Scheduler(@Named("taskPool") ExecutorService executorService,
                      TopologyStore topologyStore,
-                     TopologyExecutor topologyExecutor) {
+                     TopologyExecutor topologyExecutor,
+                     LeadershipManager leadershipManager) {
         this.executorService = executorService;
         this.topologyStore = topologyStore;
         this.topologyExecutor = topologyExecutor;
+        this.leadershipManager = leadershipManager;
+        this.leadershipManager.onGainingLeadership()
+                .connect(value -> {
+                    log.info("Purging scheduler queue for a fresh start");
+                    tasks.clear();
+                });
     }
 
     @Override
     public void start() throws Exception {
         taskCompleted.connect(this::handleTaskCompletion);
-        monitorFuture = executorService.submit(this::check);
-        log.info("Started scheduler");
+        signalGenerator.connect(this::check);
+        log.info("Started task monitor");
     }
 
     @Override
     public void stop() throws Exception {
-        stopped.set(true);
-        if (null != monitorFuture) {
-            monitorFuture.get();
-        }
-        log.info("Monitor shut down");
+        signalGenerator.disconnect(HANDLER_NAME);
+        signalGenerator.close();
+        log.info("Task monitor shut down");
     }
 
     public ConsumingFireForgetSignal<TaskData> taskCompleted() {
@@ -128,28 +131,17 @@ public final class Scheduler implements Managed {
         return runId;
     }
 
-    private void check() {
-        while (true) {
-            try {
-                Thread.sleep(1000);
-            }
-            catch (InterruptedException e) {
-                log.warn("Monitor thread interrupted");
-                Thread.currentThread().interrupt();
-                stopped.set(true);
-            }
-            if (stopped.get()) {
-                log.info("Stop called. Exiting monitor thread");
-                break;
-            }
-            processQueuedTask();
+    private void check(Date currentTime) {
+        if(leadershipManager.isLeader()) {
+            processQueuedTask(currentTime);
         }
-        log.info("Exiting monitor thread");
+        else {
+            log.info("Skipped execution as node is not the leader");
+        }
     }
 
-    private void processQueuedTask() {
+    private void processQueuedTask(Date currentTime) {
         while (true) {
-            val currTime = new Date();
             val executeCommand = tasks.peek();
             var canContinue = false;
             if (executeCommand == null) {
@@ -158,7 +150,7 @@ public final class Scheduler implements Managed {
             else {
                 log.trace("pulled exec command for: {}", executeCommand.getTopologyId());
 
-                if (currTime.before(executeCommand.getNextExecutionTime())) {
+                if (currentTime.before(executeCommand.getNextExecutionTime())) {
                     log.trace("Found non-executable earliest task: {}/{}",
                               executeCommand.getTopologyId(),
                               executeCommand.getRunId());

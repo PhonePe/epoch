@@ -67,7 +67,7 @@ public class EpochUtils {
         }
     }
 
-    @IgnoreInJacocoGeneratedReport
+    @IgnoreInJacocoGeneratedReport(reason = "Not possible to simulate properly")
     private static String readHostname() {
         try {
             return InetAddress.getLocalHost().getCanonicalHostName();
@@ -78,9 +78,9 @@ public class EpochUtils {
         return null;
     }
 
-    @IgnoreInJacocoGeneratedReport
+    @IgnoreInJacocoGeneratedReport(reason = "Not possible to simulate properly")
     public static String hostname() {
-        val hostname = Objects.requireNonNullElseGet(readHostname(), () -> System.getenv("HOST"));
+        val hostname = Objects.requireNonNullElseGet(System.getenv("HOST"), () -> readHostname());
         Objects.requireNonNull(hostname, "Hostname cannot be empty");
         return hostname;
     }

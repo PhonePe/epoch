@@ -5,8 +5,10 @@ import com.phonepe.epoch.models.topology.EpochTopology;
 import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
 import com.phonepe.epoch.models.topology.EpochTopologyRunType;
 import com.phonepe.epoch.models.triggers.EpochTaskTriggerCron;
+import com.phonepe.epoch.server.managed.LeadershipManager;
 import com.phonepe.epoch.server.managed.Scheduler;
 import com.phonepe.epoch.server.store.TopologyStore;
+import io.appform.signals.signals.ConsumingFireForgetSignal;
 import lombok.SneakyThrows;
 import lombok.val;
 import org.awaitility.Awaitility;
@@ -17,6 +19,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.phonepe.epoch.server.utils.EpochUtils.detailsFrom;
@@ -73,8 +76,13 @@ class SchedulerTest {
                             new Date()
                     ));
                 });
+        val lm = mock(LeadershipManager.class);
+        val ls = new ConsumingFireForgetSignal<Void>();
+        when(lm.onGainingLeadership()).thenReturn(ls);
+        val leader = new AtomicBoolean(true);
+        when(lm.isLeader()).thenReturn(leader.get());
 
-        val s = new Scheduler(Executors.newCachedThreadPool(), ts, topologyExecutor);
+        val s = new Scheduler(Executors.newCachedThreadPool(), ts, topologyExecutor, lm);
         val ctr = new AtomicInteger();
         s.taskCompleted().connect(r -> {
             if(r.topologyId().equals(topologyId("test-topo-2"))) {
@@ -82,6 +90,7 @@ class SchedulerTest {
             }
         });
         s.start();
+        ls.dispatch(null);
         val currDate = new Date();
         s.schedule(topoId1, topo1.getTrigger(), currDate);
         s.schedule(topoId2, topo2.getTrigger(), currDate);

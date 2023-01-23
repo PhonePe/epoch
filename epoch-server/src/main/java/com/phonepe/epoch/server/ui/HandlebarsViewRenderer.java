@@ -39,7 +39,7 @@ import java.util.concurrent.ExecutionException;
  * A {@link ViewRenderer} which renders Handlebars ({@code .hbs}) templates.
  */
 @Slf4j
-@IgnoreInJacocoGeneratedReport
+@IgnoreInJacocoGeneratedReport(reason = "Standard helper function copied from upstream for dw version compatibility")
 public class HandlebarsViewRenderer implements ViewRenderer {
     /**
      * For use by Handlebars.java internally.

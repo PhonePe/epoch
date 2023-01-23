@@ -44,9 +44,11 @@ public class CleanupTask implements Managed {
 
     @Inject
     public CleanupTask(
-            final EpochOptionsConfig options, LeadershipManager leadershipManager,
+            final EpochOptionsConfig options,
+            LeadershipManager leadershipManager,
             TopologyStore topologyStore,
-            TopologyRunInfoStore topologyRunInfoStore, TaskExecutionEngine taskEngine) {
+            TopologyRunInfoStore topologyRunInfoStore,
+            TaskExecutionEngine taskEngine) {
         this.leadershipManager = leadershipManager;
         this.topologyStore = topologyStore;
         this.topologyRunInfoStore = topologyRunInfoStore;
@@ -60,6 +62,7 @@ public class CleanupTask implements Managed {
     @Override
     public void start() throws Exception {
         cleanupJobRunner.connect(CLEANUP_HANDLER_NAME, time -> {
+            log.info("Remote task cleanup job activated at: {}", time);
             if (!leadershipManager.isLeader()) {
                 log.debug("NOOP for cleanup as i'm not the leader");
                 return;
@@ -77,6 +80,8 @@ public class CleanupTask implements Managed {
                         }
                         cleanupRuns(topologyId, runs);
                     });
+            log.info("Remote task cleanup job activated at {} is now complete", time);
+
         });
     }
 

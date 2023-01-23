@@ -26,7 +26,7 @@ import java.util.Objects;
 /**
  *
  */
-@IgnoreInJacocoGeneratedReport
+@IgnoreInJacocoGeneratedReport(reason = "UI Helper function. Will revisit TODO")
 @UtilityClass
 public class CustomHelpers {
     public static Object eqstr(Object lhs, Options options) throws IOException {

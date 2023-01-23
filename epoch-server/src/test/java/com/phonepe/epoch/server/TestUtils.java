@@ -9,15 +9,41 @@ import com.phonepe.drove.models.application.requirements.MemoryRequirement;
 import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
 import io.dropwizard.util.Duration;
 import lombok.experimental.UtilityClass;
+import lombok.val;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+
+import static org.awaitility.Awaitility.await;
 
 /**
  *
  */
 @UtilityClass
 public class TestUtils {
+    public void delay(final java.time.Duration duration) {
+        val wait = duration.toMillis();
+        val end = new Date(new Date().getTime() + wait);
+        await()
+                .pollDelay(java.time.Duration.ofMillis(10))
+                .timeout(wait + 5_000, TimeUnit.SECONDS)
+                .until(() -> new Date().after(end));
+    }
+
+    public void waitUntil(final Callable<Boolean> condition) {
+        waitUntil(condition, java.time.Duration.ofMinutes(3));
+    }
+
+    public void waitUntil(final Callable<Boolean> condition, final java.time.Duration duration) {
+        await()
+                .pollDelay(java.time.Duration.ofSeconds(1))
+                .timeout(duration)
+                .until(condition);
+    }
+
     public static EpochContainerExecutionTask genContainerTask(int index) {
         return new EpochContainerExecutionTask("test-task-" + index,
                                                new DockerCoordinates(
