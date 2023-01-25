@@ -60,6 +60,7 @@ public class TopologyRecovery implements Managed {
                 .stream()
                 .collect(Collectors.toMap(EpochTopologyDetails::getId, Function.identity()));
         log.info("Recovering topologies: {}", topologies.keySet());
+        scheduler.clear();
         topologies.forEach((tId, t) -> {
             val activeRuns = runInfoStore.list(tId, run -> run.getState().equals(EpochTopologyRunState.RUNNING));
 
@@ -71,10 +72,16 @@ public class TopologyRecovery implements Managed {
                         0,
                         run.getRunType());
                 if (status) {
-                    log.info("Scheduled topology {} for execution", t.getId());
+                    log.info("Recovered {} topology run {}/{}",
+                             run.getRunType().name().toLowerCase(),
+                             t.getId(),
+                             run.getRunId());
                 }
                 else {
-                    log.warn("Could not schedule topology {} for execution", t.getId());
+                    log.info("Failed to recover {} topology run {}/{}",
+                             run.getRunType().name().toLowerCase(),
+                             t.getId(),
+                             run.getRunId());
                 }
             });
             scheduleTopology(t, scheduler, new Date());

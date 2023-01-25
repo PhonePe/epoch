@@ -103,7 +103,7 @@ class TopologyExecutorImplTest extends TestBase {
 
         val runId = UUID.randomUUID().toString();
         val res = exec.execute(new ExecuteCommand(runId, new Date(), topoName, EpochTopologyRunType.INSTANT));
-        assertEquals(EpochTopologyRunState.SUCCESSFUL,
+        assertEquals(EpochTopologyRunState.COMPLETED,
                      res.map(EpochTopologyRunInfo::getState).orElse(EpochTopologyRunState.FAILED));
         val tri = tis.get(topoName, runId).orElse(null);
         assertNotNull(tri);
@@ -142,11 +142,11 @@ class TopologyExecutorImplTest extends TestBase {
 
     @Test
     void checkSingleAlreadyRunningTask() {
-        testPollingForState(EpochTaskRunState.RUNNING);
+        testPollingForState(EpochTaskRunState.RUNNING, EpochTopologyRunState.COMPLETED);
     }
     @Test
     void checkSingleAlreadyCompletedTask() {
-        testPollingForState(EpochTaskRunState.COMPLETED);
+        testPollingForState(EpochTaskRunState.COMPLETED, EpochTopologyRunState.COMPLETED);
     }
 
     @Test
@@ -424,7 +424,7 @@ class TopologyExecutorImplTest extends TestBase {
 
 
     @SuppressWarnings("unchecked")
-    private static void testPollingForState(EpochTaskRunState state) {
+    private static void testPollingForState(EpochTaskRunState state, EpochTopologyRunState requiredState) {
         val topoName = "test-topo";
         val topo = new EpochTopology(topoName,
                                      TestUtils.genContainerTask(1),
@@ -461,7 +461,7 @@ class TopologyExecutorImplTest extends TestBase {
 
         val runId = UUID.randomUUID().toString();
         val res = exec.execute(new ExecuteCommand(runId, new Date(), topoName, EpochTopologyRunType.INSTANT));
-        assertEquals(EpochTopologyRunState.SUCCESSFUL,
+        assertEquals(requiredState,
                      res.map(EpochTopologyRunInfo::getState).orElse(EpochTopologyRunState.FAILED));
         val tri = tis.get(topoName, runId).orElse(null);
         assertNotNull(tri);

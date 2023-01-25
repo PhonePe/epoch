@@ -23,7 +23,7 @@ class ExecutionTimeCalculatorTest {
                      etc.executionTime(new EpochTaskTriggerAt(date), date)
                 .map(Duration::toMillis)
                 .orElse(-1L));
-        assertEquals(-1,
+        assertEquals(0,
                      etc.executionTime(new EpochTaskTriggerAt(date), new Date(date.getTime() + 100))
                 .map(Duration::toMillis)
                 .orElse(-1L));

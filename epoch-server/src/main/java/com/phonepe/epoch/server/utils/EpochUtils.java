@@ -58,9 +58,9 @@ public class EpochUtils {
     }
 
     public static void scheduleTopology(EpochTopologyDetails topologyDetails, Scheduler scheduler, Date currTime) {
-        val status = scheduler.schedule(topologyDetails.getId(), topologyDetails.getTopology().getTrigger(), currTime);
-        if(status) {
-            log.info("Scheduled topology {} for execution", topologyDetails.getId());
+        val runId = scheduler.schedule(topologyDetails.getId(), topologyDetails.getTopology().getTrigger(), currTime);
+        if(runId.isPresent()) {
+            log.info("Scheduled topology {} for execution with run id: {}", topologyDetails.getId(), runId.get());
         }
         else {
             log.warn("Could not schedule topology {} for execution", topologyDetails.getId());

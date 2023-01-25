@@ -5,6 +5,9 @@ import com.phonepe.epoch.models.tasks.EpochCompositeTask;
 import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
 import com.phonepe.epoch.models.tasks.EpochTaskVisitor;
 import com.phonepe.epoch.models.topology.*;
+import com.phonepe.epoch.models.triggers.EpochTaskTriggerAt;
+import com.phonepe.epoch.models.triggers.EpochTaskTriggerCron;
+import com.phonepe.epoch.models.triggers.EpochTriggerVisitor;
 import com.phonepe.epoch.server.event.EpochEventBus;
 import com.phonepe.epoch.server.event.EpochEventType;
 import com.phonepe.epoch.server.event.EpochStateChangeEvent;
@@ -143,9 +146,10 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
 
         val allTaskRunState = task.accept(new TaskExecutor(runId, runInfo, taskEngine, runInfoStore, this));
         return allTaskRunState.state() == EpochTaskRunState.COMPLETED
-               ? EpochTopologyRunState.SUCCESSFUL
+               ? successState(topologyDetails, executeCommand)
                : EpochTopologyRunState.FAILED;
     }
+
 
     private record TaskExecutor(String runId, EpochTopologyRunInfo topologyExecutionInfo,
                                 TaskExecutionEngine taskEngine, TopologyRunInfoStore runInfoStore,
@@ -246,7 +250,7 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
             return new TaskStatusData(EpochTaskRunState.FAILED, "Unknown task state");
         }
 
-        @SuppressWarnings("ava:S1874") //Sonar bug ... unable to detect overload
+        @SuppressWarnings("java:S1874") //Sonar bug ... unable to detect overload
         private TaskStatusData pollTillTerminalState(
                 final TaskExecutionContext context,
                 final EpochContainerExecutionTask containerExecution) {
@@ -345,5 +349,22 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
                                                   StateChangeEventDataTag.ERROR_MESSAGE,
                                                   Objects.requireNonNullElse(status.errorMessage(), "")))
                                  .build());
+    }
+
+    private EpochTopologyRunState successState(final EpochTopologyDetails topologyDetails, final ExecuteCommand command) {
+        return switch (command.getRunType()) {
+            case SCHEDULED -> topologyDetails.getTopology().getTrigger().accept(new EpochTriggerVisitor<EpochTopologyRunState>() {
+                @Override
+                public EpochTopologyRunState visit(EpochTaskTriggerAt at) {
+                    return EpochTopologyRunState.COMPLETED;
+                }
+
+                @Override
+                public EpochTopologyRunState visit(EpochTaskTriggerCron cron) {
+                    return EpochTopologyRunState.SUCCESSFUL;
+                }
+            });
+            case INSTANT -> EpochTopologyRunState.COMPLETED;
+        };
     }
 }

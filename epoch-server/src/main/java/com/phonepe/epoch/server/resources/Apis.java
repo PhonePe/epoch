@@ -40,8 +40,9 @@ public class Apis {
     private final DroveClientManager clientManager;
 
     @Inject
-    public Apis(TopologyStore topologyStore, TopologyRunInfoStore runInfoStore, Scheduler scheduler,
-                DroveClientManager clientManager) {
+    public Apis(
+            TopologyStore topologyStore, TopologyRunInfoStore runInfoStore, Scheduler scheduler,
+            DroveClientManager clientManager) {
         this.topologyStore = topologyStore;
         this.runInfoStore = runInfoStore;
         this.scheduler = scheduler;
@@ -80,11 +81,11 @@ public class Apis {
     @PUT
     @Path("/topologies/{topologyId}/run")
     @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
-    public ApiResponse<EpochTopologyRunInfo> runTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
+    public ApiResponse<Map<String, String>> runTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
         return topologyStore.get(topologyId)
-                .flatMap(topology -> runInfoStore.get(topologyId,
-                                                      scheduler.scheduleNow(topologyId))
-                         .map(ApiResponse::success))
+                .map(topology -> scheduler.scheduleNow(topologyId).orElse(null))
+                .filter(Objects::nonNull)
+                .map(runId -> ApiResponse.success(Map.of("runId", runId)))
                 .orElseGet(() -> ApiResponse.failure(noTopoError(topologyId)));
     }
 
@@ -143,11 +144,11 @@ public class Apis {
         return runInfoStore.get(topologyId, runId)
                 .flatMap(runInfo -> {
                     val task = runInfo.getTasks().get(taskId);
-                    if(task == null) {
+                    if (task == null) {
                         return Optional.empty();
                     }
                     return clientManager.getClient().leader()
-                            .map(leader -> URI.create(leader + "/tasks/" + appName() + "/" + task.getUpstreamId() ));
+                            .map(leader -> URI.create(leader + "/tasks/" + appName() + "/" + task.getUpstreamId()));
                 })
                 .map(ApiResponse::success)
                 .orElse(ApiResponse.failure("Not log exists for " + topologyId + "/" + runId + "/" + taskId));

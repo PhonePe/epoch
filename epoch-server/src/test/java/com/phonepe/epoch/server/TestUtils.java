@@ -7,6 +7,8 @@ import com.phonepe.drove.models.application.placement.policies.AnyPlacementPolic
 import com.phonepe.drove.models.application.requirements.CPURequirement;
 import com.phonepe.drove.models.application.requirements.MemoryRequirement;
 import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
+import com.phonepe.epoch.server.managed.LeadershipManager;
+import io.appform.signals.signals.ConsumingFireForgetSignal;
 import io.dropwizard.util.Duration;
 import lombok.experimental.UtilityClass;
 import lombok.val;
@@ -16,8 +18,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.awaitility.Awaitility.await;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  *
@@ -59,5 +64,14 @@ public class TestUtils {
                                                new AnyPlacementPolicy(),
                                                Map.of(),
                                                Map.of());
+    }
+
+    public static LeadershipManager createLeadershipManager(boolean initialValue) {
+        val lm = mock(LeadershipManager.class);
+        val ls = new ConsumingFireForgetSignal<Void>();
+        when(lm.onGainingLeadership()).thenReturn(ls);
+        val leader = new AtomicBoolean(initialValue);
+        when(lm.isLeader()).thenReturn(leader.get());
+        return lm;
     }
 }

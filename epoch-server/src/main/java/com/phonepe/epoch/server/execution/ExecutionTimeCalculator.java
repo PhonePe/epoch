@@ -25,10 +25,8 @@ public class ExecutionTimeCalculator {
         return trigger.accept(new EpochTriggerVisitor<>() {
             @Override
             public Optional<Duration> visit(EpochTaskTriggerAt at) {
-                if (currTime.after(at.getTime())) {
-                    return Optional.empty();
-                }
-                return Optional.of(Duration.ofMillis(currTime.getTime() - at.getTime().getTime()));
+                val timeDifference = Math.min(0, currTime.getTime() - at.getTime().getTime());
+                return Optional.of(Duration.ofMillis(timeDifference));
             }
 
             @Override
