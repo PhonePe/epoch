@@ -29,8 +29,9 @@ import java.util.function.Consumer;
 @Slf4j
 public class EpochUtils {
     public static String appName() {
-        return Objects.requireNonNull(System.getenv("DROVE_APP_NAME"),
-                                      "Provide app name in DROVE_APP_NAME env variable");
+        return Objects.requireNonNullElseGet(System.getenv("DROVE_APP_NAME"),
+                                             () -> Objects.requireNonNull(System.getProperty("drove.app.name"),
+                                                                          "Provide app name in DROVE_APP_NAME env variable"));
     }
 
     public static <T> List<T> sublist(final List<T> list, int start, int size) {

@@ -3,7 +3,7 @@ package com.phonepe.epoch.models.tasks;
 import com.phonepe.drove.models.application.MountedVolume;
 import com.phonepe.drove.models.application.executable.ExecutableCoordinates;
 import com.phonepe.drove.models.application.logging.LoggingSpec;
-import com.phonepe.drove.models.application.placement.policies.AnyPlacementPolicy;
+import com.phonepe.drove.models.application.placement.PlacementPolicy;
 import com.phonepe.drove.models.application.requirements.ResourceRequirement;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -41,7 +41,7 @@ public class EpochContainerExecutionTask extends EpochTask {
     @Valid
     LoggingSpec logging;
 
-    AnyPlacementPolicy placementPolicy;
+    PlacementPolicy placementPolicy;
 
     Map<String, String> tags;
 
@@ -54,7 +54,7 @@ public class EpochContainerExecutionTask extends EpochTask {
             List<ResourceRequirement> resources,
             List<MountedVolume> volumes,
             LoggingSpec logging,
-            AnyPlacementPolicy placementPolicy,
+            PlacementPolicy placementPolicy,
             Map<String, String> tags,
             Map<String, String> env) {
         super(EpochTaskType.CONTAINER_EXECUTION);

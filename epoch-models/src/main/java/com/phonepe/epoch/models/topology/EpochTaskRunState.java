@@ -9,6 +9,7 @@ import java.util.Set;
 public enum EpochTaskRunState {
     PENDING,
     STARTING,
+    UNKNOWN,
     RUNNING,
     COMPLETED,
     FAILED
