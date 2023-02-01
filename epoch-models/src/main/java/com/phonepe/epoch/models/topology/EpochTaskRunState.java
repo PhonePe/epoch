@@ -12,8 +12,9 @@ public enum EpochTaskRunState {
     UNKNOWN,
     RUNNING,
     COMPLETED,
+    CANCELLED,
     FAILED
     ;
 
-    public static final Set<EpochTaskRunState> TERMINAL_STATES = EnumSet.of(COMPLETED, FAILED);
+    public static final Set<EpochTaskRunState> TERMINAL_STATES = EnumSet.of(COMPLETED, FAILED, CANCELLED);
 }

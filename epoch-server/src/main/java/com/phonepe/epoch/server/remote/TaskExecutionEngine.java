@@ -15,6 +15,8 @@ public interface TaskExecutionEngine {
 
     TaskStatusData status(TaskExecutionContext context, final EpochContainerExecutionTask executionTask);
 
+    CancelResponse cancelTask(String taskId);
+
     @SuppressWarnings("unused")
     default boolean cleanup(TaskExecutionContext context, EpochContainerExecutionTask containerExecution) {
         return cleanup(context.getUpstreamTaskId());

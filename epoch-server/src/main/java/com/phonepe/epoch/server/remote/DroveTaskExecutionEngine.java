@@ -1,5 +1,6 @@
 package com.phonepe.epoch.server.remote;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.phonepe.drove.client.DroveClient;
@@ -81,9 +82,7 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
             log.trace("Received create response: {}", response);
             if (response != null) {
                 if (response.statusCode() == 200) {
-                    val apiResponse = mapper.readValue(response.body(),
-                                                       new TypeReference<ApiResponse<Map<String, String>>>() {
-                                                       });
+                    val apiResponse = readApiResponse(response);
                     if (apiResponse.getStatus().equals(ApiErrorCode.SUCCESS)) {
                         val droveInternalId = apiResponse.getData()
                                 .getOrDefault("taskId", EpochTopologyRunTaskInfo.UNKNOWN_TASK_ID);
@@ -149,10 +148,44 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
         Keep task in unknown state in case we are unable to find the status
          */
         return readTaskData(context,
-                            new TaskStatusData(EpochTaskRunState.UNKNOWN, "Status could not be ascertained. Task might not have started yet"),
+                            new TaskStatusData(EpochTaskRunState.UNKNOWN,
+                                               "Status could not be ascertained. Task might not have started yet"),
                             taskInfo -> mapTaskState(context, taskInfo),
-                            e -> new TaskStatusData(EpochTaskRunState.UNKNOWN, "Error getting task status: " + EpochUtils.errorMessage(e)));
+                            e -> new TaskStatusData(EpochTaskRunState.UNKNOWN,
+                                                    "Error getting task status: " + EpochUtils.errorMessage(e)));
     }
+
+    @Override
+    public CancelResponse cancelTask(String taskId) {
+        val client = droveClientManager.getClient();
+        val killOp = new TaskKillOperation(appName, taskId, ClusterOpSpec.DEFAULT);
+        val url = "/apis/v1/tasks/operations";
+        try {
+            val request = new DroveClient.Request(DroveClient.Method.POST, url, mapper.writeValueAsString(killOp));
+            val response = client.execute(request);
+            log.info("Task kill response: {}", response);
+            return switch (response.statusCode()) {
+                case 200 -> {
+                    val apiResponse = readApiResponse(response);
+                    val successful = apiResponse.getStatus().equals(ApiErrorCode.SUCCESS);
+                    yield new CancelResponse(successful,
+                                             successful
+                                             ? "Task cancel accepted"
+                                             : "Task cancellation failed with error: " + apiResponse.getMessage());
+                }
+                case 400 -> {
+                    val apiResponse = readApiResponse(response);
+                    yield new CancelResponse(false, "Task cancellation failed with error: " + apiResponse.getMessage());
+                }
+                default -> new CancelResponse(false, "Task cancellation failed with status: " + response);
+            };
+        }
+        catch (Exception e) {
+            log.error("Error killing task " + taskId + ": " + e.getMessage(), e);
+            return new CancelResponse(false, "Task cancellation failed with error: " + e.getMessage());
+        }
+    }
+
 
     @Override
     @MonitoredFunction
@@ -228,7 +261,8 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
                 }
                 yield switch (taskResult.getStatus()) {
                     case SUCCESSFUL -> EpochTaskRunState.COMPLETED;
-                    case TIMED_OUT, CANCELLED, FAILED, LOST -> EpochTaskRunState.FAILED;
+                    case CANCELLED -> EpochTaskRunState.CANCELLED;
+                    case TIMED_OUT, FAILED, LOST -> EpochTaskRunState.FAILED;
                 };
             }
             case UNKNOWN -> EpochTaskRunState.UNKNOWN;
@@ -348,4 +382,10 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
     private String instanceId(final TaskExecutionContext context) {
         return context.getTopologyId() + "-" + context.getRunId() + "-" + context.getTaskName();
     }
+
+    private ApiResponse<Map<String, Object>> readApiResponse(DroveClient.Response response) throws JsonProcessingException {
+        return mapper.readValue(response.body(), new TypeReference<>() {
+        });
+    }
+
 }

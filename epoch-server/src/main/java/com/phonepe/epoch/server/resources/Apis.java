@@ -6,6 +6,8 @@ import com.phonepe.epoch.models.topology.*;
 import com.phonepe.epoch.server.auth.models.EpochUserRole;
 import com.phonepe.epoch.server.managed.DroveClientManager;
 import com.phonepe.epoch.server.managed.Scheduler;
+import com.phonepe.epoch.server.remote.CancelResponse;
+import com.phonepe.epoch.server.remote.TaskExecutionEngine;
 import com.phonepe.epoch.server.store.TopologyRunInfoStore;
 import com.phonepe.epoch.server.store.TopologyStore;
 import lombok.extern.slf4j.Slf4j;
@@ -38,15 +40,18 @@ public class Apis {
 
     private final Scheduler scheduler;
     private final DroveClientManager clientManager;
+    private final TaskExecutionEngine taskExecutionEngine;
 
     @Inject
     public Apis(
             TopologyStore topologyStore, TopologyRunInfoStore runInfoStore, Scheduler scheduler,
-            DroveClientManager clientManager) {
+            DroveClientManager clientManager,
+            TaskExecutionEngine taskExecutionEngine) {
         this.topologyStore = topologyStore;
         this.runInfoStore = runInfoStore;
         this.scheduler = scheduler;
         this.clientManager = clientManager;
+        this.taskExecutionEngine = taskExecutionEngine;
     }
 
     @POST
@@ -133,6 +138,27 @@ public class Apis {
         return runInfoStore.get(topologyId, runId)
                 .map(ApiResponse::success)
                 .orElse(ApiResponse.failure("Not run exists for " + topologyId + "/" + runId));
+    }
+
+    @POST
+    @Path("/topologies/{topologyId}/runs/{runId}/tasks/{taskId}/kill")
+    @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
+    public ApiResponse<CancelResponse> killTask(
+            @NotEmpty @PathParam("topologyId") final String topologyId,
+            @NotEmpty @PathParam("runId") final String runId,
+            @NotEmpty @PathParam("taskId") final String taskId) {
+        val task = runInfoStore.get(topologyId, runId)
+                .map(runInfo -> runInfo.getTasks().get(taskId))
+                .orElse(null);
+        if (null == task) {
+            return ApiResponse.failure("No task exists for " + topologyId + "/" + runId + "/" + taskId);
+        }
+        val response = taskExecutionEngine.cancelTask(task.getTaskId());
+        return response.success()
+               ? ApiResponse.success(response)
+               : ApiResponse.failure(
+                       response,
+                       "Could not cancel task " + topologyId + "/" + runId + "/" + taskId + ". Error: " + response.message());
     }
 
     @GET

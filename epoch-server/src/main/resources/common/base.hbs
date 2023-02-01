@@ -143,12 +143,13 @@ $(document).ready(function() {
 
     function renderTaskRunState(data, type, row, meta) {
         switch(data) {
-            case 'PENDING' : return '<span class="font-weight-bold text-secondary">Pending</span>';
+            case 'PENDING' : return '<span class="font-weight-bold text-warning">Pending</span>';
             case 'STARTING' : return '<span class="font-weight-bold text-warning">Starting</span>';
             case 'RUNNING' : return '<span class="font-weight-bold text-normal">Running</span>';
             case 'UNKNOWN' : return '<span class="font-weight-bold text-warning">Unknown</span>';
             case 'COMPLETED' : return '<span class="font-weight-bold text-success">Completed</span>';
             case 'FAILED' : return '<span class="font-weight-bold text-danger">Failed</span>';
+            case 'CANCELLED' : return '<span class="font-weight-bold text-secondary">Cancelled</span>';
         }
     }
 

@@ -80,6 +80,7 @@
                 <th>Task Id</th>
                 <td>Error Message</td>
                 <th>Logs</th>
+                <th/>
             </tr>
             </thead>
             <tbody>`;
@@ -89,7 +90,13 @@
             str += '<td>' + renderTaskRunState(task.state) + '</td>';
             str += '<td>' + task.taskId + '</td>';
             str += '<td>' + (task.errorMessage ? task.errorMessage : '') + '</td>';
-        str += '<td><a class="log-link" data-topology-id="' + row.topologyId + '" data-run-id="' + row.runId + '" data-task-id="' + id + '">View Log</a></td>';
+            str += '<td><a class="log-link" data-topology-id="' + row.topologyId + '" data-run-id="' + row.runId + '" data-task-id="' + id + '">View Log</a></td>';
+            if(task.state === 'RUNNING') {
+                str += '<td><button class="btn btn-sm btn-danger cancel-task" data-topology-id="' + row.topologyId + '" data-run-id="' + row.runId + '" data-task-id="' + id + '">Cancel</button> </td>';
+            }
+            else {
+                str += '<td/>';
+            }
             str += '</tr>';
         }
         str += `
@@ -108,6 +115,33 @@
                 res => {
                     if(res.data) {
                         window.open(res.data, '_blank', 'noopener,noreferrer');
+                    }
+                }
+            );
+        }
+    );
+    $(document).on('click', 'button.cancel-task',
+        e => {
+            const link = $(e.target);
+            const tId = link.attr('data-topology-id');
+            const rId = link.attr('data-run-id');
+            const tsId = link.attr('data-task-id');
+            $.post('/apis/v1/topologies/' + tId + '/runs/' + rId + '/tasks/' + tsId + '/kill',
+                res => {
+                    if(res.status === 'SUCCESS') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Task cancellation requested'
+                        })
+                        .then(() => runs.ajax.reload(null, false));
+                    }
+                    else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Task cancellation failed',
+                            text: 'Reason: ' + res.message
+                        })
+                        .then(() => runs.ajax.reload(null, false));
                     }
                 }
             );

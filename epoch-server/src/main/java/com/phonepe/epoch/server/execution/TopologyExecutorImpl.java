@@ -168,7 +168,8 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
                     val failed = composite.getTasks()
                             .stream()
                             .map(task -> task.accept(this))
-                            .filter(stateData -> stateData.state() == EpochTaskRunState.FAILED)
+                            .filter(stateData -> stateData.state() == EpochTaskRunState.FAILED
+                                    || stateData.state() == EpochTaskRunState.CANCELLED)
                             .findFirst()
                             .orElse(null);
                     yield Objects.requireNonNullElse(failed, new TaskStatusData(EpochTaskRunState.COMPLETED, ""));
@@ -178,7 +179,6 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
                                               new TaskStatusData(EpochTaskRunState.FAILED,
                                                                  "Unknown status for composite task"));
         }
-
         @Override
         public TaskStatusData visit(EpochContainerExecutionTask containerExecution) {
             val topologyName = topologyExecutionInfo.getTopologyId();
