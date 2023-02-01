@@ -185,14 +185,13 @@
 {{#partial "page_js"}}
     var topologies = $('#topologies').DataTable({
         'processing' : true,
-        'paging' : true,
+        'paging': true,
+        'lengthMenu': [[10, 25, 50, -1], [10, 25, 50, "All"]],
+        'dom' : "<'row'<'col-sm-12 col-md-2 float-left'f><'col-sm-10 col-md-9 float-right'p><'col-md-1 col-sm-3'l>><'row'<'col-sm-12'tr>>",
         'ajax': {
             'url' : '/apis/v1/topologies',
             'dataSrc': function(res) { return res.data ? res.data : []; }
         },
-        'paging': false,
-        'searching' : false,
-        'ordering' : false,
         'info' : false,
         'columnDefs': [ {'className': 'text-center', 'targets': '_all'} ],
         'columns' : [
