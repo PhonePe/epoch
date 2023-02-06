@@ -48,12 +48,22 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
     private final String appName;
 
     private final ObjectMapper mapper;
+    private final Duration retryInterval;
+    private final int retryCount;
 
     @Inject
     public DroveTaskExecutionEngine(DroveClientManager droveClientManager, ObjectMapper mapper) {
         this.droveClientManager = droveClientManager;
         this.mapper = mapper;
         this.appName = EpochUtils.appName();
+        this.retryInterval = null == droveClientManager.getDroveConfig().getRpcRetryInterval()
+                             ? Duration.ofSeconds(3)
+                             : Duration.ofMillis(droveClientManager.getDroveConfig()
+                                                         .getRpcRetryInterval()
+                                                         .toMilliseconds());
+        this.retryCount = droveClientManager.getDroveConfig().getRpcRetryCount() == 0
+                          ? 10
+                          : droveClientManager.getDroveConfig().getRpcRetryCount();
     }
 
     @Override
@@ -147,12 +157,44 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
         /*
         Keep task in unknown state in case we are unable to find the status
          */
-        return readTaskData(context,
-                            new TaskStatusData(EpochTaskRunState.UNKNOWN,
-                                               "Status could not be ascertained. Task might not have started yet"),
-                            taskInfo -> mapTaskState(context, taskInfo),
-                            e -> new TaskStatusData(EpochTaskRunState.UNKNOWN,
-                                                    "Error getting task status: " + EpochUtils.errorMessage(e)));
+        log.info("Fetching data for existing task");
+        val retryPolicy = new RetryPolicy<TaskStatusData>()
+                .withDelay(retryInterval)
+                .withMaxRetries(retryCount)
+                .onFailedAttempt(attempt -> {
+                    if (attempt.getLastFailure() != null) {
+                        log.warn("Status read attempt {} for drove task {} failed with error: {}",
+                                 attempt.getAttemptCount(),
+                                 context.getUpstreamTaskId(),
+                                 EpochUtils.errorMessage(attempt.getLastFailure()));
+                    }
+                    else {
+                        log.warn("Status read attempt {} for drove task {} failed as state is still {}",
+                                 attempt.getAttemptCount(),
+                                 context.getUpstreamTaskId(),
+                                 attempt.getLastResult());
+                    }
+                })
+                .handle(Exception.class)
+                .handleResultIf(r -> r == null || r.state().equals(EpochTaskRunState.UNKNOWN));
+        val defaultValue = new TaskStatusData(EpochTaskRunState.UNKNOWN,
+                                              "Status could not be ascertained. Task might not have started yet");
+        try {
+            return Failsafe.with(List.of(retryPolicy))
+                    .get(() -> readTaskData(context,
+                                            defaultValue,
+                                            taskInfo -> mapTaskState(context, taskInfo),
+                                            e -> new TaskStatusData(EpochTaskRunState.UNKNOWN,
+                                                                    "Error getting task status: " + EpochUtils.errorMessage(
+                                                                            e))));
+        }
+        catch (FailsafeException e) {
+            val errorMessage = EpochUtils.errorMessage(e);
+            log.error("Status read for drove task " + context.getUpstreamTaskId() + " terminally failed with error: "
+                              + errorMessage, e);
+            return new TaskStatusData(EpochTaskRunState.UNKNOWN,
+                                      "Error getting task status: " + errorMessage);
+        }
     }
 
     @Override
@@ -163,6 +205,9 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
         try {
             val request = new DroveClient.Request(DroveClient.Method.POST, url, mapper.writeValueAsString(killOp));
             val response = client.execute(request);
+            if(response == null) {
+                return new CancelResponse(false, "Could not send kill command to drove");
+            }
             log.info("Task kill response: {}", response);
             return switch (response.statusCode()) {
                 case 200 -> {
@@ -177,7 +222,7 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
                     val apiResponse = readApiResponse(response);
                     yield new CancelResponse(false, "Task cancellation failed with error: " + apiResponse.getMessage());
                 }
-                default -> new CancelResponse(false, "Task cancellation failed with status: " + response);
+                default -> new CancelResponse(false, "Task cancellation failed with status: [" + response.statusCode() + "] " + response.body());
             };
         }
         catch (Exception e) {
@@ -193,31 +238,31 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
         val client = droveClientManager.getClient();
         val api = "/apis/v1/tasks/" + appName + "/instances/" + upstreamTaskId;
         log.trace("Calling: {} for status", api);
-        val request = new DroveClient.Request(DroveClient.Method.DELETE,
-                                              api);
+        val request = new DroveClient.Request(DroveClient.Method.DELETE, api);
         try {
-            return client.execute(request, new DroveClient.ResponseHandler<>() {
-                @Override
-                public Boolean defaultValue() {
-                    return false;
-                }
-
-                @Override
-                public Boolean handle(DroveClient.Response response) throws Exception {
-                    val body = response.body();
-                    if (response.statusCode() == 200) {
-                        val apiResponse = mapper.readValue(body,
-                                                           new TypeReference<ApiResponse<Map<String, Boolean>>>() {
-                                                           });
-                        if (apiResponse.getStatus().equals(ApiErrorCode.SUCCESS)) {
-                            return apiResponse.getData().getOrDefault("deleted", false);
+            return Objects.requireNonNullElse(
+                    client.execute(request, new DroveClient.ResponseHandler<>() {
+                        @Override
+                        public Boolean defaultValue() {
+                            return false;
                         }
-                    }
-                    log.error("Failed to delete task meta from drove using api {}. Response: [{}] {}",
-                              api, response.statusCode(), body);
-                    return false;
-                }
-            });
+
+                        @Override
+                        public Boolean handle(DroveClient.Response response) throws Exception {
+                            val body = response.body();
+                            if (response.statusCode() == 200) {
+                                val apiResponse = mapper.readValue(body,
+                                                                   new TypeReference<ApiResponse<Map<String, Boolean>>>() {
+                                                                   });
+                                if (apiResponse.getStatus().equals(ApiErrorCode.SUCCESS)) {
+                                    return apiResponse.getData().getOrDefault("deleted", false);
+                                }
+                            }
+                            log.error("Failed to delete task meta from drove using api {}. Response: [{}] {}",
+                                      api, response.statusCode(), body);
+                            return false;
+                        }
+                    }), false);
 
         }
         catch (Exception e) {
@@ -276,11 +321,22 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
             String taskId) {
         log.info("Fetching data for existing task");
         val retryPolicy = new RetryPolicy<EpochTopologyRunTaskInfo>()
-                .withDelay(Duration.ofSeconds(3))
-                .withMaxRetries(10)
-                .onFailedAttempt(attempt -> log.debug("Status read attempt {}: {}",
-                                                      attempt.getAttemptCount(),
-                                                      attempt))
+                .withDelay(retryInterval)
+                .withMaxRetries(retryCount)
+                .onFailedAttempt(attempt -> {
+                    if (attempt.getLastFailure() != null) {
+                        log.warn("Status read attempt {} for existing drove task {} failed with error: {}",
+                                 attempt.getAttemptCount(),
+                                 context.getUpstreamTaskId(),
+                                 EpochUtils.errorMessage(attempt.getLastFailure()));
+                    }
+                    else {
+                        log.warn("Status read attempt {} for existing drove task {} failed as state is still {}",
+                                 attempt.getAttemptCount(),
+                                 context.getUpstreamTaskId(),
+                                 attempt.getLastResult());
+                    }
+                })
                 .handle(Exception.class)
                 .handleResultIf(r -> r == null
                         || Strings.isNullOrEmpty(r.getUpstreamId())
@@ -335,6 +391,7 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
         val instanceId = instanceId(context);
         val api = "/apis/v1/tasks/" + appName + "/instances/" + instanceId;
         val request = new DroveClient.Request(DroveClient.Method.GET, api);
+
         try {
             val response = client.execute(request);
             log.trace("Received status response: {}", response);

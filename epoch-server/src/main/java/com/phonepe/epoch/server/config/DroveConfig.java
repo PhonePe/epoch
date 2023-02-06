@@ -22,7 +22,12 @@ public class DroveConfig {
 
     private Duration operationTimeout;
 
-    private String droveAuthToken;
+    private String username;
+    private String password;
+
+    private int rpcRetryCount;
+
+    private Duration rpcRetryInterval;
 
     @Valid
     private ClusterOpSpec clusterOpSpec;

@@ -218,7 +218,7 @@ public class Scheduler implements Managed {
             return;
         }
         log.debug("{} state for {}/{}. Will try to reschedule for next slot.", result, tId, rId);
-        if (!schedule(tId, trigger, new Date()).isPresent()) {
+        if (schedule(tId, trigger, new Date()).isEmpty()) {
             log.warn("Further scheduling skipped for: {}", tId);
         }
     }
