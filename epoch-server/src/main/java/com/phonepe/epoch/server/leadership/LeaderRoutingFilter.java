@@ -1,8 +1,33 @@
 package com.phonepe.epoch.server.leadership;
 
+import com.phonepe.drove.client.DroveClient;
+import com.phonepe.drove.models.api.ApiResponse;
 import com.phonepe.epoch.server.managed.LeadershipManager;
+import com.phonepe.epoch.server.utils.EpochUtils;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.apache.hc.client5.http.classic.methods.HttpDelete;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpPut;
+import org.apache.hc.client5.http.config.ConnectionConfig;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.socket.ConnectionSocketFactory;
+import org.apache.hc.client5.http.socket.PlainConnectionSocketFactory;
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
+import org.apache.hc.core5.http.*;
+import org.apache.hc.core5.http.config.RegistryBuilder;
+import org.apache.hc.core5.http.io.SocketConfig;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.entity.StringEntity;
+import org.apache.hc.core5.http.message.BasicClassicHttpRequest;
+import org.apache.hc.core5.pool.PoolConcurrencyPolicy;
+import org.apache.hc.core5.pool.PoolReusePolicy;
+import org.apache.hc.core5.util.TimeValue;
+import org.apache.hc.core5.util.Timeout;
 import org.glassfish.jersey.server.ContainerRequest;
 
 import javax.annotation.Priority;
@@ -17,11 +42,11 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 import java.io.IOException;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * Proxies requests to leader
@@ -32,7 +57,7 @@ import java.util.*;
 @Priority(Priorities.USER)
 @PreMatching
 public class LeaderRoutingFilter implements ContainerRequestFilter {
-    private static final Set<String> RESTRICTED_HEADERS = new TreeSet<>((lhs, rhs) -> lhs.equalsIgnoreCase(rhs) ? 0 : lhs.compareTo(rhs));
+    private static final Set<String> RESTRICTED_HEADERS = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
     static {
         RESTRICTED_HEADERS.add("Connection");
@@ -44,14 +69,12 @@ public class LeaderRoutingFilter implements ContainerRequestFilter {
     }
 
     private final LeadershipManager manager;
-    private final HttpClient httpClient;
+    private final CloseableHttpClient httpClient;
 
     @Inject
     public LeaderRoutingFilter(LeadershipManager manager) {
         this.manager = manager;
-        this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(3))
-                .build();
+        this.httpClient = buildClient();
     }
 
     @Override
@@ -61,8 +84,10 @@ public class LeaderRoutingFilter implements ContainerRequestFilter {
             return;
         }
         val leader = manager.leader().orElse(null);
-        if(null == leader) {
-            requestContext.abortWith(Response.serverError().build());
+        if (null == leader) {
+            requestContext.abortWith(Response.serverError()
+                                             .entity(ApiResponse.failure("No leader found in epoch cluster"))
+                                             .build());
             return;
         }
         val parts = leader.replaceAll("/", "").split(":");
@@ -72,13 +97,13 @@ public class LeaderRoutingFilter implements ContainerRequestFilter {
                 .host(parts[1])
                 .port(Integer.parseInt(parts[2]))
                 .build();
-        val request = request(uri, (ContainerRequest)requestContext.getRequest());
+        log.trace("Proxying request to: {}", uri);
+        val request = request(uri, (ContainerRequest) requestContext.getRequest());
         try {
-            val proxyResponse = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            val responseBuilder = Response.status(proxyResponse.statusCode())
-                    .entity(proxyResponse.body());
-            proxyResponse.headers().map().forEach((name, values) -> {
-                if(RESTRICTED_HEADERS.contains(name)) {
+            val proxyResponse = httpClient.execute(request, LeaderRoutingFilter::handleResponse);
+            val responseBuilder = Response.status(proxyResponse.statusCode()).entity(proxyResponse.body());
+            proxyResponse.headers().forEach((name, values) -> {
+                if (RESTRICTED_HEADERS.contains(name)) {
                     log.trace("Ignoring header: {}", name);
                 }
                 else {
@@ -86,48 +111,69 @@ public class LeaderRoutingFilter implements ContainerRequestFilter {
                 }
             });
             requestContext.abortWith(responseBuilder.build());
-            return;
         }
-        catch (InterruptedException e) {
-            log.error("Error proxying request to " + uri + ": " + e.getMessage(), e);
+        catch (Exception e) {
+            log.error("Error proxying request to " + uri + ": " + EpochUtils.errorMessage(e), e);
             Thread.currentThread().interrupt();
+            requestContext.abortWith(
+                    Response.serverError()
+                            .entity(ApiResponse.failure("Error proxying request due to error: "
+                                                                + EpochUtils.errorMessage(e)))
+                            .build());
         }
-        log.info("Routed to: {}", uri);
-        requestContext.abortWith(Response.seeOther(uri).build());
     }
 
-    private HttpRequest request(final URI uri, final ContainerRequest request) {
-        val builder = HttpRequest.newBuilder(uri).method(request.getMethod(), getBodyPublisher(request));
-        copyHeaders(request, builder);
-        copyCookies(request, builder);
-        return builder.build();
+    private static DroveClient.Response handleResponse(ClassicHttpResponse response) throws IOException,
+                                                                                            ParseException {
+        val headers = Arrays.stream(response.getHeaders())
+                .collect(Collectors.groupingBy(Header::getName,
+                                               Collectors.mapping(Header::getValue,
+                                                                  Collectors.toUnmodifiableList())));
+        return new DroveClient.Response(response.getCode(),
+                                        headers,
+                                        EntityUtils.toString(response.getEntity()));
     }
 
-    private static HttpRequest.BodyPublisher getBodyPublisher(ContainerRequest request) {
-        return switch (request.getMethod()) {
-            case "GET", "HEAD", "OPTIONS", "TRACE", "DELETE" -> HttpRequest.BodyPublishers.noBody();
-            case "POST", "PUT", "PATCH" -> copyBody(request);
-            default -> throw new IllegalArgumentException("Unsupported operation type: " + request.getMethod());
+    private ClassicHttpRequest request(final URI uri, final ContainerRequest request) {
+        val proxyRequest = switch (request.getMethod().toUpperCase()) {
+            case "GET" -> new HttpGet(uri);
+            case "POST" -> {
+                val req = new HttpPost(uri);
+                copyBody(request, req);
+                yield req;
+            }
+            case "PUT" -> {
+                val req = new HttpPut(uri);
+                copyBody(request, req);
+                yield req;
+            }
+            case "DELETE" -> new HttpDelete(uri);
+            default ->
+                    throw new IllegalArgumentException("Request proxying for " + request.getMethod() + " is " +
+                                                               "unsupported");
         };
+        copyHeaders(request, proxyRequest);
+        copyCookies(request, proxyRequest);
+        return proxyRequest;
     }
 
-    private static HttpRequest.BodyPublisher copyBody(ContainerRequest request) {
-        return HttpRequest.BodyPublishers.ofString(request.readEntity(String.class));
+    private static void copyBody(ContainerRequest request, BasicClassicHttpRequest req) {
+        req.setEntity(new StringEntity(request.readEntity(String.class)));
     }
 
-    private static void copyCookies(ContainerRequest request, HttpRequest.Builder builder) {
-        request.getCookies().forEach((name, cookie) -> builder.header(HttpHeaders.COOKIE, name + "=" + cookie));
+    private static void copyCookies(ContainerRequest request, HttpRequest proxyRequest) {
+        request.getCookies().forEach((name, cookie) -> proxyRequest.setHeader(HttpHeaders.COOKIE, name + "=" + cookie));
     }
 
-    private static void copyHeaders(ContainerRequest request, HttpRequest.Builder builder) {
+    private static void copyHeaders(ContainerRequest request, HttpRequest proxyRequest) {
         request.getHeaders().forEach((name, values) -> {
-            if(RESTRICTED_HEADERS.contains(name)) {
+            if (RESTRICTED_HEADERS.contains(name)) {
                 log.trace("Ignoring header: {}", name);
             }
             else {
                 values.forEach(value -> {
                     try {
-                        builder.header(name, value);
+                        proxyRequest.setHeader(name, value);
                     }
                     catch (IllegalArgumentException e) {
                         log.warn("Ignoring header " + name + " due to error: " + e.getMessage());
@@ -135,5 +181,33 @@ public class LeaderRoutingFilter implements ContainerRequestFilter {
                 });
             }
         });
+    }
+
+    private static CloseableHttpClient buildClient() {
+        val socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
+                .register(URIScheme.HTTP.id, PlainConnectionSocketFactory.getSocketFactory())
+                .register(URIScheme.HTTPS.id, SSLConnectionSocketFactory.getSocketFactory())
+                .build();
+        val connManager = new PoolingHttpClientConnectionManager(
+                socketFactoryRegistry, PoolConcurrencyPolicy.STRICT, PoolReusePolicy.LIFO, TimeValue.ofMinutes(5));
+
+        connManager.setDefaultSocketConfig(SocketConfig.custom()
+                                                   .setTcpNoDelay(true)
+                                                   .setSoTimeout(Timeout.of(Duration.ofSeconds(2)))
+                                                   .build());
+        // Validate connections after 10 sec of inactivity
+        connManager.setDefaultConnectionConfig(ConnectionConfig.custom()
+                                                       .setConnectTimeout(Timeout.of(Duration.ofSeconds(2)))
+                                                       .setSocketTimeout(Timeout.of(Duration.ofSeconds(2)))
+                                                       .setValidateAfterInactivity(TimeValue.ofSeconds(10))
+                                                       .setTimeToLive(TimeValue.ofHours(1))
+                                                       .build());
+        val rc = RequestConfig.custom()
+                .setResponseTimeout(Timeout.of(Duration.ofSeconds(2)))
+                .build();
+        return HttpClients.custom()
+                .setConnectionManager(connManager)
+                .setDefaultRequestConfig(rc)
+                .build();
     }
 }

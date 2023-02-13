@@ -74,3 +74,9 @@ div.dataTables_wrapper div.dataTables_filter {
 .close-row {
     margin-bottom: .25rem;
 }
+
+table {
+    width: 100% !important;
+    word-break: break-all;
+    word-break: break-word;
+}

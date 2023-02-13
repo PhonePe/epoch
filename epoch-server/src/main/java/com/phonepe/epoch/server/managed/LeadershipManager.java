@@ -30,14 +30,15 @@ import java.util.concurrent.locks.ReentrantLock;
 @Order(10)
 @Singleton
 public class LeadershipManager extends LeaderSelectorListenerAdapter implements Managed, ServerLifecycleListener {
+    @SuppressWarnings("java:S1057")
     private static final String LEADER_SELECTION_MTX_PATH = "/leader-selection";
 
     private final ConsumingFireForgetSignal<Void> gainedLeadership = new ConsumingFireForgetSignal<>();
 
     private final LeaderSelector selector;
 
-    private AtomicBoolean started = new AtomicBoolean();
-    private AtomicBoolean leader = new AtomicBoolean();
+    private final AtomicBoolean started = new AtomicBoolean();
+    private final AtomicBoolean leader = new AtomicBoolean();
     private final AtomicBoolean stopped = new AtomicBoolean();
     private final Lock stopLock = new ReentrantLock();
     private final Condition stopCondition = stopLock.newCondition();

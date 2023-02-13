@@ -196,7 +196,7 @@ public class Scheduler implements Managed {
 
     private void handleTaskCompletion(final TaskData taskData) {
         val tId = taskData.topologyId();
-        val rId = taskData.runInfo().getRunId();
+        val rId = taskData.runInfo().getRunId(); //TODO::NPE
 
         val result = taskData.runInfo().getState();
         if (taskData.runType() == EpochTopologyRunType.INSTANT) {
