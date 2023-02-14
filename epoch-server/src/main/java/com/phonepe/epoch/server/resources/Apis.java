@@ -44,7 +44,9 @@ public class Apis {
 
     @Inject
     public Apis(
-            TopologyStore topologyStore, TopologyRunInfoStore runInfoStore, Scheduler scheduler,
+            TopologyStore topologyStore,
+            TopologyRunInfoStore runInfoStore,
+            Scheduler scheduler,
             DroveClientManager clientManager,
             TaskExecutionEngine taskExecutionEngine) {
         this.topologyStore = topologyStore;
@@ -88,8 +90,7 @@ public class Apis {
     @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
     public ApiResponse<Map<String, String>> runTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
         return topologyStore.get(topologyId)
-                .map(topology -> scheduler.scheduleNow(topologyId).orElse(null))
-                .filter(Objects::nonNull)
+                .flatMap(topology -> scheduler.scheduleNow(topologyId))
                 .map(runId -> ApiResponse.success(Map.of("runId", runId)))
                 .orElseGet(() -> ApiResponse.failure(noTopoError(topologyId)));
     }
@@ -124,7 +125,7 @@ public class Apis {
     public ApiResponse<Collection<EpochTopologyRunInfo>> listRuns(
             @NotEmpty @PathParam("topologyId") final String topologyId,
             @QueryParam("state") final Set<EpochTaskRunState> runStates) {
-        val matchStates = null == runStates || runStates.isEmpty()
+        val matchStates = runStates.isEmpty()
                           ? EnumSet.allOf(EpochTopologyRunState.class)
                           : runStates;
         return ApiResponse.success(runInfoStore.list(topologyId, r -> matchStates.contains(r.getState())));
@@ -132,7 +133,7 @@ public class Apis {
 
     @GET
     @Path("/topologies/{topologyId}/runs/{runId}")
-    public ApiResponse<EpochTopologyRunInfo> listRuns(
+    public ApiResponse<EpochTopologyRunInfo> getRun(
             @NotEmpty @PathParam("topologyId") final String topologyId,
             @NotEmpty @PathParam("runId") final String runId) {
         return runInfoStore.get(topologyId, runId)
@@ -151,14 +152,15 @@ public class Apis {
                 .map(runInfo -> runInfo.getTasks().get(taskId))
                 .orElse(null);
         if (null == task) {
-            return ApiResponse.failure("No task exists for " + topologyId + "/" + runId + "/" + taskId);
+            return ApiResponse.failure(new CancelResponse(false, "No task found for the provided id"),
+                                       "No task exists for " + topologyId + "/" + runId + "/" + taskId);
         }
         val response = taskExecutionEngine.cancelTask(task.getTaskId());
-        return response.success()
+        return response.isSuccess()
                ? ApiResponse.success(response)
                : ApiResponse.failure(
                        response,
-                       "Could not cancel task " + topologyId + "/" + runId + "/" + taskId + ". Error: " + response.message());
+                       "Could not cancel task " + topologyId + "/" + runId + "/" + taskId + ". Error: " + response.getMessage());
     }
 
     @GET
@@ -173,11 +175,12 @@ public class Apis {
                     if (task == null) {
                         return Optional.empty();
                     }
-                    return clientManager.getClient().leader()
+                    return clientManager.getClient()
+                            .leader()
                             .map(leader -> URI.create(leader + "/tasks/" + appName() + "/" + task.getUpstreamId()));
                 })
                 .map(ApiResponse::success)
-                .orElse(ApiResponse.failure("Not log exists for " + topologyId + "/" + runId + "/" + taskId));
+                .orElse(ApiResponse.failure("No log exists for " + topologyId + "/" + runId + "/" + taskId));
     }
 
     private static String noTopoError(String topologyId) {

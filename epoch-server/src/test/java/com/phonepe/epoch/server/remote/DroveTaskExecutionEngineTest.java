@@ -539,8 +539,8 @@ class DroveTaskExecutionEngineTest extends TestBase {
         stubFor(post("/apis/v1/tasks/operations")
                         .willReturn(ok(MAPPER.writeValueAsString(ApiResponse.success(Map.of())))));
         val cr = engine.cancelTask("Random");
-        assertTrue(cr.success());
-        assertEquals("Task cancel accepted", cr.message());
+        assertTrue(cr.isSuccess());
+        assertEquals("Task cancel accepted", cr.getMessage());
     }
 
     @Test
@@ -550,8 +550,8 @@ class DroveTaskExecutionEngineTest extends TestBase {
         stubFor(post("/apis/v1/tasks/operations")
                         .willReturn(ok(MAPPER.writeValueAsString(ApiResponse.failure("Test failure")))));
         val cr = engine.cancelTask("Random");
-        assertFalse(cr.success());
-        assertEquals("Task cancellation failed with error: Test failure", cr.message());
+        assertFalse(cr.isSuccess());
+        assertEquals("Task cancellation failed with error: Test failure", cr.getMessage());
     }
 
     @Test
@@ -562,8 +562,8 @@ class DroveTaskExecutionEngineTest extends TestBase {
                         .willReturn(badRequest()
                                             .withBody(MAPPER.writeValueAsString(ApiResponse.failure("Test failure")))));
         val cr = engine.cancelTask("Random");
-        assertFalse(cr.success());
-        assertEquals("Task cancellation failed with error: Test failure", cr.message());
+        assertFalse(cr.isSuccess());
+        assertEquals("Task cancellation failed with error: Test failure", cr.getMessage());
     }
 
     @Test
@@ -574,8 +574,8 @@ class DroveTaskExecutionEngineTest extends TestBase {
                         .willReturn(serverError()
                                             .withBody(MAPPER.writeValueAsString(ApiResponse.failure("Test failure")))));
         val cr = engine.cancelTask("Random");
-        assertFalse(cr.success());
-        assertEquals("Task cancellation failed with status: [500] {\"status\":\"FAILED\",\"message\":\"Test failure\"}", cr.message());
+        assertFalse(cr.isSuccess());
+        assertEquals("Task cancellation failed with status: [500] {\"status\":\"FAILED\",\"message\":\"Test failure\"}", cr.getMessage());
     }
 
     @Test
@@ -585,8 +585,8 @@ class DroveTaskExecutionEngineTest extends TestBase {
         stubFor(post("/apis/v1/tasks/operations")
                         .willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
         val cr = engine.cancelTask("Random");
-        assertFalse(cr.success());
-        assertEquals("Could not send kill command to drove", cr.message());
+        assertFalse(cr.isSuccess());
+        assertEquals("Could not send kill command to drove", cr.getMessage());
     }
 
     @Test
@@ -595,8 +595,8 @@ class DroveTaskExecutionEngineTest extends TestBase {
         val engine = createFailEngine(wm);
 
         val cr = engine.cancelTask("Random");
-        assertFalse(cr.success());
-        assertEquals("Task cancellation failed with error: Failure testing error", cr.message());
+        assertFalse(cr.isSuccess());
+        assertEquals("Task cancellation failed with error: Failure testing error", cr.getMessage());
     }
 
     private static DroveTaskExecutionEngine createEngine(WireMockRuntimeInfo wm) {

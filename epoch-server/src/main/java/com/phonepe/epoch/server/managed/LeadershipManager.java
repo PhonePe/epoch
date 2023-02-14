@@ -29,6 +29,7 @@ import java.util.concurrent.locks.ReentrantLock;
 @Slf4j
 @Order(10)
 @Singleton
+@SuppressWarnings("java:S1075")
 public class LeadershipManager extends LeaderSelectorListenerAdapter implements Managed, ServerLifecycleListener {
     @SuppressWarnings("java:S1057")
     private static final String LEADER_SELECTION_MTX_PATH = "/leader-selection";

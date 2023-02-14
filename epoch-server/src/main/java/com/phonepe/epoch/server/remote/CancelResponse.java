@@ -1,7 +1,12 @@
 package com.phonepe.epoch.server.remote;
 
+import lombok.Value;
+
 /**
  *
  */
-public record CancelResponse(boolean success, String message) {
+@Value
+public class CancelResponse {
+    boolean success;
+    String message;
 }

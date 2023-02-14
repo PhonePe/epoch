@@ -3,7 +3,8 @@ package com.phonepe.epoch.server.auth.models;
 import lombok.Getter;
 import lombok.experimental.UtilityClass;
 
-import static com.phonepe.epoch.server.auth.models.EpochUserRole.Values.*;
+import static com.phonepe.epoch.server.auth.models.EpochUserRole.Values.EPOCH_READ_ONLY_ROLE;
+import static com.phonepe.epoch.server.auth.models.EpochUserRole.Values.EPOCH_READ_WRITE_ROLE;
 
 /**
  *

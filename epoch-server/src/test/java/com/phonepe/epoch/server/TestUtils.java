@@ -6,7 +6,10 @@ import com.phonepe.drove.models.application.logging.LocalLoggingSpec;
 import com.phonepe.drove.models.application.placement.policies.AnyPlacementPolicy;
 import com.phonepe.drove.models.application.requirements.CPURequirement;
 import com.phonepe.drove.models.application.requirements.MemoryRequirement;
+import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
+import com.phonepe.epoch.models.topology.*;
+import com.phonepe.epoch.models.triggers.EpochTaskTriggerAt;
 import com.phonepe.epoch.server.managed.LeadershipManager;
 import io.appform.signals.signals.ConsumingFireForgetSignal;
 import io.dropwizard.util.Duration;
@@ -66,6 +69,22 @@ public class TestUtils {
                                                Map.of());
     }
 
+    public static EpochTopologyRunInfo genRunInfo(int index, EpochTopologyRunState state) {
+        return new EpochTopologyRunInfo(
+                "TEST_TOPO",
+                "TR-" + index,
+                state,
+                "Test",
+                Map.of("TR-T-" + index,
+                       new EpochTopologyRunTaskInfo()
+                               .setTaskId("TR-T-" + index)
+                               .setState(EpochTaskRunState.RUNNING)
+                               .setUpstreamId("TDT-" + index)),
+                EpochTopologyRunType.INSTANT,
+                new Date(),
+                new Date());
+    }
+
     public static LeadershipManager createLeadershipManager(boolean initialValue) {
         val lm = mock(LeadershipManager.class);
         val ls = new ConsumingFireForgetSignal<Void>();
@@ -73,5 +92,11 @@ public class TestUtils {
         val leader = new AtomicBoolean(initialValue);
         when(lm.isLeader()).thenReturn(leader.get());
         return lm;
+    }
+
+    public static EpochTopology generateTopologyDesc(int i) {
+        return new EpochTopology("TEST_TOPO-" + i,
+                                 genContainerTask(i),
+                                 new EpochTaskTriggerAt(new Date()));
     }
 }

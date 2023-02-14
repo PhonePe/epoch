@@ -1,8 +1,8 @@
 package com.phonepe.epoch.server.auth.filters;
 
 
-import com.phonepe.epoch.server.auth.models.EpochUser;
 import com.phonepe.epoch.server.auth.config.BasicAuthConfig;
+import com.phonepe.epoch.server.auth.models.EpochUser;
 import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.auth.Authenticator;
 import io.dropwizard.auth.basic.BasicCredentials;

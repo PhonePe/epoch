@@ -1,9 +1,9 @@
 package com.phonepe.epoch.server.auth.core;
 
 
-import com.phonepe.epoch.server.auth.models.EpochUser;
 import com.phonepe.epoch.server.auth.config.BasicAuthConfig;
 import com.phonepe.epoch.server.auth.config.UserAuthInfo;
+import com.phonepe.epoch.server.auth.models.EpochUser;
 import io.dropwizard.auth.Authenticator;
 import io.dropwizard.auth.basic.BasicCredentials;
 

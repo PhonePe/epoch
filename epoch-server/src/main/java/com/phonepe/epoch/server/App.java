@@ -2,11 +2,11 @@ package com.phonepe.epoch.server;
 
 import com.github.benmanes.caffeine.cache.CaffeineSpec;
 import com.google.inject.Stage;
-import com.phonepe.epoch.server.auth.models.EpochUser;
 import com.phonepe.epoch.server.auth.config.BasicAuthConfig;
 import com.phonepe.epoch.server.auth.core.EpochAuthenticator;
 import com.phonepe.epoch.server.auth.core.EpochAuthorizer;
 import com.phonepe.epoch.server.auth.filters.DummyAuthFilter;
+import com.phonepe.epoch.server.auth.models.EpochUser;
 import com.phonepe.epoch.server.config.AppConfig;
 import com.phonepe.epoch.server.ui.HandlebarsViewRenderer;
 import io.appform.functionmetrics.FunctionMetricsManager;
