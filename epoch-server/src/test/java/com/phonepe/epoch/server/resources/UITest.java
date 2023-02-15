@@ -27,25 +27,11 @@ import static org.mockito.Mockito.when;
 /**
  *
  */
-//@ExtendWith(DropwizardExtensionsSupport.class)
 class UITest extends TestBase {
     private static final TopologyStore topologyStore = mock(TopologyStore.class);
     private static final EpochEventBus epochEventbus = new EpochEventBus();
 
     private static final Scheduler scheduler = mock(Scheduler.class);
-
-/*    private static final ResourceExtension EXT = ResourceExtension.builder()
-            .setMapper(MAPPER)
-            .addResource()
-            .addProvider(new AuthDynamicFeature(new DummyAuthFilter.Builder()
-                                                        .setAuthenticator(new DummyAuthFilter.DummyAuthenticator())
-                                                        .setAuthorizer(new EpochAuthorizer())
-                                                        .buildAuthFilter()))
-            .addProvider(RolesAllowedDynamicFeature.class)
-            .addProvider(new AuthValueFactoryProvider.Binder<>(EpochUser.class))
-            .addProvider(new ViewMessageBodyWriter(SharedMetricRegistries.getOrCreate("test"),
-                                                   List.of(new HandlebarsViewRenderer())))
-            .build();*/
 
     @AfterEach
     void reset() {
