@@ -36,6 +36,18 @@
         <wiremock.version>2.35.0</wiremock.version>
         <bytebuddy.version>1.12.16</bytebuddy.version>
         <maven.deploy.skip>false</maven.deploy.skip>
+        <sonar.exclusions>
+            **/*.hbs,
+            **/*.js,
+            **/*.css,
+            **/model/**,
+            **/models/**,
+            **/*Handlebar**,
+            **com/phonepe/epoch/server/**,
+            **com/phonepe/epoch/server/config/**,
+            **com/phonepe/epoch/server/ui/**,
+            **com/phonepe/epoch/server/ui/views/**,
+        </sonar.exclusions>
     </properties>
 
     <dependencyManagement>

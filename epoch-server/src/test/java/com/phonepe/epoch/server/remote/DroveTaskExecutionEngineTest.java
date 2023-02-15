@@ -15,6 +15,7 @@ import com.phonepe.drove.models.info.resources.allocation.CPUAllocation;
 import com.phonepe.drove.models.info.resources.allocation.MemoryAllocation;
 import com.phonepe.drove.models.taskinstance.TaskInfo;
 import com.phonepe.drove.models.taskinstance.TaskState;
+import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
 import com.phonepe.epoch.models.topology.EpochTaskRunState;
 import com.phonepe.epoch.models.topology.EpochTopology;
@@ -22,6 +23,7 @@ import com.phonepe.epoch.models.topology.EpochTopologyRunTaskInfo;
 import com.phonepe.epoch.models.topology.EpochTopologyRunType;
 import com.phonepe.epoch.models.triggers.EpochTaskTriggerAt;
 import com.phonepe.epoch.server.TestBase;
+import com.phonepe.epoch.server.TestUtils;
 import com.phonepe.epoch.server.config.DroveConfig;
 import com.phonepe.epoch.server.managed.DroveClientManager;
 import com.phonepe.epoch.server.utils.EpochUtils;
@@ -495,6 +497,8 @@ class DroveTaskExecutionEngineTest extends TestBase {
         val engine = createEngine(wm);
         stubFor(delete("/apis/v1/tasks/epoch.test/instances/Test-TR1-CT1")
                         .willReturn(ok(MAPPER.writeValueAsString(ApiResponse.success(Map.of("deleted", true))))));
+        assertTrue(engine.cleanup(""));
+        assertTrue(engine.cleanup(EpochTopologyRunTaskInfo.UNKNOWN_TASK_ID));
         assertTrue(engine.cleanup("Test-TR1-CT1"));
     }
 
@@ -514,6 +518,17 @@ class DroveTaskExecutionEngineTest extends TestBase {
         stubFor(delete("/apis/v1/tasks/epoch.test/instances/Test-TR1-CT1")
                         .willReturn(ok(MAPPER.writeValueAsString(ApiResponse.failure("Test fail")))));
         assertFalse(engine.cleanup("Test-TR1-CT1"));
+        assertFalse(engine.cleanup(new TaskExecutionContext(null, null, null, null, "Test-TR1-CT1"), null));
+    }
+
+    @Test
+    @SneakyThrows
+    void testCleanupInfo(WireMockRuntimeInfo wm) {
+        val engine = createEngine(wm);
+        stubFor(delete("/apis/v1/tasks/epoch.test/instances/TDT-0")
+                        .willReturn(ok(MAPPER.writeValueAsString(ApiResponse.success(Map.of("deleted", true))))));
+        val runInfo = TestUtils.genRunInfo(0, EpochTopologyRunState.COMPLETED);
+        assertTrue(engine.cleanup(runInfo));
     }
 
     @Test
@@ -575,7 +590,8 @@ class DroveTaskExecutionEngineTest extends TestBase {
                                             .withBody(MAPPER.writeValueAsString(ApiResponse.failure("Test failure")))));
         val cr = engine.cancelTask("Random");
         assertFalse(cr.isSuccess());
-        assertEquals("Task cancellation failed with status: [500] {\"status\":\"FAILED\",\"message\":\"Test failure\"}", cr.getMessage());
+        assertEquals("Task cancellation failed with status: [500] {\"status\":\"FAILED\",\"message\":\"Test failure\"}",
+                     cr.getMessage());
     }
 
     @Test

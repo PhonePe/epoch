@@ -234,7 +234,7 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
 
     @Override
     @MonitoredFunction
-    public boolean cleanup(String upstreamTaskId) {
+    public boolean cleanupTask(String upstreamTaskId) {
         val client = droveClientManager.getClient();
         val api = "/apis/v1/tasks/" + appName + "/instances/" + upstreamTaskId;
         log.trace("Calling: {} for status", api);

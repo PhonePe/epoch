@@ -4,6 +4,7 @@ import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
 import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
 import com.phonepe.epoch.models.topology.EpochTopologyRunTaskInfo;
 import com.phonepe.epoch.server.execution.TaskStatusData;
+import io.dropwizard.util.Strings;
 
 /**
  *
@@ -29,6 +30,11 @@ public interface TaskExecutionEngine {
                 .map(EpochTopologyRunTaskInfo::getUpstreamId)
                 .allMatch(this::cleanup);
     }
+    default boolean cleanup(final String upstreamTaskId) {
+        return Strings.isNullOrEmpty(upstreamTaskId)
+                || upstreamTaskId.equals(EpochTopologyRunTaskInfo.UNKNOWN_TASK_ID)
+                || cleanupTask(upstreamTaskId);
+    }
 
-    boolean cleanup(final String upstreamTaskId);
+    boolean cleanupTask(final String upstreamTaskId);
 }
