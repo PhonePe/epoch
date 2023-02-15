@@ -9,6 +9,7 @@ import com.phonepe.drove.models.application.requirements.CPURequirement;
 import com.phonepe.drove.models.application.requirements.MemoryRequirement;
 import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
 import com.phonepe.epoch.models.topology.EpochTopology;
+import com.phonepe.epoch.models.topology.EpochTopologyDetails;
 import com.phonepe.epoch.models.topology.EpochTopologyState;
 import com.phonepe.epoch.models.topology.SimpleTopologyCreateRequest;
 import com.phonepe.epoch.models.triggers.EpochTaskTriggerCron;
@@ -22,6 +23,7 @@ import com.phonepe.epoch.server.managed.Scheduler;
 import com.phonepe.epoch.server.store.TopologyStore;
 import com.phonepe.epoch.server.ui.views.HomeView;
 import com.phonepe.epoch.server.ui.views.TopologyDetailsView;
+import com.phonepe.epoch.server.utils.IgnoreInJacocoGeneratedReport;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.util.Duration;
 import lombok.extern.slf4j.Slf4j;
@@ -70,27 +72,19 @@ public class UI {
     }
 
     @GET
+    @IgnoreInJacocoGeneratedReport(reason = "Template context cannot be injected for UI tests")
     public HomeView home(@Auth final EpochUser user) {
         return new HomeView(user.getRole());
     }
 
     @GET
     @Path("/topologies/{topologyId}")
+    @IgnoreInJacocoGeneratedReport(reason = "Template context cannot be injected for UI tests")
     public TopologyDetailsView topologyDetails(
             @PathParam("topologyId") final String topologyId,
             @Auth final EpochUser user) {
         val details = topologyStore.get(topologyId)
-                .map(topologyDetails -> {
-                    try {
-                        return new TopologyDetailsView(user.getRole(), topologyId, topologyDetails,
-                                                       mapper.writerWithDefaultPrettyPrinter()
-                                                               .writeValueAsString(topologyDetails));
-                    }
-                    catch (JsonProcessingException e) {
-                        log.error("Error creating topology details view for topology " + topologyId + ": " + e.getMessage(), e);
-                        return null;
-                    }
-                })
+                .map(topologyDetails -> createTopologyDetailsView(topologyId, user, topologyDetails))
                 .orElse(null);
         if (null == details) {
             throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
@@ -98,8 +92,20 @@ public class UI {
         return details;
     }
 
-    private static Response redirectToHome() {
-        return Response.seeOther(URI.create("/")).build();
+    @IgnoreInJacocoGeneratedReport(reason = "Parent function is ignored")
+    private TopologyDetailsView createTopologyDetailsView(
+            String topologyId,
+            EpochUser user,
+            EpochTopologyDetails topologyDetails) {
+        try {
+            return new TopologyDetailsView(user.getRole(), topologyId, topologyDetails,
+                                           mapper.writerWithDefaultPrettyPrinter()
+                                                   .writeValueAsString(topologyDetails));
+        }
+        catch (JsonProcessingException e) {
+            log.error("Error creating topology details view for topology " + topologyId + ": " + e.getMessage(), e);
+            return null;
+        }
     }
 
     @POST
@@ -134,4 +140,9 @@ public class UI {
         });
         return redirectToHome();
     }
+
+    private static Response redirectToHome() {
+        return Response.seeOther(URI.create("/")).build();
+    }
+
 }
