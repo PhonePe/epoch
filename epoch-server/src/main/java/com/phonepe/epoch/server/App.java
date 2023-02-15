@@ -9,6 +9,7 @@ import com.phonepe.epoch.server.auth.filters.DummyAuthFilter;
 import com.phonepe.epoch.server.auth.models.EpochUser;
 import com.phonepe.epoch.server.config.AppConfig;
 import com.phonepe.epoch.server.ui.HandlebarsViewRenderer;
+import com.phonepe.epoch.server.utils.IgnoreInJacocoGeneratedReport;
 import io.appform.functionmetrics.FunctionMetricsManager;
 import io.dropwizard.Application;
 import io.dropwizard.auth.*;
@@ -34,6 +35,7 @@ import static com.phonepe.epoch.server.utils.EpochUtils.configureMapper;
 /**
  *
  */
+@IgnoreInJacocoGeneratedReport(reason = "mostly used for wiring ... nothing to test")
 public class App extends Application<AppConfig> {
     @Override
     public void initialize(Bootstrap<AppConfig> bootstrap) {

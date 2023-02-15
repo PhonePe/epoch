@@ -25,4 +25,8 @@ public class TestResource {
     public Response put(String name) {
         return Response.ok().entity(Map.of("name", name)).build();
     }
+    @DELETE
+    public Response delete() {
+        return Response.ok().build();
+    }
 }

@@ -7,7 +7,6 @@ import lombok.val;
 import org.eclipse.jetty.http.HttpStatus;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -42,11 +41,6 @@ class LeaderRoutingFilterTest {
                 .build();
     }
 
-    @BeforeEach
-    void setup() {
-        //Nothing
-    }
-
     @AfterEach
     void teardown() {
         reset(LM);
@@ -56,33 +50,37 @@ class LeaderRoutingFilterTest {
     @Test
     void testSuccessLocal() {
         when(LM.isLeader()).thenReturn(true);
-        val res = EXT.target("/").request().get();
-        assertEquals(HttpStatus.OK_200, res.getStatus());
+        try(val res = EXT.target("/").request().get()) {
+            assertEquals(HttpStatus.OK_200, res.getStatus());
+        }
     }
+
     @Test
     void testFailNoLeader() {
         when(LM.isLeader()).thenReturn(false);
         when(LM.leader()).thenReturn(Optional.empty());
 
-        val res = EXT.target("/").request().get();
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR_500, res.getStatus());
+        try(val res = EXT.target("/").request().get()) {
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR_500, res.getStatus());
+        }
     }
+
     @Test
     void testSuccessRemoteGet() {
         when(LM.isLeader()).thenReturn(false);
         when(LM_LEADER.isLeader()).thenReturn(true);
         when(LM.leader()).thenReturn(Optional.of(EXT_LEADER.target("/").getUri().toString()));
-        System.out.println(LM.leader());
 
-        val res = EXT.target("/").request().get();
-        assertEquals(HttpStatus.OK_200, res.getStatus());
+        try(val res = EXT.target("/").request().get()) {
+            assertEquals(HttpStatus.OK_200, res.getStatus());
+        }
     }
+
     @Test
     void testSuccessRemotePost() {
         when(LM.isLeader()).thenReturn(false);
         when(LM_LEADER.isLeader()).thenReturn(true);
         when(LM.leader()).thenReturn(Optional.of(EXT_LEADER.target("/").getUri().toString()));
-        System.out.println(LM.leader());
 
         try(val res = EXT.target("/").request().post(Entity.text("Santanu"))) {
             assertEquals(HttpStatus.OK_200, res.getStatus());
@@ -95,11 +93,21 @@ class LeaderRoutingFilterTest {
         when(LM.isLeader()).thenReturn(false);
         when(LM_LEADER.isLeader()).thenReturn(true);
         when(LM.leader()).thenReturn(Optional.of(EXT_LEADER.target("/").getUri().toString()));
-        System.out.println(LM.leader());
 
-        try(val res = EXT.target("/").request().post(Entity.text("Santanu"))) {
+        try(val res = EXT.target("/").request().put(Entity.text("Santanu"))) {
             assertEquals(HttpStatus.OK_200, res.getStatus());
             assertEquals("{\"name\":\"Santanu\"}", res.readEntity(String.class));
+        }
+    }
+
+    @Test
+    void testSuccessRemoteDelete() {
+        when(LM.isLeader()).thenReturn(false);
+        when(LM_LEADER.isLeader()).thenReturn(true);
+        when(LM.leader()).thenReturn(Optional.of(EXT_LEADER.target("/").getUri().toString()));
+
+        try(val res = EXT.target("/").request().delete()) {
+            assertEquals(HttpStatus.OK_200, res.getStatus());
         }
     }
 }
