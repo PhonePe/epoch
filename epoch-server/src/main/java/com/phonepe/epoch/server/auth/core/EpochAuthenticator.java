@@ -22,9 +22,6 @@ public class EpochAuthenticator implements Authenticator<BasicCredentials, Epoch
 
     @Override
     public Optional<EpochUser> authenticate(BasicCredentials credentials) {
-        if(!basicAuthConfig.isEnabled()) {
-            return Optional.of(toEpochUser(BasicAuthConfig.DEFAULT.getUsers().get(0)));
-        }
         return basicAuthConfig.getUsers()
                 .stream()
                 .filter(user -> user.getUsername().equals(credentials.getUsername())

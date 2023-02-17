@@ -81,7 +81,7 @@ public class EpochUtils {
 
     @IgnoreInJacocoGeneratedReport(reason = "Not possible to simulate properly")
     public static String hostname() {
-        val hostname = Objects.requireNonNullElseGet(System.getenv("HOST"), () -> readHostname());
+        val hostname = Objects.requireNonNullElseGet(System.getenv("HOST"), EpochUtils::readHostname);
         Objects.requireNonNull(hostname, "Hostname cannot be empty");
         return hostname;
     }

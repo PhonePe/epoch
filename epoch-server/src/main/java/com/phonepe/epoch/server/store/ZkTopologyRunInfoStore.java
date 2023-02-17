@@ -18,6 +18,7 @@ import java.util.function.Predicate;
  */
 @Singleton
 public class ZkTopologyRunInfoStore implements TopologyRunInfoStore {
+    @SuppressWarnings("java:S1075")
     private static final String DATA_PATH = "/runs";
 
     private final CuratorFramework curatorFramework;

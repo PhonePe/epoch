@@ -23,6 +23,7 @@ import static com.phonepe.epoch.server.utils.EpochUtils.detailsFrom;
  */
 @Singleton
 public class ZkTopologyStore implements TopologyStore {
+    @SuppressWarnings("java:S1075")
     private static final String DATA_PATH = "/topologies";
 
     private final CuratorFramework curatorFramework;
