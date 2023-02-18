@@ -39,9 +39,16 @@ public class TopologyRecovery implements Managed {
         this.runInfoStore = runInfoStore;
         this.scheduler = scheduler;
 
-        leadershipManager.onGainingLeadership().connect(data -> {
-            log.info("This node became leader. Will recover topologies");
-            recoverTopologyRuns();
+        leadershipManager.onLeadershipStateChange().connect(isLeader -> {
+            if(Boolean.TRUE.equals(isLeader)) {
+                log.info("This node became leader. Will recover topologies");
+                scheduler.clear();
+                recoverTopologyRuns();
+            }
+            else {
+                log.info("Purging scheduler queue");
+                scheduler.clear();
+            }
         });
     }
 
@@ -60,7 +67,6 @@ public class TopologyRecovery implements Managed {
                 .stream()
                 .collect(Collectors.toMap(EpochTopologyDetails::getId, Function.identity()));
         log.info("Recovering topologies: {}", topologies.keySet());
-        scheduler.clear();
         topologies.forEach((tId, t) -> {
             val activeRuns = runInfoStore.list(tId, run -> run.getState().equals(EpochTopologyRunState.RUNNING));
 
@@ -69,7 +75,6 @@ public class TopologyRecovery implements Managed {
                         t.getId(),
                         run.getRunId(),
                         new Date(),
-                        0,
                         run.getRunType());
                 if (status) {
                     log.info("Recovered {} topology run {}/{}",

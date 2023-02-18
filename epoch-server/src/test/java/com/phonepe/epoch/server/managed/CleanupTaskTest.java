@@ -41,10 +41,10 @@ class CleanupTaskTest extends TestBase {
     @SneakyThrows
     void testCleanup() {
         val lm = mock(LeadershipManager.class);
-        val s = new ConsumingFireForgetSignal<Void>();
+        val s = new ConsumingFireForgetSignal<Boolean>();
         val leader = new AtomicBoolean();
         when(lm.isLeader()).thenAnswer((Answer<Boolean>) invocationOnMock -> leader.get());
-        when(lm.onGainingLeadership()).thenReturn(s);
+        when(lm.onLeadershipStateChange()).thenReturn(s);
         val tis = new InMemoryTopologyStore();
         val ris = new InMemoryTopologyRunInfoStore();
         val te = mock(TaskExecutionEngine.class);

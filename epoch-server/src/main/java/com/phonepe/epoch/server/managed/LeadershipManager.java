@@ -10,7 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.leader.LeaderSelector;
-import org.apache.curator.framework.recipes.leader.LeaderSelectorListenerAdapter;
+import org.apache.curator.framework.recipes.leader.LeaderSelectorListener;
+import org.apache.curator.framework.state.ConnectionState;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import ru.vyarus.dropwizard.guice.module.installer.order.Order;
@@ -30,11 +31,10 @@ import java.util.concurrent.locks.ReentrantLock;
 @Order(10)
 @Singleton
 @SuppressWarnings("java:S1075")
-public class LeadershipManager extends LeaderSelectorListenerAdapter implements Managed, ServerLifecycleListener {
-    @SuppressWarnings("java:S1057")
+public class LeadershipManager implements LeaderSelectorListener, Managed, ServerLifecycleListener {
     private static final String LEADER_SELECTION_MTX_PATH = "/leader-selection";
 
-    private final ConsumingFireForgetSignal<Void> gainedLeadership = new ConsumingFireForgetSignal<>();
+    private final ConsumingFireForgetSignal<Boolean> leadershipStateChanged = new ConsumingFireForgetSignal<>();
 
     private final LeaderSelector selector;
 
@@ -72,8 +72,8 @@ public class LeadershipManager extends LeaderSelectorListenerAdapter implements 
         log.debug("Shut down {}", this.getClass().getSimpleName());
     }
 
-    public ConsumingFireForgetSignal<Void> onGainingLeadership() {
-        return gainedLeadership;
+    public ConsumingFireForgetSignal<Boolean> onLeadershipStateChange() {
+        return leadershipStateChanged;
     }
 
     public boolean isLeader() {
@@ -88,9 +88,9 @@ public class LeadershipManager extends LeaderSelectorListenerAdapter implements 
     }
 
     @Override
-    public void takeLeadership(CuratorFramework curatorFramework) throws Exception {
+    public void takeLeadership(CuratorFramework curatorFramework) {
         log.info("This node became leader. Notifying everyone");
-        gainedLeadership.dispatch(null);
+        leadershipStateChanged.dispatch(true);
         stopLock.lock();
         leader.set(true);
         try {
@@ -98,6 +98,11 @@ public class LeadershipManager extends LeaderSelectorListenerAdapter implements 
                 stopCondition.await();
             }
             log.info("Stop called, leadership relinquished");
+        }
+        catch (InterruptedException e) {
+            log.info("Lost leadership");
+            leadershipStateChanged.dispatch(false);
+            Thread.currentThread().interrupt();
         }
         finally {
             leader.set(false);
@@ -116,5 +121,13 @@ public class LeadershipManager extends LeaderSelectorListenerAdapter implements 
         selector.setId(id);
         this.selector.start();
         this.started.set(true);
+    }
+
+    @Override
+    public void stateChanged(CuratorFramework client, ConnectionState newState) {
+        if(client.getConnectionStateErrorPolicy().isErrorState(newState)) {
+            log.error("ZK connection state went to {}. Will commit seppuku.", newState);
+            System.exit(-1);
+        }
     }
 }

@@ -67,7 +67,7 @@ class TopologyRecoveryTest extends TestBase {
         val scheduler = mock(Scheduler.class);
         val recoveryCount = new AtomicInteger();
         val scheduleCount = new AtomicInteger();
-        when(scheduler.recover(anyString(), anyString(), any(), anyLong(), any()))
+        when(scheduler.recover(anyString(), anyString(), any(), any()))
                 .then(new Answer<Boolean>() {
                     final AtomicInteger idx = new AtomicInteger();
 
@@ -88,7 +88,7 @@ class TopologyRecoveryTest extends TestBase {
         val lm = TestUtils.createLeadershipManager(true);
         val tr = new TopologyRecovery(lm, ts, ris, scheduler);
         tr.start();
-        lm.onGainingLeadership().dispatch(null);
+        lm.onLeadershipStateChange().dispatch(null);
         TestUtils.waitUntil(() -> scheduleCount.get() == 50);
         assertEquals(25, recoveryCount.get());
         assertEquals(50, scheduleCount.get());

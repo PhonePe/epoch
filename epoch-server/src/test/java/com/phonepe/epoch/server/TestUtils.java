@@ -87,8 +87,8 @@ public class TestUtils {
 
     public static LeadershipManager createLeadershipManager(boolean initialValue) {
         val lm = mock(LeadershipManager.class);
-        val ls = new ConsumingFireForgetSignal<Void>();
-        when(lm.onGainingLeadership()).thenReturn(ls);
+        val ls = new ConsumingFireForgetSignal<Boolean>();
+        when(lm.onLeadershipStateChange()).thenReturn(ls);
         val leader = new AtomicBoolean(initialValue);
         when(lm.isLeader()).thenReturn(leader.get());
         return lm;

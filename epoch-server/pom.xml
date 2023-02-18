@@ -39,6 +39,11 @@
             <version>${signals.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.appform.kaal</groupId>
+            <artifactId>kaal</artifactId>
+            <version>${kaal.version}</version>
+        </dependency>
+        <dependency>
             <groupId>net.jodah</groupId>
             <artifactId>failsafe</artifactId>
             <version>${failsafe.version}</version>

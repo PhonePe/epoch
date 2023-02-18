@@ -68,7 +68,7 @@ class SchedulerTest {
             }
         });
         s.start();
-        lm.onGainingLeadership().dispatch(null);
+        lm.onLeadershipStateChange().dispatch(null);
         val currDate = new Date();
         s.schedule(topoId1, topo1.getTrigger(), currDate);
         s.schedule(topoId2, topo2.getTrigger(), currDate);
@@ -99,7 +99,7 @@ class SchedulerTest {
             }
         });
         s.start();
-        lm.onGainingLeadership().dispatch(null);
+        lm.onLeadershipStateChange().dispatch(null);
         assertFalse(Strings.isNullOrEmpty(s.scheduleNow(topoId).orElse(null)));
         TestUtils.waitUntil(runCompleted::get);
         assertTrue(runCompleted.get());
@@ -128,7 +128,7 @@ class SchedulerTest {
             }
         });
         s.start();
-        lm.onGainingLeadership().dispatch(null);
+        lm.onLeadershipStateChange().dispatch(null);
         assertTrue(s.schedule(topoId, topo.getTrigger(), new Date()).isPresent());
         TestUtils.waitUntil(runCompleted::get);
         assertTrue(runCompleted.get());
@@ -157,8 +157,8 @@ class SchedulerTest {
             }
         });
         s.start();
-        lm.onGainingLeadership().dispatch(null);
-        assertTrue(s.recover(topoId, "r1", new Date(), 0, EpochTopologyRunType.SCHEDULED));
+        lm.onLeadershipStateChange().dispatch(null);
+        assertTrue(s.recover(topoId, "r1", new Date(), EpochTopologyRunType.SCHEDULED));
         TestUtils.waitUntil(runCompleted::get);
         assertTrue(runCompleted.get());
         s.stop();
@@ -215,7 +215,7 @@ class SchedulerTest {
         val topologyExecutor = createExecutor(EpochTopologyRunState.COMPLETED);
         val lm = createLeadershipManager(true);
         val ex = mock(ExecutorService.class);
-        when(ex.submit(any(Callable.class)))
+        when(ex.submit(any(Runnable.class)))
                 .thenAnswer(new Answer<Future<Void>>() {
                     private final AtomicInteger ctr = new AtomicInteger();
                     private final ExecutorService root = Executors.newCachedThreadPool();
@@ -235,7 +235,7 @@ class SchedulerTest {
             }
         });
         s.start();
-        lm.onGainingLeadership().dispatch(null);
+        lm.onLeadershipStateChange().dispatch(null);
         assertTrue(s.schedule(topoId, topo.getTrigger(), new Date()).isPresent());
         TestUtils.waitUntil(runCompleted::get);
         assertTrue(runCompleted.get());

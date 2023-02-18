@@ -36,8 +36,8 @@ class CachingProxyTopologyRunInfoStoreTest extends TestBase {
             try (val curator = ZkUtils.buildCurator(
                     new ZkConfig().setConnectionString(cluster.getConnectString()))) {
                 val lm = mock(LeadershipManager.class);
-                val s = new ConsumingFireForgetSignal<Void>();
-                when(lm.onGainingLeadership()).thenReturn(s);
+                val s = new ConsumingFireForgetSignal<Boolean>();
+                when(lm.onLeadershipStateChange()).thenReturn(s);
                 val ris = new CachingProxyTopologyRunInfoStore(new ZkTopologyRunInfoStore(curator, MAPPER), lm);
                 {
                     val executionInfo = new EpochTopologyRunInfo("TID1",

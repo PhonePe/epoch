@@ -9,8 +9,8 @@ import com.phonepe.epoch.server.execution.ExecuteCommand;
 import com.phonepe.epoch.server.execution.ExecutionTimeCalculator;
 import com.phonepe.epoch.server.execution.TopologyExecutor;
 import com.phonepe.epoch.server.store.TopologyStore;
+import io.appform.kaal.*;
 import io.appform.signals.signals.ConsumingFireForgetSignal;
-import io.appform.signals.signals.ScheduledSignal;
 import io.dropwizard.lifecycle.Managed;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -21,11 +21,9 @@ import javax.inject.Named;
 import javax.inject.Singleton;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.PriorityBlockingQueue;
 
 /**
  *
@@ -36,26 +34,110 @@ import java.util.concurrent.PriorityBlockingQueue;
 public class Scheduler implements Managed {
     private static final String DATE_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS";
 
-    private static final String HANDLER_NAME = "TASK_POLLER";
-
-    private final ExecutorService executorService;
-    private final TopologyStore topologyStore;
     private final TopologyExecutor topologyExecutor;
-    private final LeadershipManager leadershipManager;
 
-    private final PriorityBlockingQueue<ExecuteCommand> tasks
-            = new PriorityBlockingQueue<>(1024,
-                                          Comparator.comparing(e -> {
-                                              log.debug("Execution time: {}", e.getNextExecutionTime());
-                                              return e.getNextExecutionTime().getTime();
-                                          }));
-    private final ScheduledSignal signalGenerator = ScheduledSignal.builder()
-            .errorHandler(e -> log.error("Error running scheduled poll: " + e.getMessage(), e))
-            .interval(Duration.ofSeconds(1))
-            .build();
     private final ExecutionTimeCalculator timeCalculator = new ExecutionTimeCalculator();
 
     private final ConsumingFireForgetSignal<TaskData> taskCompleted = new ConsumingFireForgetSignal<>();
+
+    private static final class EpochRunnableTask implements KaalTask<EpochRunnableTask, TaskData> {
+
+        private final String topologyId;
+        private final EpochTaskTrigger trigger;
+        private final ExecutionTimeCalculator timeCalculator;
+        private final EpochTopologyRunType runType;
+        private final TopologyExecutor topologyExecutor;
+
+        private EpochRunnableTask(
+                String topologyId, EpochTaskTrigger trigger,
+                ExecutionTimeCalculator timeCalculator, EpochTopologyRunType runType, TopologyExecutor topologyExecutor) {
+            this.topologyId = topologyId;
+            this.trigger = trigger;
+            this.timeCalculator = timeCalculator;
+            this.runType = runType;
+            this.topologyExecutor = topologyExecutor;
+        }
+
+        @Override
+        public String id() {
+            return topologyId;
+        }
+
+        @Override
+        public long delayToNextRun(Date currentTime) {
+            if (null == trigger) {
+                return -1L;
+            }
+            return timeCalculator.executionTime(trigger, currentTime)
+                    .map(Duration::toMillis)
+                    .filter(value -> value >= 0)
+                    .orElse(-1L);
+        }
+
+        @Override
+        public TaskData apply(Date currentTime, KaalTaskData<EpochRunnableTask, TaskData> runData) {
+            val task = runData.getTask();
+            val taskId = task.id();
+            val runId = runData.getRunId();
+            val executionTime = runData.getTargetExecutionTime();
+            log.trace("Received exec command for: {}/{}", taskId, runId);
+            return new TaskData(topologyId,
+                         topologyExecutor.execute(new ExecuteCommand(runId, executionTime, topologyId, runType)).orElse(null),
+                         runType);
+        }
+    }
+
+    private static final class EpochTaskStopStrategy implements KaalTaskStopStrategy<EpochRunnableTask, TaskData> {
+
+        private final TopologyStore topologyStore;
+        private final LeadershipManager leadershipManager;
+
+        private EpochTaskStopStrategy(TopologyStore topologyStore, LeadershipManager leadershipManager) {
+            this.topologyStore = topologyStore;
+            this.leadershipManager = leadershipManager;
+        }
+
+        @Override
+        public boolean scheduleNext(KaalTaskData<EpochRunnableTask, TaskData> lastRunData) {
+            if(!leadershipManager.isLeader()) {
+                log.info("Will not reschedule any task as I'm not the leader");
+                return false;
+            }
+            val taskData = lastRunData.getResult();
+            val tId = taskData.topologyId();
+            val rId = taskData.runInfo().getRunId();
+
+            val result = taskData.runInfo().getState();
+            if (taskData.runType() == EpochTopologyRunType.INSTANT) {
+                log.info("Run {}/{} finished with state: {}. No more runs needed as this was an instant run.",
+                         tId,
+                         rId,
+                         result);
+                return false;
+            }
+            if (result == EpochTopologyRunState.COMPLETED) {
+                log.info("No further scheduling needed for {}/{}", tId, rId);
+                return false;
+            }
+            val trigger = topologyStore.get(tId)
+                    .map(e -> e.getTopology().getTrigger())
+                    .orElse(null);
+            if (trigger == null) {
+                log.info("Topology {} seems to have been deleted, no scheduling needed.", tId);
+                return false;
+            }
+            return true;
+        }
+    }
+
+    private static final class EpochTaskIdGenerator implements KaalTaskIdGenerator<EpochRunnableTask, TaskData> {
+
+        @Override
+        public String generateId(EpochRunnableTask task, Date executionTime) {
+            return (task.runType == EpochTopologyRunType.INSTANT ? "EIR-" : "ESR-")
+                    + new SimpleDateFormat(DATE_FORMAT).format(executionTime);
+        }
+    }
 
     public record TaskData(
             String topologyId,
@@ -64,36 +146,39 @@ public class Scheduler implements Managed {
     ) {
     }
 
+    private final KaalScheduler<EpochRunnableTask, TaskData> schedulerImpl;
+
     @Inject
     public Scheduler(
             @Named("taskPool") ExecutorService executorService,
             TopologyStore topologyStore,
             TopologyExecutor topologyExecutor,
             LeadershipManager leadershipManager) {
-        this.executorService = executorService;
-        this.topologyStore = topologyStore;
         this.topologyExecutor = topologyExecutor;
-        this.leadershipManager = leadershipManager;
+        this.schedulerImpl = KaalScheduler.<EpochRunnableTask, TaskData>builder()
+                .withExecutorService(executorService)
+                .withTaskStopStrategy(new EpochTaskStopStrategy(topologyStore, leadershipManager))
+                .withTaskIdGenerator(new EpochTaskIdGenerator())
+                .withPollingInterval(100)
+                .build();
+        this.schedulerImpl.onTaskCompleted()
+                .connect(taskData -> taskCompleted.dispatch(taskData.getResult()));
     }
 
     @Override
     public void start() throws Exception {
-        taskCompleted.connect(this::handleTaskCompletion);
-        signalGenerator.connect(this::processQueuedTask);
-        clear();
+        schedulerImpl.start();
         log.info("Started task scheduler");
     }
 
     @Override
     public void stop() throws Exception {
-        signalGenerator.disconnect(HANDLER_NAME);
-        signalGenerator.close();
+        schedulerImpl.stop();
         log.info("Task scheduler shut down");
     }
 
     public void clear() {
-        tasks.clear();
-        log.info("Scheduler queue purged for a fresh start");
+        schedulerImpl.clear();
     }
 
     public ConsumingFireForgetSignal<TaskData> taskCompleted() {
@@ -116,15 +201,13 @@ public class Scheduler implements Managed {
             String topologyId,
             String runId,
             Date currTime,
-            long duration,
             EpochTopologyRunType runType) {
-        tasks.put(new ExecuteCommand(runId, new Date(currTime.getTime() + duration), topologyId, runType));
-        log.trace("Scheduled recovery task {}/{} with delay of {} at {}",
-                  topologyId,
-                  runId,
-                  duration,
-                  new Date(currTime.getTime() + duration));
-        return true;
+        return schedulerImpl.schedule(new EpochRunnableTask(topologyId, null, timeCalculator, runType, topologyExecutor),
+                                      currTime,
+                                      currTime,
+                                      runId,
+                                      0)
+                .isPresent();
     }
 
     private Optional<String> schedule(
@@ -132,96 +215,8 @@ public class Scheduler implements Managed {
             final EpochTaskTrigger trigger,
             Date currTime,
             EpochTopologyRunType runType) {
-        val delay = timeCalculator.executionTime(trigger, currTime)
-                .map(Duration::toMillis)
-                .filter(value -> value >= 0)
-                .orElse(0L);
-        val executionTime = new Date(currTime.getTime() + delay);
-        val runId = (runType == EpochTopologyRunType.INSTANT ? "EIR-" : "ESR-")
-                + new SimpleDateFormat(DATE_FORMAT).format(executionTime);
-        tasks.put(new ExecuteCommand(runId, executionTime, topologyId, runType));
-        log.debug("Scheduled task {}/{} with delay of {} ms at {}. Reference time: {}",
-                  topologyId,
-                  runId,
-                  delay,
-                  executionTime,
-                  currTime);
-        return Optional.of(runId);
+        return schedulerImpl.schedule(
+                new EpochRunnableTask(topologyId, trigger, timeCalculator, runType, topologyExecutor),
+                currTime);
     }
-
-    private void processQueuedTask(Date currentTime) {
-        if(!leadershipManager.isLeader()) {
-            log.trace("Skipped execution as node is not the leader");
-            return;
-        }
-        while (true) {
-            val executeCommand = tasks.peek();
-            var canContinue = false;
-            if (executeCommand == null) {
-                log.trace("Nothing queued... will sleep again");
-            }
-            else {
-                log.trace("Received exec command for: {}", executeCommand.getTopologyId());
-
-                if (currentTime.before(executeCommand.getNextExecutionTime())) {
-                    log.trace("Found non-executable earliest task: {}/{}",
-                              executeCommand.getTopologyId(),
-                              executeCommand.getRunId());
-                }
-                else {
-                    canContinue = true;
-                }
-            }
-            if (!canContinue) {
-                log.trace("Nothing to do now, will try again later.");
-                break;
-            }
-            try {
-                executorService.submit(() -> taskCompleted.dispatch(
-                        new TaskData(executeCommand.getTopologyId(),
-                                     topologyExecutor.execute(executeCommand).orElse(null),
-                                     executeCommand.getRunType())));
-                val status = tasks.remove(executeCommand);
-                log.trace("{} run {}/{} submitted for execution with status {}",
-                          executeCommand.getRunType(),
-                          executeCommand.getTopologyId(),
-                          executeCommand.getRunId(),
-                          status);
-            }
-            catch (Exception e) {
-                log.error("Error scheduling topology task: ", e);
-            }
-        }
-    }
-
-    private void handleTaskCompletion(final TaskData taskData) {
-        val tId = taskData.topologyId();
-        val rId = taskData.runInfo().getRunId(); //TODO::NPE
-
-        val result = taskData.runInfo().getState();
-        if (taskData.runType() == EpochTopologyRunType.INSTANT) {
-            log.info("Run {}/{} finished with state: {}. No more runs needed as this was an instant run.",
-                     tId,
-                     rId,
-                     result);
-            return;
-        }
-        if (result == EpochTopologyRunState.COMPLETED) {
-            log.info("No further scheduling needed for {}/{}", tId, rId);
-            return;
-        }
-        val trigger = topologyStore.get(tId)
-                .map(e -> e.getTopology().getTrigger())
-                .orElse(null);
-        if (trigger == null) {
-            log.info("Topology {} seems to have been deleted, no scheduling needed.", tId);
-            return;
-        }
-        log.debug("{} state for {}/{}. Will try to reschedule for next slot.", result, tId, rId);
-        if (schedule(tId, trigger, new Date()).isEmpty()) {
-            log.warn("Further scheduling skipped for: {}", tId);
-        }
-    }
-
-
 }

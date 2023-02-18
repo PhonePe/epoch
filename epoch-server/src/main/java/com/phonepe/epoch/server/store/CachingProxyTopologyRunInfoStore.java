@@ -30,7 +30,7 @@ public class CachingProxyTopologyRunInfoStore implements TopologyRunInfoStore {
             @Named("rootRunInfoStore") TopologyRunInfoStore root,
             final LeadershipManager leadershipEnsurer) {
         this.root = root;
-        leadershipEnsurer.onGainingLeadership().connect(leader -> {
+        leadershipEnsurer.onLeadershipStateChange().connect(leader -> {
             val stamp = lock.writeLock();
             try {
                 cache.clear(); //Nuke the cache and rebuild

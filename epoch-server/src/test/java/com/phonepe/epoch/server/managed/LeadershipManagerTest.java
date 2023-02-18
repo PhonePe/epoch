@@ -43,9 +43,9 @@ class LeadershipManagerTest extends TestBase {
                 val l2 = new LeadershipManager(curator, env);
 
                 val leaderUpdated1 = new AtomicBoolean();
-                l1.onGainingLeadership().connect(value -> leaderUpdated1.set(true));
+                l1.onLeadershipStateChange().connect(value -> leaderUpdated1.set(true));
                 val leaderUpdated2 = new AtomicBoolean();
-                l2.onGainingLeadership().connect(value -> leaderUpdated2.set(true));
+                l2.onLeadershipStateChange().connect(value -> leaderUpdated2.set(true));
                 assertNull(l1.leader().orElse(null));
                 l1.start();
                 l1.serverStarted(server(8080));
