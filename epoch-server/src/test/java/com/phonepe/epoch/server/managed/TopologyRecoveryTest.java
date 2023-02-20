@@ -85,13 +85,15 @@ class TopologyRecoveryTest extends TestBase {
                     scheduleCount.incrementAndGet();
                     return Optional.of("xx");
                 });
+        scheduler.start();
         val lm = TestUtils.createLeadershipManager(true);
         val tr = new TopologyRecovery(lm, ts, ris, scheduler);
         tr.start();
-        lm.onLeadershipStateChange().dispatch(null);
+        lm.onLeadershipStateChange().dispatch(true);
         TestUtils.waitUntil(() -> scheduleCount.get() == 50);
         assertEquals(25, recoveryCount.get());
         assertEquals(50, scheduleCount.get());
         tr.stop();
+        scheduler.stop();
     }
 }

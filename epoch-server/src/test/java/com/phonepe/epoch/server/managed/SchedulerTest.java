@@ -22,7 +22,6 @@ import java.time.Duration;
 import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -128,7 +127,7 @@ class SchedulerTest {
             }
         });
         s.start();
-        lm.onLeadershipStateChange().dispatch(null);
+        lm.onLeadershipStateChange().dispatch(true);
         assertTrue(s.schedule(topoId, topo.getTrigger(), new Date()).isPresent());
         TestUtils.waitUntil(runCompleted::get);
         assertTrue(runCompleted.get());
@@ -216,15 +215,15 @@ class SchedulerTest {
         val lm = createLeadershipManager(true);
         val ex = mock(ExecutorService.class);
         when(ex.submit(any(Runnable.class)))
-                .thenAnswer(new Answer<Future<Void>>() {
+                .thenAnswer(new Answer<Future<?>>() {
                     private final AtomicInteger ctr = new AtomicInteger();
                     private final ExecutorService root = Executors.newCachedThreadPool();
                     @Override
-                    public Future<Void> answer(InvocationOnMock invocationOnMock) throws Throwable {
+                    public Future<?> answer(InvocationOnMock invocationOnMock) throws Throwable {
                         if (ctr.incrementAndGet() == 1) {
                             throw new IllegalStateException("Test exception");
                         }
-                        return root.submit((Callable<Void>)invocationOnMock.getArgument(0));
+                        return root.submit((Runnable) invocationOnMock.getArgument(0));
                     }
                 });
         val s = new Scheduler(ex, ts, topologyExecutor, lm);
@@ -235,7 +234,7 @@ class SchedulerTest {
             }
         });
         s.start();
-        lm.onLeadershipStateChange().dispatch(null);
+        lm.onLeadershipStateChange().dispatch(true);
         assertTrue(s.schedule(topoId, topo.getTrigger(), new Date()).isPresent());
         TestUtils.waitUntil(runCompleted::get);
         assertTrue(runCompleted.get());

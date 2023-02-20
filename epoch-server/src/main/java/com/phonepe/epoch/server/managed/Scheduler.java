@@ -35,6 +35,7 @@ public class Scheduler implements Managed {
     private static final String DATE_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS";
 
     private final TopologyExecutor topologyExecutor;
+    private final LeadershipManager leadershipManager;
 
     private final ExecutionTimeCalculator timeCalculator = new ExecutionTimeCalculator();
 
@@ -47,15 +48,18 @@ public class Scheduler implements Managed {
         private final ExecutionTimeCalculator timeCalculator;
         private final EpochTopologyRunType runType;
         private final TopologyExecutor topologyExecutor;
+        private final LeadershipManager leadershipManager;
 
         private EpochRunnableTask(
                 String topologyId, EpochTaskTrigger trigger,
-                ExecutionTimeCalculator timeCalculator, EpochTopologyRunType runType, TopologyExecutor topologyExecutor) {
+                ExecutionTimeCalculator timeCalculator, EpochTopologyRunType runType, TopologyExecutor topologyExecutor,
+                LeadershipManager leadershipManager) {
             this.topologyId = topologyId;
             this.trigger = trigger;
             this.timeCalculator = timeCalculator;
             this.runType = runType;
             this.topologyExecutor = topologyExecutor;
+            this.leadershipManager = leadershipManager;
         }
 
         @Override
@@ -71,7 +75,7 @@ public class Scheduler implements Managed {
             return timeCalculator.executionTime(trigger, currentTime)
                     .map(Duration::toMillis)
                     .filter(value -> value >= 0)
-                    .orElse(-1L);
+                    .orElse(0L); //Immediately
         }
 
         @Override
@@ -80,6 +84,10 @@ public class Scheduler implements Managed {
             val taskId = task.id();
             val runId = runData.getRunId();
             val executionTime = runData.getTargetExecutionTime();
+            if(!leadershipManager.isLeader()) {
+                log.warn("Skipped execution for {}/{} at {} as I am not the leader", taskId, runId, executionTime);
+                return null;
+            }
             log.trace("Received exec command for: {}/{}", taskId, runId);
             return new TaskData(topologyId,
                          topologyExecutor.execute(new ExecuteCommand(runId, executionTime, topologyId, runType)).orElse(null),
@@ -104,6 +112,10 @@ public class Scheduler implements Managed {
                 return false;
             }
             val taskData = lastRunData.getResult();
+            if(taskData == null) {
+                log.warn("No result received from last task run");
+                return false;
+            }
             val tId = taskData.topologyId();
             val rId = taskData.runInfo().getRunId();
 
@@ -155,6 +167,7 @@ public class Scheduler implements Managed {
             TopologyExecutor topologyExecutor,
             LeadershipManager leadershipManager) {
         this.topologyExecutor = topologyExecutor;
+        this.leadershipManager = leadershipManager;
         this.schedulerImpl = KaalScheduler.<EpochRunnableTask, TaskData>builder()
                 .withExecutorService(executorService)
                 .withTaskStopStrategy(new EpochTaskStopStrategy(topologyStore, leadershipManager))
@@ -202,7 +215,8 @@ public class Scheduler implements Managed {
             String runId,
             Date currTime,
             EpochTopologyRunType runType) {
-        return schedulerImpl.schedule(new EpochRunnableTask(topologyId, null, timeCalculator, runType, topologyExecutor),
+        return schedulerImpl.schedule(new EpochRunnableTask(topologyId, null, timeCalculator, runType, topologyExecutor,
+                                                            leadershipManager),
                                       currTime,
                                       currTime,
                                       runId,
@@ -216,7 +230,7 @@ public class Scheduler implements Managed {
             Date currTime,
             EpochTopologyRunType runType) {
         return schedulerImpl.schedule(
-                new EpochRunnableTask(topologyId, trigger, timeCalculator, runType, topologyExecutor),
+                new EpochRunnableTask(topologyId, trigger, timeCalculator, runType, topologyExecutor, leadershipManager),
                 currTime);
     }
 }
