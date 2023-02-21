@@ -21,7 +21,7 @@
         <slf4j-api.version>1.8.32</slf4j-api.version>
         <junit.version>5.8.2</junit.version>
         <signals.version>1.4</signals.version>
-        <kaal.version>1.0-SNAPSHOT</kaal.version>
+        <kaal.version>1.0.0</kaal.version>
         <drove.version>1.19-SNAPSHOT</drove.version>
         <function-metrics.version>1.0.14</function-metrics.version>
         <awaitility.version>4.2.0</awaitility.version>

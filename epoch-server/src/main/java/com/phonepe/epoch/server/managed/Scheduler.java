@@ -142,7 +142,7 @@ public class Scheduler implements Managed {
         }
     }
 
-    private static final class EpochTaskIdGenerator implements KaalTaskIdGenerator<EpochRunnableTask, TaskData> {
+    private static final class EpochTaskIdGenerator implements KaalTaskRunIdGenerator<EpochRunnableTask, TaskData> {
 
         @Override
         public String generateId(EpochRunnableTask task, Date executionTime) {
@@ -215,12 +215,14 @@ public class Scheduler implements Managed {
             String runId,
             Date currTime,
             EpochTopologyRunType runType) {
-        return schedulerImpl.schedule(new EpochRunnableTask(topologyId, null, timeCalculator, runType, topologyExecutor,
+        return schedulerImpl.schedule(new EpochRunnableTask(topologyId,
+                                                            null,
+                                                            timeCalculator,
+                                                            runType,
+                                                            topologyExecutor,
                                                             leadershipManager),
                                       currTime,
-                                      currTime,
-                                      runId,
-                                      0)
+                                      runId)
                 .isPresent();
     }
 
