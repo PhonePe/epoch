@@ -34,7 +34,7 @@ import static org.mockito.Mockito.when;
  */
 @UtilityClass
 public class TestUtils {
-    public void delay(final java.time.Duration duration) {
+    public static void delay(final java.time.Duration duration) {
         val wait = duration.toMillis();
         val end = new Date(new Date().getTime() + wait);
         await()
@@ -43,11 +43,11 @@ public class TestUtils {
                 .until(() -> new Date().after(end));
     }
 
-    public void waitUntil(final Callable<Boolean> condition) {
+    public static void waitUntil(final Callable<Boolean> condition) {
         waitUntil(condition, java.time.Duration.ofMinutes(3));
     }
 
-    public void waitUntil(final Callable<Boolean> condition, final java.time.Duration duration) {
+    public static void waitUntil(final Callable<Boolean> condition, final java.time.Duration duration) {
         await()
                 .pollDelay(java.time.Duration.ofSeconds(1))
                 .timeout(duration)
