@@ -28,4 +28,7 @@ public class AppConfig extends Configuration {
     @Valid
     private BasicAuthConfig userAuth;
 
+    @Valid
+    private NotificationConfig notify;
+
 }

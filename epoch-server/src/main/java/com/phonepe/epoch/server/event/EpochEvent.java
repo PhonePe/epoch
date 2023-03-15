@@ -18,4 +18,6 @@ public abstract class EpochEvent<T extends Enum<T>> {
     private final String id = UUID.randomUUID().toString();
     private final Date time = new Date();
     private Map<T, Object> metadata;
+
+    public abstract <T> T accept(final EpochEventVisitor<T> visitor);
 }

@@ -1,5 +1,6 @@
 package com.phonepe.epoch.server.managed;
 
+import com.phonepe.epoch.models.notification.BlackholeNotificationSpec;
 import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
 import com.phonepe.epoch.models.topology.*;
@@ -46,7 +47,8 @@ class TopologyRecoveryTest extends TestBase {
                                                                                          null,
                                                                                          null,
                                                                                          null),
-                                                         new EpochTaskTriggerCron("0/2 * * ? * * *")))
+                                                         new EpochTaskTriggerCron("0/2 * * ? * * *"),
+                                                         BlackholeNotificationSpec.DEFAULT))
                         .flatMap(topology -> i % 2 == 0 ? ts.updateState(topologyId(topology.getTopology()),
                                                                          EpochTopologyState.DELETED)
                                                         : Optional.of(topology))

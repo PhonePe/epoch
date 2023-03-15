@@ -1,5 +1,6 @@
 package com.phonepe.epoch.models.topology;
 
+import com.phonepe.epoch.models.notification.NotificationSpec;
 import com.phonepe.epoch.models.tasks.EpochTask;
 import com.phonepe.epoch.models.triggers.EpochTaskTrigger;
 import lombok.Value;
@@ -28,4 +29,7 @@ public class EpochTopology {
     @NotNull
     @Valid
     EpochTaskTrigger trigger;
+
+    @Valid
+    NotificationSpec notify;
 }

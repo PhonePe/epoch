@@ -1,5 +1,6 @@
 package com.phonepe.epoch.server.store;
 
+import com.phonepe.epoch.models.notification.BlackholeNotificationSpec;
 import com.phonepe.epoch.models.tasks.EpochCompositeTask;
 import com.phonepe.epoch.models.tasks.EpochTask;
 import com.phonepe.epoch.models.topology.EpochTopology;
@@ -47,7 +48,8 @@ class CachingProxyTopologyStoreTest extends TestBase {
                                                                                 .<EpochTask>mapToObj(TestUtils::genContainerTask)
                                                                                 .toList(),
                                                                         EpochCompositeTask.CompositionType.ALL),
-                                                 new EpochTaskTriggerCron("0/2 * * ? * * *"));
+                                                 new EpochTaskTriggerCron("0/2 * * ? * * *"),
+                                                 BlackholeNotificationSpec.DEFAULT);
                     val topologyId = topologyId(topo);
                     assertEquals(topo, ts.save(topo).map(EpochTopologyDetails::getTopology).orElse(null));
                     assertEquals(EpochTopologyState.ACTIVE,
@@ -69,7 +71,8 @@ class CachingProxyTopologyStoreTest extends TestBase {
                                                                                                            TestUtils::genContainerTask)
                                                                                                    .toList(),
                                                                                            EpochCompositeTask.CompositionType.ALL),
-                                                                    new EpochTaskTriggerCron("0/2 * * ? * * *"))));
+                                                                    new EpochTaskTriggerCron("0/2 * * ? * * *"),
+                                                                    BlackholeNotificationSpec.DEFAULT)));
                     assertEquals(100, ts.list(x -> true).size());
                     assertEquals(50,
                                  ts.list(x -> Integer.parseInt(x.getTopology().getName().split("\\-")[2]) % 2 == 0)

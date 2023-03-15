@@ -7,6 +7,7 @@ import com.phonepe.drove.models.application.logging.LocalLoggingSpec;
 import com.phonepe.drove.models.application.placement.policies.AnyPlacementPolicy;
 import com.phonepe.drove.models.application.requirements.CPURequirement;
 import com.phonepe.drove.models.application.requirements.MemoryRequirement;
+import com.phonepe.epoch.models.notification.BlackholeNotificationSpec;
 import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
 import com.phonepe.epoch.models.topology.EpochTopology;
 import com.phonepe.epoch.models.topology.EpochTopologyDetails;
@@ -123,7 +124,8 @@ public class UI {
                                                 new AnyPlacementPolicy(),
                                                 Map.of(),
                                                 request.getEnv()),
-                new EpochTaskTriggerCron(request.getCron()));
+                new EpochTaskTriggerCron(request.getCron()),
+                BlackholeNotificationSpec.DEFAULT);
         val topologyId = topologyId(topology);
         if (topologyStore.get(topologyId).isPresent()) {
             return redirectToHome();

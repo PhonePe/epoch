@@ -15,6 +15,7 @@
         <guicey-server-pages.version>5.5.0-1</guicey-server-pages.version>
         <handlebars.version>4.3.0</handlebars.version>
         <handlebars-guava-cache.version>4.3.0</handlebars-guava-cache.version>
+        <simple-java-mail.version>8.0.0</simple-java-mail.version>
     </properties>
 
     <dependencies>
@@ -95,6 +96,11 @@
             <groupId>com.github.jknack</groupId>
             <artifactId>handlebars-guava-cache</artifactId>
             <version>${handlebars-guava-cache.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.simplejavamail</groupId>
+            <artifactId>simple-java-mail</artifactId>
+            <version>${simple-java-mail.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.curator</groupId>

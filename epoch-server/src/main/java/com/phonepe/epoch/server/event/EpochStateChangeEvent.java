@@ -21,4 +21,9 @@ public class EpochStateChangeEvent extends EpochEvent<StateChangeEventDataTag> {
     public EpochStateChangeEvent(EpochEventType type, Map<StateChangeEventDataTag, Object> metadata) {
         super(type, metadata);
     }
+
+    @Override
+    public <T> T accept(EpochEventVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
 }

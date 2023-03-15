@@ -6,6 +6,7 @@ import com.phonepe.drove.models.application.logging.LocalLoggingSpec;
 import com.phonepe.drove.models.application.placement.policies.AnyPlacementPolicy;
 import com.phonepe.drove.models.application.requirements.CPURequirement;
 import com.phonepe.drove.models.application.requirements.MemoryRequirement;
+import com.phonepe.epoch.models.notification.BlackholeNotificationSpec;
 import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
 import com.phonepe.epoch.models.topology.*;
@@ -97,6 +98,7 @@ public class TestUtils {
     public static EpochTopology generateTopologyDesc(int i) {
         return new EpochTopology("TEST_TOPO-" + i,
                                  genContainerTask(i),
-                                 new EpochTaskTriggerAt(new Date()));
+                                 new EpochTaskTriggerAt(new Date()),
+                                 BlackholeNotificationSpec.DEFAULT);
     }
 }

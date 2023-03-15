@@ -15,6 +15,7 @@ import com.phonepe.drove.models.info.resources.allocation.CPUAllocation;
 import com.phonepe.drove.models.info.resources.allocation.MemoryAllocation;
 import com.phonepe.drove.models.taskinstance.TaskInfo;
 import com.phonepe.drove.models.taskinstance.TaskState;
+import com.phonepe.epoch.models.notification.BlackholeNotificationSpec;
 import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
 import com.phonepe.epoch.models.topology.EpochTaskRunState;
@@ -67,7 +68,8 @@ class DroveTaskExecutionEngineTest extends TestBase {
                                                    Map.of());
         val spec = new EpochTopology("Test",
                                      task,
-                                     new EpochTaskTriggerAt(new Date()));
+                                     new EpochTaskTriggerAt(new Date()),
+                                     BlackholeNotificationSpec.DEFAULT);
         val context = new TaskExecutionContext(EpochUtils.topologyId(spec.getName()),
                                                "TR1",
                                                task.getTaskName(),
@@ -96,7 +98,8 @@ class DroveTaskExecutionEngineTest extends TestBase {
                                                    Map.of());
         val spec = new EpochTopology("Test",
                                      task,
-                                     new EpochTaskTriggerAt(new Date()));
+                                     new EpochTaskTriggerAt(new Date()),
+                                     BlackholeNotificationSpec.DEFAULT);
         val context = new TaskExecutionContext(EpochUtils.topologyId(spec.getName()),
                                                "TR1",
                                                task.getTaskName(),
@@ -126,7 +129,8 @@ class DroveTaskExecutionEngineTest extends TestBase {
                                                    Map.of());
         val spec = new EpochTopology("Test",
                                      task,
-                                     new EpochTaskTriggerAt(new Date()));
+                                     new EpochTaskTriggerAt(new Date()),
+                                     BlackholeNotificationSpec.DEFAULT);
         val context = new TaskExecutionContext(EpochUtils.topologyId(spec.getName()),
                                                "TR1",
                                                task.getTaskName(),
@@ -175,7 +179,8 @@ class DroveTaskExecutionEngineTest extends TestBase {
                                                    Map.of());
         val spec = new EpochTopology("Test",
                                      task,
-                                     new EpochTaskTriggerAt(new Date()));
+                                     new EpochTaskTriggerAt(new Date()),
+                                     BlackholeNotificationSpec.DEFAULT);
         val context = new TaskExecutionContext(EpochUtils.topologyId(spec.getName()),
                                                "TR1",
                                                task.getTaskName(),
@@ -203,7 +208,8 @@ class DroveTaskExecutionEngineTest extends TestBase {
                                                    Map.of());
         val spec = new EpochTopology("Test",
                                      task,
-                                     new EpochTaskTriggerAt(new Date()));
+                                     new EpochTaskTriggerAt(new Date()),
+                                     BlackholeNotificationSpec.DEFAULT);
         val context = new TaskExecutionContext(EpochUtils.topologyId(spec.getName()),
                                                "TR1",
                                                task.getTaskName(),
@@ -231,7 +237,8 @@ class DroveTaskExecutionEngineTest extends TestBase {
                                                    Map.of());
         val spec = new EpochTopology("Test",
                                      task,
-                                     new EpochTaskTriggerAt(new Date()));
+                                     new EpochTaskTriggerAt(new Date()),
+                                     BlackholeNotificationSpec.DEFAULT);
         val context = new TaskExecutionContext(EpochUtils.topologyId(spec.getName()),
                                                "TR1",
                                                task.getTaskName(),
@@ -286,7 +293,8 @@ class DroveTaskExecutionEngineTest extends TestBase {
                                                    Map.of());
         val spec = new EpochTopology("Test",
                                      task,
-                                     new EpochTaskTriggerAt(new Date()));
+                                     new EpochTaskTriggerAt(new Date()),
+                                     BlackholeNotificationSpec.DEFAULT);
         val context = new TaskExecutionContext(EpochUtils.topologyId(spec.getName()),
                                                "TR1",
                                                task.getTaskName(),
@@ -321,7 +329,8 @@ class DroveTaskExecutionEngineTest extends TestBase {
                                                    Map.of());
         val spec = new EpochTopology("Test",
                                      task,
-                                     new EpochTaskTriggerAt(new Date()));
+                                     new EpochTaskTriggerAt(new Date()),
+                                     BlackholeNotificationSpec.DEFAULT);
         val context = new TaskExecutionContext(EpochUtils.topologyId(spec.getName()),
                                                "TR1",
                                                task.getTaskName(),
@@ -356,7 +365,8 @@ class DroveTaskExecutionEngineTest extends TestBase {
                                                    Map.of());
         val spec = new EpochTopology("Test",
                                      task,
-                                     new EpochTaskTriggerAt(new Date()));
+                                     new EpochTaskTriggerAt(new Date()),
+                                     BlackholeNotificationSpec.DEFAULT);
         val context = new TaskExecutionContext(EpochUtils.topologyId(spec.getName()),
                                                "TR1",
                                                task.getTaskName(),
@@ -391,7 +401,8 @@ class DroveTaskExecutionEngineTest extends TestBase {
                                                    Map.of());
         val spec = new EpochTopology("Test",
                                      task,
-                                     new EpochTaskTriggerAt(new Date()));
+                                     new EpochTaskTriggerAt(new Date()),
+                                     BlackholeNotificationSpec.DEFAULT);
         val context = new TaskExecutionContext(EpochUtils.topologyId(spec.getName()),
                                                "TR1",
                                                task.getTaskName(),

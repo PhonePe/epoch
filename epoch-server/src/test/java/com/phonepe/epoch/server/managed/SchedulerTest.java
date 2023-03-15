@@ -1,5 +1,6 @@
 package com.phonepe.epoch.server.managed;
 
+import com.phonepe.epoch.models.notification.BlackholeNotificationSpec;
 import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.topology.EpochTopology;
 import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
@@ -44,13 +45,15 @@ class SchedulerTest {
     @SneakyThrows
     void testScheduledTopologyRun() {
         val topo1 = new EpochTopology("test-topo",
-                                               null,
-                                               new EpochTaskTriggerCron("0/5 * * ? * * *"));
+                                      null,
+                                      new EpochTaskTriggerCron("0/5 * * ? * * *"),
+                                      BlackholeNotificationSpec.DEFAULT);
         val topoId1 = topologyId(topo1);
 
         val topo2 = new EpochTopology("test-topo-2",
-                                               null,
-                                               new EpochTaskTriggerCron("0/5 * * ? * * *"));
+                                      null,
+                                      new EpochTaskTriggerCron("0/5 * * ? * * *"),
+                                      BlackholeNotificationSpec.DEFAULT);
         val topoId2 = topologyId(topo2);
 
         val ts = new InMemoryTopologyStore();
@@ -62,7 +65,7 @@ class SchedulerTest {
         val s = new Scheduler(Executors.newCachedThreadPool(), ts, topologyExecutor, lm);
         val ctr = new AtomicInteger();
         s.taskCompleted().connect(r -> {
-            if(r.topologyId().equals(topoId2)) {
+            if (r.topologyId().equals(topoId2)) {
                 ctr.incrementAndGet();
             }
         });
@@ -81,8 +84,9 @@ class SchedulerTest {
     @SneakyThrows
     void testScheduledTopologyInstant() {
         val topo = new EpochTopology("test-topo",
-                                               null,
-                                               new EpochTaskTriggerCron("0/2 * * ? * * *"));
+                                     null,
+                                     new EpochTaskTriggerCron("0/2 * * ? * * *"),
+                                     BlackholeNotificationSpec.DEFAULT);
         val topoId = topologyId(topo);
 
         val ts = new InMemoryTopologyStore();
@@ -93,7 +97,7 @@ class SchedulerTest {
         val s = new Scheduler(Executors.newCachedThreadPool(), ts, topologyExecutor, lm);
         val runCompleted = new AtomicBoolean();
         s.taskCompleted().connect(r -> {
-            if(r.topologyId().equals(topoId)) {
+            if (r.topologyId().equals(topoId)) {
                 runCompleted.set(true);
             }
         });
@@ -111,7 +115,8 @@ class SchedulerTest {
         val atDate = new Date(System.currentTimeMillis() + 100);
         val topo = new EpochTopology("test-topo",
                                      null,
-                                     new EpochTaskTriggerAt(atDate));
+                                     new EpochTaskTriggerAt(atDate),
+                                     BlackholeNotificationSpec.DEFAULT);
         val topoId = topologyId(topo);
 
         val ts = new InMemoryTopologyStore();
@@ -122,7 +127,7 @@ class SchedulerTest {
         val s = new Scheduler(Executors.newCachedThreadPool(), ts, topologyExecutor, lm);
         val runCompleted = new AtomicBoolean();
         s.taskCompleted().connect(r -> {
-            if(r.topologyId().equals(topoId)) {
+            if (r.topologyId().equals(topoId)) {
                 runCompleted.set(true);
             }
         });
@@ -140,7 +145,8 @@ class SchedulerTest {
         val atDate = new Date(System.currentTimeMillis() + 100);
         val topo = new EpochTopology("test-topo",
                                      null,
-                                     new EpochTaskTriggerAt(atDate));
+                                     new EpochTaskTriggerAt(atDate),
+                                     BlackholeNotificationSpec.DEFAULT);
         val topoId = topologyId(topo);
 
         val ts = new InMemoryTopologyStore();
@@ -151,7 +157,7 @@ class SchedulerTest {
         val s = new Scheduler(Executors.newCachedThreadPool(), ts, topologyExecutor, lm);
         val runCompleted = new AtomicBoolean();
         s.taskCompleted().connect(r -> {
-            if(r.topologyId().equals(topoId)) {
+            if (r.topologyId().equals(topoId)) {
                 runCompleted.set(true);
             }
         });
@@ -168,8 +174,9 @@ class SchedulerTest {
     void testNotLeader() {
         val atDate = new Date(System.currentTimeMillis() + 100);
         val topo = new EpochTopology("test-topo",
-                                               null,
-                                               new EpochTaskTriggerAt(atDate));
+                                     null,
+                                     new EpochTaskTriggerAt(atDate),
+                                     BlackholeNotificationSpec.DEFAULT);
         val topoId = topologyId(topo);
 
         val ts = new InMemoryTopologyStore();
@@ -180,7 +187,7 @@ class SchedulerTest {
         val s = new Scheduler(Executors.newCachedThreadPool(), ts, topologyExecutor, lm);
         val runCompleted = new AtomicBoolean();
         s.taskCompleted().connect(r -> {
-            if(r.topologyId().equals(topoId)) {
+            if (r.topologyId().equals(topoId)) {
                 runCompleted.set(true);
             }
         });
@@ -206,7 +213,8 @@ class SchedulerTest {
         val atDate = new Date(System.currentTimeMillis() + 100);
         val topo = new EpochTopology("test-topo",
                                      null,
-                                     new EpochTaskTriggerAt(atDate));
+                                     new EpochTaskTriggerAt(atDate),
+                                     BlackholeNotificationSpec.DEFAULT);
         val topoId = topologyId(topo);
 
         val ts = new InMemoryTopologyStore();
@@ -218,6 +226,7 @@ class SchedulerTest {
                 .thenAnswer(new Answer<Future<?>>() {
                     private final AtomicInteger ctr = new AtomicInteger();
                     private final ExecutorService root = Executors.newCachedThreadPool();
+
                     @Override
                     public Future<?> answer(InvocationOnMock invocationOnMock) throws Throwable {
                         if (ctr.incrementAndGet() == 1) {
@@ -229,7 +238,7 @@ class SchedulerTest {
         val s = new Scheduler(ex, ts, topologyExecutor, lm);
         val runCompleted = new AtomicBoolean();
         s.taskCompleted().connect(r -> {
-            if(r.topologyId().equals(topoId)) {
+            if (r.topologyId().equals(topoId)) {
                 runCompleted.set(true);
             }
         });

@@ -1,5 +1,6 @@
 package com.phonepe.epoch.server.execution;
 
+import com.phonepe.epoch.models.notification.BlackholeNotificationSpec;
 import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.tasks.EpochCompositeTask;
 import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
@@ -42,7 +43,8 @@ class TopologyExecutorImplTest extends TestBase {
         val topoName = "test-topo";
         val topo = new EpochTopology(topoName,
                                      TestUtils.genContainerTask(1),
-                                     new EpochTaskTriggerCron("0/2 * * ? * * *"));
+                                     new EpochTaskTriggerCron("0/2 * * ? * * *"),
+                                     BlackholeNotificationSpec.DEFAULT);
         val ts = mock(TopologyStore.class);
         when(ts.get(anyString())).thenReturn(Optional.of(detailsFrom(topo)));
         val te = mock(TaskExecutionEngine.class);
@@ -85,7 +87,8 @@ class TopologyExecutorImplTest extends TestBase {
         val topoName = "test-topo";
         val topo = new EpochTopology(topoName,
                                      TestUtils.genContainerTask(1),
-                                     new EpochTaskTriggerCron("0/2 * * ? * * *"));
+                                     new EpochTaskTriggerCron("0/2 * * ? * * *"),
+                                     BlackholeNotificationSpec.DEFAULT);
         val ts = mock(TopologyStore.class);
         when(ts.get(anyString())).thenReturn(Optional.of(new EpochTopologyDetails(topologyId(topo),
                                                                                   topo,
@@ -118,7 +121,8 @@ class TopologyExecutorImplTest extends TestBase {
         val topoName = "test-topo";
         val topo = new EpochTopology(topoName,
                                      TestUtils.genContainerTask(1),
-                                     new EpochTaskTriggerCron("0/2 * * ? * * *"));
+                                     new EpochTaskTriggerCron("0/2 * * ? * * *"),
+                                     BlackholeNotificationSpec.DEFAULT);
         val ts = mock(TopologyStore.class);
         when(ts.get(anyString())).thenReturn(Optional.of(new EpochTopologyDetails(topologyId(topo),
                                                                                   topo,
@@ -157,7 +161,8 @@ class TopologyExecutorImplTest extends TestBase {
         val topoName = "test-topo";
         val topo = new EpochTopology(topoName,
                                      TestUtils.genContainerTask(1),
-                                     new EpochTaskTriggerCron("0/2 * * ? * * *"));
+                                     new EpochTaskTriggerCron("0/2 * * ? * * *"),
+                                     BlackholeNotificationSpec.DEFAULT);
         val ts = mock(TopologyStore.class);
         when(ts.get(anyString())).thenReturn(Optional.of(new EpochTopologyDetails(topologyId(topo),
                                                                                   topo,
@@ -187,7 +192,8 @@ class TopologyExecutorImplTest extends TestBase {
         val topoName = "test-topo";
         val topo = new EpochTopology(topoName,
                                      TestUtils.genContainerTask(1),
-                                     new EpochTaskTriggerCron("0/2 * * ? * * *"));
+                                     new EpochTaskTriggerCron("0/2 * * ? * * *"),
+                                     BlackholeNotificationSpec.DEFAULT);
         val ts = mock(TopologyStore.class);
         when(ts.get(anyString())).thenReturn(Optional.of(new EpochTopologyDetails(topologyId(topo),
                                                                                   topo,
@@ -216,7 +222,8 @@ class TopologyExecutorImplTest extends TestBase {
         val topoName = "test-topo";
         val topo = new EpochTopology(topoName,
                                      TestUtils.genContainerTask(1),
-                                     new EpochTaskTriggerCron("0/2 * * ? * * *"));
+                                     new EpochTaskTriggerCron("0/2 * * ? * * *"),
+                                     BlackholeNotificationSpec.DEFAULT);
         val ts = mock(TopologyStore.class);
         when(ts.get(anyString())).thenReturn(Optional.of(new EpochTopologyDetails(topologyId(topo),
                                                                                   topo,
@@ -249,7 +256,8 @@ class TopologyExecutorImplTest extends TestBase {
                                                                     .<EpochTask>mapToObj(TestUtils::genContainerTask)
                                                                     .toList(),
                                                             EpochCompositeTask.CompositionType.ALL),
-                                     new EpochTaskTriggerCron("0/2 * * ? * * *"));
+                                     new EpochTaskTriggerCron("0/2 * * ? * * *"),
+                                     BlackholeNotificationSpec.DEFAULT);
         val ts = mock(TopologyStore.class);
         when(ts.get(anyString())).thenReturn(Optional.of(detailsFrom(topo)));
         val te = mock(TaskExecutionEngine.class);
@@ -282,7 +290,8 @@ class TopologyExecutorImplTest extends TestBase {
                                                                     .<EpochTask>mapToObj(TestUtils::genContainerTask)
                                                                     .toList(),
                                                             EpochCompositeTask.CompositionType.ALL),
-                                     new EpochTaskTriggerCron("0/2 * * ? * * *"));
+                                     new EpochTaskTriggerCron("0/2 * * ? * * *"),
+                                     BlackholeNotificationSpec.DEFAULT);
         val ts = mock(TopologyStore.class);
         when(ts.get(anyString())).thenReturn(Optional.of(detailsFrom(topo)));
         val te = mock(TaskExecutionEngine.class);
@@ -322,7 +331,8 @@ class TopologyExecutorImplTest extends TestBase {
                                                                     .<EpochTask>mapToObj(TestUtils::genContainerTask)
                                                                     .toList(),
                                                             EpochCompositeTask.CompositionType.ANY),
-                                     new EpochTaskTriggerCron("0/2 * * ? * * *"));
+                                     new EpochTaskTriggerCron("0/2 * * ? * * *"),
+                                     BlackholeNotificationSpec.DEFAULT);
         val ts = mock(TopologyStore.class);
         when(ts.get(anyString())).thenReturn(Optional.of(detailsFrom(topo)));
         val te = mock(TaskExecutionEngine.class);
@@ -358,7 +368,8 @@ class TopologyExecutorImplTest extends TestBase {
         val topoName = "test-topo";
         val topo = new EpochTopology(topoName,
                                      TestUtils.genContainerTask(1),
-                                     new EpochTaskTriggerCron("0/2 * * ? * * *"));
+                                     new EpochTaskTriggerCron("0/2 * * ? * * *"),
+                                     BlackholeNotificationSpec.DEFAULT);
         val ts = mock(TopologyStore.class);
         when(ts.get(anyString())).thenReturn(Optional.of(detailsFrom(topo)));
         val te = mock(TaskExecutionEngine.class);
@@ -406,7 +417,8 @@ class TopologyExecutorImplTest extends TestBase {
         val topoName = "test-topo";
         val topo = new EpochTopology(topoName,
                                      TestUtils.genContainerTask(1),
-                                     new EpochTaskTriggerCron("0/2 * * ? * * *"));
+                                     new EpochTaskTriggerCron("0/2 * * ? * * *"),
+                                     BlackholeNotificationSpec.DEFAULT);
         val ts = mock(TopologyStore.class);
         when(ts.get(anyString())).thenReturn(Optional.of(detailsFrom(topo)));
         val te = mock(TaskExecutionEngine.class);
@@ -431,7 +443,8 @@ class TopologyExecutorImplTest extends TestBase {
         val topoName = "test-topo";
         val topo = new EpochTopology(topoName,
                                      TestUtils.genContainerTask(1),
-                                     new EpochTaskTriggerCron("0/2 * * ? * * *"));
+                                     new EpochTaskTriggerCron("0/2 * * ? * * *"),
+                                     BlackholeNotificationSpec.DEFAULT);
         val ts = mock(TopologyStore.class);
         when(ts.get(anyString())).thenReturn(Optional.of(new EpochTopologyDetails(topologyId(topo),
                                                                                   topo,

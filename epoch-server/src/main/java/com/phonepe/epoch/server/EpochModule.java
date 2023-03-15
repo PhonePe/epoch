@@ -4,10 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.name.Names;
-import com.phonepe.epoch.server.config.AppConfig;
-import com.phonepe.epoch.server.config.DroveConfig;
+import com.phonepe.epoch.server.config.*;
 import com.phonepe.epoch.server.execution.TopologyExecutor;
 import com.phonepe.epoch.server.execution.TopologyExecutorImpl;
+import com.phonepe.epoch.server.notify.NotificationBlackholeSender;
+import com.phonepe.epoch.server.notify.NotificationMailSender;
+import com.phonepe.epoch.server.notify.NotificationSender;
 import com.phonepe.epoch.server.remote.DroveTaskExecutionEngine;
 import com.phonepe.epoch.server.remote.TaskExecutionEngine;
 import com.phonepe.epoch.server.store.*;
@@ -19,6 +21,7 @@ import org.apache.curator.framework.CuratorFramework;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
 
@@ -72,5 +75,22 @@ public class EpochModule extends AbstractModule {
                 .workQueue(new SynchronousQueue<>())
                 .keepAliveTime(Duration.seconds(60))
                 .build();
+    }
+
+    @Provides
+    @Singleton
+    public NotificationSender notificationConfig(final TopologyStore topologyStore, final TopologyRunInfoStore runInfoStore, final AppConfig appConfig) {
+        return Objects.requireNonNullElse(appConfig.getNotify(), BlackholeNotificationConfig.INSTANCE)
+                .accept(new NotificationConfigVisitor<NotificationSender>() {
+                    @Override
+                    public NotificationSender visit(MailNotificationConfig mailConfig) {
+                        return new NotificationMailSender(topologyStore, runInfoStore, mailConfig);
+                    }
+
+                    @Override
+                    public NotificationSender visit(BlackholeNotificationConfig blackholeConfig) {
+                        return new NotificationBlackholeSender();
+                    }
+                });
     }
 }

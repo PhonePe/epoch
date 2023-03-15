@@ -41,3 +41,13 @@ userAuth:
   - username: guest
     password: guest
     role: READ_ONLY
+
+notify:
+  type: MAIL
+  smtpServer: sandbox.smtp.mailtrap.io
+  port: 2525
+  username: ${EMAIL_USER}
+  password: ${EMAIL_PASSWORD}
+  defaultEmails:
+    - ${DEV_EMAIL}
+

@@ -1,5 +1,6 @@
 package com.phonepe.epoch.server.managed;
 
+import com.phonepe.epoch.models.notification.BlackholeNotificationSpec;
 import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.tasks.EpochCompositeTask;
 import com.phonepe.epoch.models.tasks.EpochTask;
@@ -64,12 +65,13 @@ class CleanupTaskTest extends TestBase {
         val oldDate = new Date(System.currentTimeMillis() - 120_000);
         IntStream.rangeClosed(1, 105)
                 .forEach(i -> tis.save(new EpochTopology("TID-" + i,
-                                                        new EpochCompositeTask(IntStream.rangeClosed(1, 10)
+                                                         new EpochCompositeTask(IntStream.rangeClosed(1, 10)
                                                                                        .<EpochTask>mapToObj(
                                                                                                TestUtils::genContainerTask)
                                                                                        .toList(),
                                                                                EpochCompositeTask.CompositionType.ALL),
-                                                        new EpochTaskTriggerCron("0/2 * * ? * * *"))));
+                                                         new EpochTaskTriggerCron("0/2 * * ? * * *"),
+                                                         BlackholeNotificationSpec.DEFAULT)));
 
         IntStream.rangeClosed(1, 100)
                 .forEach(i -> IntStream.rangeClosed(1, 25)
