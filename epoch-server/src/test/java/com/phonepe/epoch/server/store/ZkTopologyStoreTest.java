@@ -1,6 +1,6 @@
 package com.phonepe.epoch.server.store;
 
-import com.phonepe.epoch.models.notification.BlackholeNotificationSpec;
+import com.phonepe.epoch.models.notification.MailNotificationSpec;
 import com.phonepe.epoch.models.tasks.EpochCompositeTask;
 import com.phonepe.epoch.models.tasks.EpochTask;
 import com.phonepe.epoch.models.topology.EpochTopology;
@@ -16,6 +16,7 @@ import lombok.val;
 import org.apache.curator.test.TestingCluster;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.stream.IntStream;
 
 import static com.phonepe.epoch.server.utils.EpochUtils.topologyId;
@@ -42,7 +43,7 @@ class ZkTopologyStoreTest extends TestBase {
                                                                                 .toList(),
                                                                         EpochCompositeTask.CompositionType.ALL),
                                                  new EpochTaskTriggerCron("0/2 * * ? * * *"),
-                                                 BlackholeNotificationSpec.DEFAULT);
+                                                 new MailNotificationSpec(List.of("test@email.com")));
                     val topologyId = topologyId(topo);
                     assertEquals(topo, ts.save(topo).map(EpochTopologyDetails::getTopology).orElse(null));
                     assertEquals(EpochTopologyState.ACTIVE,
@@ -65,7 +66,7 @@ class ZkTopologyStoreTest extends TestBase {
                                                                                                    .toList(),
                                                                                            EpochCompositeTask.CompositionType.ALL),
                                                                     new EpochTaskTriggerCron("0/2 * * ? * * *"),
-                                                                    BlackholeNotificationSpec.DEFAULT)));
+                                                                    new MailNotificationSpec(List.of("test@email.com")))));
                     assertEquals(100, ts.list(x -> true).size());
                     assertEquals(50,
                                  ts.list(x -> Integer.parseInt(x.getTopology().getName().split("\\-")[2]) % 2 == 0)

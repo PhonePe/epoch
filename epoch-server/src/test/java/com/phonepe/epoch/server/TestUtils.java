@@ -7,6 +7,7 @@ import com.phonepe.drove.models.application.placement.policies.AnyPlacementPolic
 import com.phonepe.drove.models.application.requirements.CPURequirement;
 import com.phonepe.drove.models.application.requirements.MemoryRequirement;
 import com.phonepe.epoch.models.notification.BlackholeNotificationSpec;
+import com.phonepe.epoch.models.notification.NotificationSpec;
 import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
 import com.phonepe.epoch.models.topology.*;
@@ -71,15 +72,22 @@ public class TestUtils {
     }
 
     public static EpochTopologyRunInfo genRunInfo(int index, EpochTopologyRunState state) {
+        return genRunInfo("TEST_TOPO", index, state, EpochTaskRunState.RUNNING);
+    }
+
+    public static EpochTopologyRunInfo genRunInfo(String topologyId,
+                                                  int index,
+                                                  EpochTopologyRunState state,
+                                                  EpochTaskRunState taskState) {
         return new EpochTopologyRunInfo(
-                "TEST_TOPO",
+                topologyId,
                 "TR-" + index,
                 state,
                 "Test",
                 Map.of("TR-T-" + index,
                        new EpochTopologyRunTaskInfo()
                                .setTaskId("TR-T-" + index)
-                               .setState(EpochTaskRunState.RUNNING)
+                               .setState(taskState)
                                .setUpstreamId("TDT-" + index)),
                 EpochTopologyRunType.INSTANT,
                 new Date(),
@@ -96,9 +104,13 @@ public class TestUtils {
     }
 
     public static EpochTopology generateTopologyDesc(int i) {
+        return generateTopologyDesc(i, BlackholeNotificationSpec.DEFAULT);
+    }
+
+    public static EpochTopology generateTopologyDesc(int i, NotificationSpec notificationSpec) {
         return new EpochTopology("TEST_TOPO-" + i,
                                  genContainerTask(i),
                                  new EpochTaskTriggerAt(new Date()),
-                                 BlackholeNotificationSpec.DEFAULT);
+                                 notificationSpec);
     }
 }

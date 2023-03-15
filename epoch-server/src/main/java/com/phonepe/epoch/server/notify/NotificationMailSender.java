@@ -1,5 +1,6 @@
 package com.phonepe.epoch.server.notify;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.phonepe.epoch.models.notification.BlackholeNotificationSpec;
 import com.phonepe.epoch.models.notification.MailNotificationSpec;
 import com.phonepe.epoch.models.notification.NotificationSpecVisitor;
@@ -11,6 +12,7 @@ import com.phonepe.epoch.server.config.MailNotificationConfig;
 import com.phonepe.epoch.server.event.*;
 import com.phonepe.epoch.server.store.TopologyRunInfoStore;
 import com.phonepe.epoch.server.store.TopologyStore;
+import com.phonepe.epoch.server.utils.IgnoreInJacocoGeneratedReport;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.simplejavamail.api.mailer.Mailer;
@@ -38,22 +40,35 @@ public class NotificationMailSender implements NotificationSender {
     private final Mailer mailer;
 
     @Inject
+    @IgnoreInJacocoGeneratedReport(reason = "Constructor ignored as local smtp would not be possible")
     public NotificationMailSender(
             TopologyStore topologyStore,
             TopologyRunInfoStore runInfoStore,
             MailNotificationConfig mailConfig) {
+        this(topologyStore,
+             runInfoStore,
+             mailConfig,
+             MailerBuilder
+                     .withSMTPServerHost(mailConfig.getSmtpServer())
+                     .withSMTPServerPort(mailConfig.getPort())
+                     .withSMTPServerUsername(mailConfig.getUsername())
+                     .withSMTPServerPassword(mailConfig.getPassword())
+                     .withTransportStrategy(mailConfig.isTls()
+                                            ? TransportStrategy.SMTP_TLS
+                                            : TransportStrategy.SMTP)
+                     .buildMailer());
+    }
+
+    @VisibleForTesting
+    NotificationMailSender(
+            TopologyStore topologyStore,
+            TopologyRunInfoStore runInfoStore,
+            MailNotificationConfig mailConfig,
+            Mailer mailer) {
         this.topologyStore = topologyStore;
         this.runInfoStore = runInfoStore;
         this.mailConfig = mailConfig;
-        this.mailer = MailerBuilder
-                .withSMTPServerHost(mailConfig.getSmtpServer())
-                .withSMTPServerPort(mailConfig.getPort())
-                .withSMTPServerUsername(mailConfig.getUsername())
-                .withSMTPServerPassword(mailConfig.getPassword())
-                .withTransportStrategy(mailConfig.isTls()
-                                       ? TransportStrategy.SMTP_TLS
-                                       : TransportStrategy.SMTP)
-                .buildMailer();
+        this.mailer = mailer;
     }
 
     @Override
@@ -89,6 +104,7 @@ public class NotificationMailSender implements NotificationSender {
                         return List.of();
                     }
                 }))
+                .filter(emails -> !emails.isEmpty())
                 .orElseGet(() -> Objects.requireNonNullElse(mailConfig.getDefaultEmails(), List.of()));
         if (emailIds.isEmpty()) {
             log.warn("No mail notification spec provided. Ignoring state change message");
@@ -120,16 +136,17 @@ public class NotificationMailSender implements NotificationSender {
                         .filter(taskRun -> taskRun.getState().equals(EpochTaskRunState.FAILED))
                         .findFirst()
                         .orElse(null);
+                val subject = String.format("Topology run %s/%s failed", topologyId, runId);
                 if (failedTask != null) {
                     yield Optional.of(
                             new MailData(
-                                    String.format("Topology run %s/%s failed", topologyId, runId),
+                                    subject,
                                     String.format("Task %s with upstream ID %s failed with error: %s",
                                                   failedTask.getTaskId(),
                                                   failedTask.getUpstreamId(),
                                                   failedTask.getErrorMessage())));
                 }
-                yield Optional.empty();
+                yield Optional.of(new MailData(subject, "All tasks seem to have succeeded."));
             }
         };
     }

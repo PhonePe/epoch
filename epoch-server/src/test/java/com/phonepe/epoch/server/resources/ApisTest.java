@@ -3,6 +3,7 @@ package com.phonepe.epoch.server.resources;
 import com.phonepe.drove.client.DroveClient;
 import com.phonepe.drove.models.api.ApiErrorCode;
 import com.phonepe.drove.models.api.ApiResponse;
+import com.phonepe.epoch.models.notification.MailNotificationSpec;
 import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.topology.*;
 import com.phonepe.epoch.server.TestBase;
@@ -78,7 +79,7 @@ class ApisTest extends TestBase {
                 .thenAnswer(invocationMock -> Optional.of(EpochUtils.detailsFrom(
                         invocationMock.getArgument(0, EpochTopology.class))));
         when(scheduler.schedule(anyString(), any(), any())).thenReturn(Optional.of("TestSched"));
-        val topology = TestUtils.generateTopologyDesc(1);
+        val topology = TestUtils.generateTopologyDesc(1, new MailNotificationSpec(List.of("test@email.com")));
         try (val r = EXT.target("/v1/topologies")
                 .request()
                 .post(Entity.json(topology))) {
@@ -92,7 +93,7 @@ class ApisTest extends TestBase {
 
     @Test
     void testSaveFailExists() {
-        val topology = TestUtils.generateTopologyDesc(1);
+        val topology = TestUtils.generateTopologyDesc(1, new MailNotificationSpec(List.of("test@email.com")));
         when(topologyStore.get(anyString())).thenReturn(Optional.of(EpochUtils.detailsFrom(topology)));
         try (val r = EXT.target("/v1/topologies")
                 .request()
@@ -109,7 +110,7 @@ class ApisTest extends TestBase {
     void testFailSave() {
         when(topologyStore.get(anyString())).thenReturn(Optional.empty());
         when(topologyStore.save(any())).thenReturn(Optional.empty());
-        val topology = TestUtils.generateTopologyDesc(1);
+        val topology = TestUtils.generateTopologyDesc(1, new MailNotificationSpec(List.of("test@email.com")));
         try (val r = EXT.target("/v1/topologies")
                 .request()
                 .post(Entity.json(topology))) {
@@ -139,7 +140,7 @@ class ApisTest extends TestBase {
     void testListTopologiesNonEmpty() {
         when(topologyStore.list(any()))
                 .thenReturn(IntStream.rangeClosed(1, 10)
-                                    .mapToObj(i -> EpochUtils.detailsFrom(TestUtils.generateTopologyDesc(i)))
+                                    .mapToObj(i -> EpochUtils.detailsFrom(TestUtils.generateTopologyDesc(i, new MailNotificationSpec(List.of("test@email.com")))))
                                     .toList());
         try (val r = EXT.target("/v1/topologies")
                 .request()
@@ -154,7 +155,7 @@ class ApisTest extends TestBase {
 
     @Test
     void testGetTopologySuccess() {
-        val details = EpochUtils.detailsFrom(TestUtils.generateTopologyDesc(0));
+        val details = EpochUtils.detailsFrom(TestUtils.generateTopologyDesc(0, new MailNotificationSpec(List.of("test@email.com"))));
         when(topologyStore.get(anyString()))
                 .thenReturn(Optional.of(details));
         try (val r = EXT.target("/v1/topologies/TEST_TOPO-0")
@@ -236,7 +237,7 @@ class ApisTest extends TestBase {
 
     @Test
     void testPauseTopologySuccess() {
-        val details = EpochUtils.detailsFrom(TestUtils.generateTopologyDesc(0));
+        val details = EpochUtils.detailsFrom(TestUtils.generateTopologyDesc(0, new MailNotificationSpec(List.of("test@email.com"))));
         when(topologyStore.updateState(details.getId(), PAUSED))
                 .thenAnswer(invocationMock -> Optional.of(new EpochTopologyDetails(details.getId(),
                                                                                    details.getTopology(),
@@ -270,7 +271,7 @@ class ApisTest extends TestBase {
 
     @Test
     void testUnpauseTopologySuccess() {
-        val details = EpochUtils.detailsFrom(TestUtils.generateTopologyDesc(0));
+        val details = EpochUtils.detailsFrom(TestUtils.generateTopologyDesc(0, new MailNotificationSpec(List.of("test@email.com"))));
         val called = new AtomicBoolean();
         when(topologyStore.updateState(details.getId(), ACTIVE))
                 .thenAnswer(invocationMock -> {
