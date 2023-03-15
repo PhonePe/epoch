@@ -41,7 +41,8 @@ class NotificationMailSenderTest {
         val mc = new MailNotificationConfig("localhost", 2525, false, "", "", List.of());
         val mailer = mock(Mailer.class);
         val ctr = new AtomicBoolean();
-        val ns = new NotificationMailSender(ts, trs, mc, mailer);
+        val mailDataConverter = new EventMailDataConverter(ts, trs, List.of());
+        val ns = new NotificationMailSender(mc, mailDataConverter, mailer);
         val spec = TestUtils.generateTopologyDesc(1, new MailNotificationSpec(List.of("test@email.com")));
         val topologyId = topologyId(spec);
         val topology = new EpochTopologyDetails(topologyId,
@@ -75,7 +76,8 @@ class NotificationMailSenderTest {
         val mc = new MailNotificationConfig("localhost", 2525, false, "", "", List.of());
         val mailer = mock(Mailer.class);
         val ctr = new AtomicBoolean();
-        val ns = new NotificationMailSender(ts, trs, mc, mailer);
+        val mailDataConverter = new EventMailDataConverter(ts, trs, List.of());
+        val ns = new NotificationMailSender(mc, mailDataConverter, mailer);
         val spec = TestUtils.generateTopologyDesc(1, new MailNotificationSpec(List.of("test@email.com")));
         val topologyId = topologyId(spec);
         val topology = new EpochTopologyDetails(topologyId,
@@ -109,7 +111,8 @@ class NotificationMailSenderTest {
         val mc = new MailNotificationConfig("localhost", 2525, false, "", "", List.of("test@email.com"));
         val mailer = mock(Mailer.class);
         val ctr = new AtomicBoolean();
-        val ns = new NotificationMailSender(ts, trs, mc, mailer);
+        val mailDataConverter = new EventMailDataConverter(ts, trs, List.of("test@email.com"));
+        val ns = new NotificationMailSender(mc, mailDataConverter, mailer);
         val spec = TestUtils.generateTopologyDesc(1, BlackholeNotificationSpec.DEFAULT);
         val topologyId = topologyId(spec);
         val topology = new EpochTopologyDetails(topologyId,
@@ -142,7 +145,8 @@ class NotificationMailSenderTest {
         val mc = new MailNotificationConfig("localhost", 2525, false, "", "", List.of());
         val mailer = mock(Mailer.class);
         val ctr = new AtomicBoolean();
-        val ns = new NotificationMailSender(ts, trs, mc, mailer);
+        val mailDataConverter = new EventMailDataConverter(ts, trs, List.of());
+        val ns = new NotificationMailSender(mc, mailDataConverter, mailer);
         val spec = TestUtils.generateTopologyDesc(1, new MailNotificationSpec(List.of("test@email.com")));
         val topologyId = topologyId(spec);
         val topology = new EpochTopologyDetails(topologyId,
@@ -175,7 +179,8 @@ class NotificationMailSenderTest {
         val mc = new MailNotificationConfig("localhost", 2525, false, "", "", List.of());
         val mailer = mock(Mailer.class);
         val ctr = new AtomicBoolean();
-        val ns = new NotificationMailSender(ts, trs, mc, mailer);
+        val mailDataConverter = new EventMailDataConverter(ts, trs, List.of());
+        val ns = new NotificationMailSender(mc, mailDataConverter, mailer);
         val spec = TestUtils.generateTopologyDesc(1);
         val topologyId = topologyId(spec);
         val topology = new EpochTopologyDetails(topologyId,
@@ -208,7 +213,8 @@ class NotificationMailSenderTest {
         val mc = new MailNotificationConfig("localhost", 2525, false, "", "", List.of());
         val mailer = mock(Mailer.class);
         val ctr = new AtomicBoolean();
-        val ns = new NotificationMailSender(ts, trs, mc, mailer);
+        val mailDataConverter = new EventMailDataConverter(ts, trs, List.of());
+        val ns = new NotificationMailSender(mc, mailDataConverter, mailer);
         val spec = TestUtils.generateTopologyDesc(1, new MailNotificationSpec(List.of("test@email.com")));
         val topologyId = topologyId(spec);
         val topology = new EpochTopologyDetails(topologyId,
