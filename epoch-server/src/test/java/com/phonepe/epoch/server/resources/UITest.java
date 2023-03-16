@@ -60,6 +60,7 @@ class UITest extends TestBase {
                                                       "docker.io/bash",
                                                       4,
                                                       512,
+                                                      "test@x.com",
                                                       Map.of(),
                                                       List.of());
         val r = ui.createSimpleTopology(request);
@@ -85,6 +86,7 @@ class UITest extends TestBase {
                                                       "docker.io/bash",
                                                       4,
                                                       512,
+                                                      "test@x.com",
                                                       Map.of(),
                                                       List.of());
         val r = ui.createSimpleTopology(request);
