@@ -160,6 +160,13 @@
                                                                 </div>
                                                             </div>
                                                         </div>
+                                                        <div class="form-group row">
+                                                            <label for="notifyEmail" class="col-md-4 col-form-label">Notification Email</label>
+                                                            <div class="col-md-8">
+                                                                <input type="email" class="form-control" id="notifyEmail" name="notifyEmail"
+                                                                       placeholder="Email ID to notify one success and failure" required>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
 
@@ -267,6 +274,7 @@
         tdef['docker'] = inputs.get('docker');
         tdef['cpus'] = parseInt(inputs.get('cpus'));
         tdef['memory'] = parseInt(inputs.get('memory'));
+        tdef['notifyEmail'] = inputs.get('notifyEmail');
         const envNames = inputs.getAll('env-name');
         const envValues = inputs.getAll('env-val');
         var env = {};
