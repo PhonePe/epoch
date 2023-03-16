@@ -32,7 +32,6 @@ public class MailNotificationConfig extends NotificationConfig {
 
     String password;
 
-    @NotEmpty
     List<@Email String> defaultEmails;
     public MailNotificationConfig(
             String smtpServer,
