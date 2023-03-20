@@ -5,6 +5,7 @@ import com.phonepe.epoch.models.topology.EpochTopologyDetails;
 import com.phonepe.epoch.models.topology.EpochTopologyState;
 import com.phonepe.epoch.server.store.TopologyRunInfoStore;
 import com.phonepe.epoch.server.store.TopologyStore;
+import com.phonepe.epoch.server.utils.EpochUtils;
 import io.dropwizard.lifecycle.Managed;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -71,25 +72,36 @@ public class TopologyRecovery implements Managed {
             val activeRuns = runInfoStore.list(tId, run -> run.getState().equals(EpochTopologyRunState.RUNNING));
 
             activeRuns.forEach(run -> {
-                val status = scheduler.recover(
-                        t.getId(),
-                        run.getRunId(),
-                        new Date(),
-                        run.getRunType());
-                if (status) {
-                    log.info("Recovered {} topology run {}/{}",
-                             run.getRunType().name().toLowerCase(),
-                             t.getId(),
-                             run.getRunId());
+                try {
+                    val status = scheduler.recover(
+                            t.getId(),
+                            run.getRunId(),
+                            new Date(),
+                            run.getRunType());
+                    if (status) {
+                        log.info("Recovered {} topology run {}/{}",
+                                 run.getRunType().name().toLowerCase(),
+                                 t.getId(),
+                                 run.getRunId());
+                    }
+                    else {
+                        log.info("Failed to recover {} topology run {}/{}",
+                                 run.getRunType().name().toLowerCase(),
+                                 t.getId(),
+                                 run.getRunId());
+                    }
                 }
-                else {
-                    log.info("Failed to recover {} topology run {}/{}",
-                             run.getRunType().name().toLowerCase(),
-                             t.getId(),
-                             run.getRunId());
+                catch (Exception e) {
+                    log.error("Could not recover topology run " + t.getId() + "/" + run.getRunId()
+                                      + ". Error: " + EpochUtils.errorMessage(e), e);
                 }
             });
-            scheduleTopology(t, scheduler, new Date());
+            try {
+                scheduleTopology(t, scheduler, new Date());
+            }
+            catch (Exception e) {
+                log.error("Could not reschedule topology " + t.getId() + ". Error: " + EpochUtils.errorMessage(e), e);
+            }
         });
     }
 }
