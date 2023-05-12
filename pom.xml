@@ -44,6 +44,8 @@
             **com/phonepe/epoch/server/config/**,
             **com/phonepe/epoch/server/ui/**,
             **com/phonepe/epoch/server/ui/views/**,
+            **/App.*
+            **/Module.*
         </sonar.exclusions>
     </properties>
 
