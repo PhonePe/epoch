@@ -15,7 +15,6 @@ import java.util.Map;
 /**
  *
  */
-@Value
 public record SimpleTopologyCreateRequest(
         @NotEmpty @Pattern(regexp = "[0-9a-zA-Z_-]+") String name,
         @SuppressWarnings({"java:S5843", "java:S5998"}) @NotEmpty @Pattern(regexp = "^\\s*($|#|\\w+\\s*=|(\\?|\\*|"
