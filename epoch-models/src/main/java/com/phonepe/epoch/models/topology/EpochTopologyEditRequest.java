@@ -1,7 +1,6 @@
 package com.phonepe.epoch.models.topology;
 
 import com.phonepe.drove.models.application.MountedVolume;
-import lombok.Value;
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.Range;
 
@@ -12,12 +11,7 @@ import javax.validation.constraints.Pattern;
 import java.util.List;
 import java.util.Map;
 
-/**
- *
- */
-@Value
-public record SimpleTopologyCreateRequest(
-        @NotEmpty @Pattern(regexp = "[0-9a-zA-Z_-]+") String name,
+public record EpochTopologyEditRequest(
         @SuppressWarnings({"java:S5843", "java:S5998"}) @NotEmpty @Pattern(regexp = "^\\s*($|#|\\w+\\s*=|(\\?|\\*|"
                 + "(?:[0-5]?\\d)(?:(?:-|\\/|\\,)(?:[0-5]?\\d))?(?:,(?:[0-5]?\\d)(?:(?:-|\\/|\\,)(?:[0-5]?\\d))?)*)"
                 + "\\s+(\\?|\\*|(?:[0-5]?\\d)(?:(?:-|\\/|\\,)(?:[0-5]?\\d))?(?:,(?:[0-5]?\\d)(?:(?:-|\\/|\\,)"
@@ -45,4 +39,5 @@ public record SimpleTopologyCreateRequest(
         @NotNull @Email String notifyEmail,
         Map<String, String> env,
         List<MountedVolume> volumes) {
+
 }

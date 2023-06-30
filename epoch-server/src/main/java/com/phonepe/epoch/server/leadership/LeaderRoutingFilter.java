@@ -51,6 +51,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -63,6 +64,7 @@ import java.util.stream.Collectors;
 @PreMatching
 public class LeaderRoutingFilter implements ContainerRequestFilter {
     private static final Set<String> RESTRICTED_HEADERS = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+    private static final Set<String> SKIP_LIST_FILTER = Set.of("housekeeping");
 
     static {
         RESTRICTED_HEADERS.add("Connection");
@@ -136,6 +138,10 @@ public class LeaderRoutingFilter implements ContainerRequestFilter {
                                                                 + EpochUtils.errorMessage(e)))
                             .build());
         }
+    }
+
+    private static Predicate<String> doesRequestContextPathMatchFilter(final ContainerRequestContext requestContext) {
+        return filter -> requestContext.getUriInfo().getRequestUri().getPath().contains(filter);
     }
 
     private static DroveClient.Response handleResponse(ClassicHttpResponse response) throws IOException,

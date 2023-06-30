@@ -3,7 +3,12 @@ package com.phonepe.epoch.server.managed;
 import com.phonepe.epoch.models.notification.BlackholeNotificationSpec;
 import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
-import com.phonepe.epoch.models.topology.*;
+import com.phonepe.epoch.models.topology.EpochTaskRunState;
+import com.phonepe.epoch.models.topology.EpochTopology;
+import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
+import com.phonepe.epoch.models.topology.EpochTopologyRunTaskInfo;
+import com.phonepe.epoch.models.topology.EpochTopologyRunType;
+import com.phonepe.epoch.models.topology.EpochTopologyState;
 import com.phonepe.epoch.models.triggers.EpochTaskTriggerCron;
 import com.phonepe.epoch.server.TestBase;
 import com.phonepe.epoch.server.TestUtils;
@@ -24,7 +29,8 @@ import java.util.stream.IntStream;
 
 import static com.phonepe.epoch.server.utils.EpochUtils.topologyId;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -49,8 +55,9 @@ class TopologyRecoveryTest extends TestBase {
                                                                                          null),
                                                          new EpochTaskTriggerCron("0/2 * * ? * * *"),
                                                          BlackholeNotificationSpec.DEFAULT))
-                        .flatMap(topology -> i % 2 == 0 ? ts.updateState(topologyId(topology.getTopology()),
-                                                                         EpochTopologyState.DELETED)
+                        .flatMap(topology -> i % 2 == 0 ? ts.update(topologyId(topology.getTopology()),
+                                                                    topology.getTopology(),
+                                                                    EpochTopologyState.DELETED)
                                                         : Optional.of(topology))
                         .orElse(null))
                 .filter(Objects::nonNull)

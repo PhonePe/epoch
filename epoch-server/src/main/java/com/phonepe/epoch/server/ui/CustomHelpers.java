@@ -16,6 +16,13 @@ package com.phonepe.epoch.server.ui;
 
 import com.github.jknack.handlebars.Options;
 import com.github.jknack.handlebars.TagType;
+import com.phonepe.drove.models.application.requirements.CPURequirement;
+import com.phonepe.drove.models.application.requirements.MemoryRequirement;
+import com.phonepe.drove.models.application.requirements.ResourceRequirementVisitor;
+import com.phonepe.epoch.models.tasks.EpochCompositeTask;
+import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
+import com.phonepe.epoch.models.tasks.EpochTaskVisitor;
+import com.phonepe.epoch.server.ui.views.TopologyDetailsView;
 import com.phonepe.epoch.server.utils.IgnoreInJacocoGeneratedReport;
 import lombok.experimental.UtilityClass;
 import lombok.val;
@@ -38,6 +45,38 @@ public class CustomHelpers {
         return result
                ? options.hash("yes", true)
                : options.hash("no", false);
+    }
+
+    public static Object getresource(Object context, Options options) {
+        final TopologyDetailsView topologyDetailsView = ((TopologyDetailsView) options.context.model());
+
+        final String key = options.param(0);
+        return topologyDetailsView.getDetails().getTopology()
+                .getTask().accept(new EpochTaskVisitor<>() {
+                    @Override
+                    public Object visit(final EpochCompositeTask composite) {
+                        return null;
+                    }
+
+                    @Override
+                    public Object visit(final EpochContainerExecutionTask containerExecution) {
+                        return containerExecution.getResources().stream()
+                                .filter(resourceRequirement -> resourceRequirement.getType().name().equals(key))
+                                .map(resourceRequirement -> resourceRequirement
+                                        .accept(new ResourceRequirementVisitor<Long>() {
+                                            @Override
+                                            public Long visit(final CPURequirement cpuRequirement) {
+                                                return cpuRequirement.getCount();
+                                            }
+
+                                            @Override
+                                            public Long visit(final MemoryRequirement memoryRequirement) {
+                                                return memoryRequirement.getSizeInMB();
+                                            }
+                                        }))
+                                .findFirst().orElse(1L);
+                    }
+                });
     }
 
     public static CharSequence env(final String envVar) {

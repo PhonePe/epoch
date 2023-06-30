@@ -36,6 +36,7 @@ public class CachingProxyTopologyStore implements TopologyStore {
         leadershipEnsurer.onLeadershipStateChange().connect(leader -> {
             val stamp = lock.writeLock();
             try {
+                log.info("Clearing topology cache. New leader: {}", leader.toString());
                 cache.clear(); //Nuke the cache and rebuild
             }
             finally {
@@ -91,10 +92,11 @@ public class CachingProxyTopologyStore implements TopologyStore {
     }
 
     @Override
-    public Optional<EpochTopologyDetails> updateState(String id, EpochTopologyState state) {
+    public Optional<EpochTopologyDetails> update(final String id, final EpochTopology topology,
+                                                 final EpochTopologyState state) {
         val stamp = lock.writeLock();
         try {
-            val saved = root.updateState(id, state);
+            val saved = root.update(id, topology, state);
             if (saved.isPresent()) {
                 val data = saved.get();
                 cache.put(data.getId(), data);

@@ -49,13 +49,14 @@ public class InMemoryTopologyStore implements TopologyStore {
     }
 
     @Override
-    public Optional<EpochTopologyDetails> updateState(String id, EpochTopologyState state) {
+    public Optional<EpochTopologyDetails> update(final String id, final EpochTopology topology,
+                                                 final EpochTopologyState state) {
         return Optional.ofNullable(data.computeIfPresent(id,
-                                                 (tid, old) -> new EpochTopologyDetails(old.getId(),
-                                                                                        old.getTopology(),
-                                                                                        state,
-                                                                                        old.getCreated(),
-                                                                                        new Date())));
+                                                         (tid, old) -> new EpochTopologyDetails(old.getId(),
+                                                                                                topology,
+                                                                                                state,
+                                                                                                old.getCreated(),
+                                                                                                new Date())));
     }
 
     @Override

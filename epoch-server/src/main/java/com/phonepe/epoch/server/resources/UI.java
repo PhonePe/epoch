@@ -11,6 +11,7 @@ import com.phonepe.epoch.models.notification.MailNotificationSpec;
 import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
 import com.phonepe.epoch.models.topology.EpochTopology;
 import com.phonepe.epoch.models.topology.EpochTopologyDetails;
+import com.phonepe.epoch.models.topology.EpochTopologyEditRequest;
 import com.phonepe.epoch.models.topology.EpochTopologyState;
 import com.phonepe.epoch.models.topology.SimpleTopologyCreateRequest;
 import com.phonepe.epoch.models.triggers.EpochTaskTriggerCron;
@@ -42,6 +43,7 @@ import java.net.URI;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.phonepe.epoch.server.utils.EpochUtils.scheduleTopology;
 import static com.phonepe.epoch.server.utils.EpochUtils.topologyId;
@@ -114,23 +116,58 @@ public class UI {
     @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
     public Response createSimpleTopology(@Valid final SimpleTopologyCreateRequest request) {
         val topology = new EpochTopology(
-                request.getName(),
+                request.name(),
                 new EpochContainerExecutionTask("docker-task",
-                                                new DockerCoordinates(request.getDocker(), Duration.seconds(120)),
-                                                List.of(new CPURequirement(request.getCpus()),
-                                                        new MemoryRequirement(request.getMemory())),
-                                                request.getVolumes(),
+                                                new DockerCoordinates(request.docker(), Duration.seconds(120)),
+                                                List.of(new CPURequirement(request.cpus()),
+                                                        new MemoryRequirement(request.memory())),
+                                                request.volumes(),
                                                 LocalLoggingSpec.DEFAULT,
                                                 new AnyPlacementPolicy(),
                                                 Map.of(),
-                                                request.getEnv()),
-                new EpochTaskTriggerCron(request.getCron()),
-                new MailNotificationSpec(List.of(request.getNotifyEmail())));
+                                                request.env()),
+                new EpochTaskTriggerCron(request.cron()),
+                new MailNotificationSpec(List.of(request.notifyEmail())));
         val topologyId = topologyId(topology);
         if (topologyStore.get(topologyId).isPresent()) {
             return redirectToHome();
         }
         val saved = topologyStore.save(topology);
+        saved.ifPresent(epochTopologyDetails -> {
+            scheduleTopology(epochTopologyDetails, scheduler, new Date());
+            eventBus.publish(EpochStateChangeEvent.builder()
+                                     .type(EpochEventType.TOPOLOGY_STATE_CHANGED)
+                                     .metadata(Map.of(StateChangeEventDataTag.TOPOLOGY_ID, topologyId,
+                                                      StateChangeEventDataTag.NEW_STATE, EpochTopologyState.ACTIVE))
+                                     .build());
+
+        });
+        return redirectToHome();
+    }
+
+    @POST
+    @Path("/topologies/{topologyId}/update")
+    @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
+    public Response updateTopology(@PathParam("topologyId")String topologyId, @Valid final EpochTopologyEditRequest request) {
+        final Optional<EpochTopologyDetails> topologyDetails = topologyStore.get(topologyId);
+        if (topologyDetails.isEmpty()) {
+            return redirectToHome();
+        }
+        val topology = new EpochTopology(
+                topologyId,
+                new EpochContainerExecutionTask("docker-task",
+                                                new DockerCoordinates(request.docker(), Duration.seconds(120)),
+                                                List.of(new CPURequirement(request.cpus()),
+                                                        new MemoryRequirement(request.memory())),
+                                                request.volumes(),
+                                                LocalLoggingSpec.DEFAULT,
+                                                new AnyPlacementPolicy(),
+                                                Map.of(),
+                                                request.env()),
+                new EpochTaskTriggerCron(request.cron()),
+                new MailNotificationSpec(List.of(request.notifyEmail())));
+
+        val saved = topologyStore.update(topologyId, topology, topologyDetails.get().getState());
         saved.ifPresent(epochTopologyDetails -> {
             scheduleTopology(epochTopologyDetails, scheduler, new Date());
             eventBus.publish(EpochStateChangeEvent.builder()

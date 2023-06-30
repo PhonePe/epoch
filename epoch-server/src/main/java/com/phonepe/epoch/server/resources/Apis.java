@@ -71,6 +71,19 @@ public class Apis {
                 .orElseGet(() -> ApiResponse.failure("Could not create topology"));
     }
 
+    @PUT
+    @Path("/topologies")
+    @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
+    public ApiResponse<EpochTopologyDetails> update(@NotNull @Valid final EpochTopology topology) {
+        val topologyId = topologyId(topology);
+        val saved = topologyStore.update(topologyId, topology, EpochTopologyState.ACTIVE);
+        runInfoStore.deleteAll(topologyId);
+        saved.ifPresent(epochTopologyDetails -> scheduleTopology(epochTopologyDetails, scheduler, new Date()));
+        return saved
+                .map(ApiResponse::success)
+                .orElseGet(() -> ApiResponse.failure("Could not update topology"));
+    }
+
     @GET
     @Path("/topologies")
     public ApiResponse<List<EpochTopologyDetails>> listTopologies() {
@@ -99,7 +112,8 @@ public class Apis {
     @Path("/topologies/{topologyId}/pause")
     @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
     public ApiResponse<EpochTopologyDetails> pauseTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
-        return topologyStore.updateState(topologyId, EpochTopologyState.PAUSED)
+        return topologyStore.get(topologyId)
+                .flatMap(topology-> topologyStore.update(topologyId, topology.getTopology(), EpochTopologyState.PAUSED))
                 .map(ApiResponse::success)
                 .orElseGet(() -> ApiResponse.failure(noTopoError(topologyId)));
     }
@@ -108,7 +122,8 @@ public class Apis {
     @Path("/topologies/{topologyId}/unpause")
     @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
     public ApiResponse<EpochTopologyDetails> unpauseTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
-        return topologyStore.updateState(topologyId, EpochTopologyState.ACTIVE)
+        return topologyStore.get(topologyId)
+                .flatMap(topology-> topologyStore.update(topologyId, topology.getTopology(), EpochTopologyState.ACTIVE))
                 .map(ApiResponse::success)
                 .orElseGet(() -> ApiResponse.failure(noTopoError(topologyId)));
     }

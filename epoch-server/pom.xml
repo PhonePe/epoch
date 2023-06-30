@@ -14,7 +14,6 @@
         <handlebars.version>4.3.0</handlebars.version>
         <handlebars-guava-cache.version>4.3.0</handlebars-guava-cache.version>
         <simple-java-mail.version>8.0.0</simple-java-mail.version>
-        <cronutils.version>9.2.0</cronutils.version>
     </properties>
 
     <dependencies>
