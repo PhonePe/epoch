@@ -238,6 +238,8 @@ class ApisTest extends TestBase {
     @Test
     void testPauseTopologySuccess() {
         val details = EpochUtils.detailsFrom(TestUtils.generateTopologyDesc(0, new MailNotificationSpec(List.of("test@email.com"))));
+        when(topologyStore.get(anyString()))
+                .thenReturn(Optional.of(details));
         when(topologyStore.update(details.getId(), details.getTopology(), PAUSED))
                 .thenAnswer(invocationMock -> Optional.of(new EpochTopologyDetails(details.getId(),
                                                                                    details.getTopology(),
@@ -273,6 +275,8 @@ class ApisTest extends TestBase {
     void testUnpauseTopologySuccess() {
         val details = EpochUtils.detailsFrom(TestUtils.generateTopologyDesc(0, new MailNotificationSpec(List.of("test@email.com"))));
         val called = new AtomicBoolean();
+        when(topologyStore.get(anyString()))
+                .thenReturn(Optional.of(details));
         when(topologyStore.update(details.getId(), details.getTopology(), ACTIVE))
                 .thenAnswer(invocationMock -> {
                     called.set(true);
