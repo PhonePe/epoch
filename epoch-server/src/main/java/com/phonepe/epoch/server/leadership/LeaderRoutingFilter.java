@@ -18,7 +18,12 @@ import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 import org.apache.hc.client5.http.socket.ConnectionSocketFactory;
 import org.apache.hc.client5.http.socket.PlainConnectionSocketFactory;
 import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
-import org.apache.hc.core5.http.*;
+import org.apache.hc.core5.http.ClassicHttpRequest;
+import org.apache.hc.core5.http.ClassicHttpResponse;
+import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.HttpRequest;
+import org.apache.hc.core5.http.ParseException;
+import org.apache.hc.core5.http.URIScheme;
 import org.apache.hc.core5.http.config.RegistryBuilder;
 import org.apache.hc.core5.http.io.SocketConfig;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
@@ -80,7 +85,7 @@ public class LeaderRoutingFilter implements ContainerRequestFilter {
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
         if (manager.isLeader()) {
-            log.trace("Allowing request as this node is the leader");
+            log.trace("Allowing request as this node is the leader. Path:{}", requestContext.getUriInfo().getPath());
             return;
         }
         val leader = manager.leader().orElse(null);
@@ -92,12 +97,22 @@ public class LeaderRoutingFilter implements ContainerRequestFilter {
         }
         val parts = leader.replaceAll("/", "").split(":");
 
+        /*
+        the path from requestContext includes base path - /apis/ui .. which shouldn't be forwarded to the leader, we need to
+        sanitize the path such that /ui requests are trimmed while the rest are included with the base path. Hence
+        the logic below */
+        val decodedPath = ((ContainerRequest) requestContext).getPath(true);
+        val destinationUriPath = decodedPath.startsWith("ui/")
+               ? decodedPath.replace("ui/", "")
+               : ((ContainerRequest) requestContext).getRequestUri().getPath();
+
         val uri = requestContext.getUriInfo().getRequestUriBuilder()
+                .uri(destinationUriPath)
                 .scheme(parts[0])
                 .host(parts[1])
                 .port(Integer.parseInt(parts[2]))
                 .build();
-        log.trace("Proxying request to: {}", uri);
+        log.trace("Proxying request {} to: {}", requestContext.getUriInfo().getPath(), uri);
         val request = request(uri, (ContainerRequest) requestContext.getRequest());
         try {
             val proxyResponse = httpClient.execute(request, LeaderRoutingFilter::handleResponse);

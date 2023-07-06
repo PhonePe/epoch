@@ -20,7 +20,7 @@
         <junit.version>5.8.2</junit.version>
         <signals.version>1.4</signals.version>
         <kaal.version>1.0.0</kaal.version>
-        <drove.version>1.19</drove.version>
+        <drove.version>1.21</drove.version>
         <function-metrics.version>1.0.14</function-metrics.version>
         <awaitility.version>4.2.0</awaitility.version>
         <guice.version>5.1.0</guice.version>
@@ -44,9 +44,21 @@
             **com/phonepe/epoch/server/config/**,
             **com/phonepe/epoch/server/ui/**,
             **com/phonepe/epoch/server/ui/views/**,
-            **/App.*
-            **/Module.*
+            **com/phonepe/epoch/server/App.java,
+            **com/phonepe/epoch/server/EpochModule.java
         </sonar.exclusions>
+        <sonar.coverage.exclusions>
+            **/*.hbs,
+            **/*.js,
+            **/*.css,
+            **/model/**,
+            **/models/**,
+            **com/phonepe/epoch/server/config/**,
+            **com/phonepe/epoch/server/ui/**,
+            **com/phonepe/epoch/server/ui/views/**,
+            **com/phonepe/epoch/server/App.java,
+            **com/phonepe/epoch/server/EpochModule.java
+        </sonar.coverage.exclusions>
     </properties>
 
     <dependencyManagement>

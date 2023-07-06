@@ -1,0 +1,9 @@
+{
+	"hideEmptyReleases": true,
+	"unreleased": true,
+	"hideCredit": true,
+	"template": "compact",
+	"commitLimit": 5,
+	"startingDate": "2023-06-01",
+	"ignoreCommitPattern": "^\\[CI\\] |^[Uu]pdating (poms|develop)"
+}

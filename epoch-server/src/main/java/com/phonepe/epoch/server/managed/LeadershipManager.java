@@ -1,5 +1,6 @@
 package com.phonepe.epoch.server.managed;
 
+import com.google.common.base.Strings;
 import com.phonepe.epoch.server.utils.EpochUtils;
 import io.appform.signals.signals.ConsumingFireForgetSignal;
 import io.dropwizard.lifecycle.Managed;
@@ -64,8 +65,7 @@ public class LeadershipManager implements LeaderSelectorListener, Managed, Serve
         try {
             stopped.set(true);
             stopCondition.signalAll();
-        }
-        finally {
+        } finally {
             stopLock.unlock();
         }
         this.selector.close();
@@ -82,8 +82,8 @@ public class LeadershipManager implements LeaderSelectorListener, Managed, Serve
 
     @SneakyThrows
     public Optional<String> leader() {
-        return started.get() && leader.get()
-               ? Optional.of(selector.getLeader().getId())
+        return started.get()
+               ? leaderOptional()
                : Optional.empty();
     }
 
@@ -125,9 +125,25 @@ public class LeadershipManager implements LeaderSelectorListener, Managed, Serve
 
     @Override
     public void stateChanged(CuratorFramework client, ConnectionState newState) {
-        if(client.getConnectionStateErrorPolicy().isErrorState(newState)) {
+        if (client.getConnectionStateErrorPolicy().isErrorState(newState) && started.get()) {
             log.error("ZK connection state went to {}. Will commit seppuku.", newState);
             System.exit(-1);
         }
+    }
+
+    /**
+     * From {@link LeaderSelector} If for some reason there is no current leader, a dummy
+     * {@link org.apache.curator.framework.recipes.leader.Participant} is returned.
+     * We are handling that case in thisfunction
+     *
+     * @return leader id if present
+     * @throws Exception if curator throws an exception
+     */
+    private Optional<String> leaderOptional() throws Exception {
+        final String id = selector.getLeader().getId();
+        if (Strings.isNullOrEmpty(id)) {
+            return Optional.empty();
+        }
+        return Optional.of(id);
     }
 }

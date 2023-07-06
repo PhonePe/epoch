@@ -16,6 +16,8 @@ public class DroveConfig {
     @NotEmpty
     private List<String> endpoints;
 
+    boolean insecure;
+
     private Duration checkInterval;
 
     private Duration connectionTimeout;

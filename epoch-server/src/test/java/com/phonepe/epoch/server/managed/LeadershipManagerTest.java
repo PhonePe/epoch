@@ -50,19 +50,20 @@ class LeadershipManagerTest extends TestBase {
                 l1.start();
                 l1.serverStarted(server(8080));
                 val host = hostname();
-                //l2.start();
                 await()
                         .atMost(Duration.ofMinutes(1))
                         .until(leaderUpdated1::get);
                 assertTrue(leaderUpdated1.get());
                 assertTrue(l1.isLeader());
                 assertEquals("http://" + host + ":8080", l1.leader().orElse(null));
-                //Check failover
 
+                //Check failover
                 l2.start();
                 l2.serverStarted(server(9000));
                 assertFalse(l2.isLeader());
-                assertNull(l2.leader().orElse(null));
+                // leader should still be the older host
+                assertEquals("http://" + host + ":8080", l2.leader().orElse(null));
+
                 l1.stop();
                 await()
                         .atMost(Duration.ofMinutes(1))
