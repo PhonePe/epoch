@@ -62,6 +62,11 @@ public class NotificationMailSender implements NotificationSender {
         epochEvent.accept((EpochEventVisitor<Void>) stateChangeEvent -> {
             val newState = (EpochTopologyRunState) stateChangeEvent.getMetadata().get(StateChangeEventDataTag.NEW_STATE);
             if (newState == EpochTopologyRunState.SUCCESSFUL && !mailConfig.isEnableForSuccessfulRuns()) {
+                log.info("Skipping mail for {}/{}/{} status {}",
+                         stateChangeEvent.getMetadata().get(StateChangeEventDataTag.TOPOLOGY_ID),
+                         stateChangeEvent.getMetadata().get(StateChangeEventDataTag.TOPOLOGY_RUN_ID),
+                         stateChangeEvent.getMetadata().get(StateChangeEventDataTag.TOPOLOGY_RUN_TASK_ID),
+                         newState);
                 return null;
             }
             mailDataConverter.convert(stateChangeEvent)
