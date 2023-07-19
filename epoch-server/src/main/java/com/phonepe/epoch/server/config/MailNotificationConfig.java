@@ -33,13 +33,17 @@ public class MailNotificationConfig extends NotificationConfig {
     String password;
 
     List<@Email String> defaultEmails;
+
+    boolean enableForSuccessfulRuns;
+
     public MailNotificationConfig(
             String smtpServer,
             int port,
             boolean tls,
             String username,
             String password,
-            List<@Email String> defaultEmails) {
+            List<@Email String> defaultEmails,
+            boolean enableForSuccessfulRuns) {
         super(NotificationReceiverType.MAIL);
         this.smtpServer = smtpServer;
         this.port = port;
@@ -47,6 +51,7 @@ public class MailNotificationConfig extends NotificationConfig {
         this.username = username;
         this.password = password;
         this.defaultEmails = defaultEmails;
+        this.enableForSuccessfulRuns = enableForSuccessfulRuns;
     }
 
     @Override

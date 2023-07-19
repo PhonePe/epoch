@@ -1,9 +1,11 @@
 package com.phonepe.epoch.server.notify;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.server.config.MailNotificationConfig;
 import com.phonepe.epoch.server.event.EpochEvent;
 import com.phonepe.epoch.server.event.EpochEventVisitor;
+import com.phonepe.epoch.server.event.StateChangeEventDataTag;
 import com.phonepe.epoch.server.utils.IgnoreInJacocoGeneratedReport;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -58,6 +60,10 @@ public class NotificationMailSender implements NotificationSender {
     @Override
     public void consume(EpochEvent epochEvent) {
         epochEvent.accept((EpochEventVisitor<Void>) stateChangeEvent -> {
+            val newState = (EpochTopologyRunState) stateChangeEvent.getMetadata().get(StateChangeEventDataTag.NEW_STATE);
+            if (newState == EpochTopologyRunState.SUCCESSFUL && !mailConfig.isEnableForSuccessfulRuns()) {
+                return null;
+            }
             mailDataConverter.convert(stateChangeEvent)
                     .ifPresent(this::sendMail);
             return null;
