@@ -38,7 +38,7 @@ class NotificationMailSenderTest {
     void testSendMail() {
         val ts = mock(TopologyStore.class);
         val trs = mock(TopologyRunInfoStore.class);
-        val mc = new MailNotificationConfig("localhost", 2525, false, "", "", List.of(), true);
+        val mc = new MailNotificationConfig("localhost", 2525, false, "", "", List.of(), false);
         val mailer = mock(Mailer.class);
         val ctr = new AtomicBoolean();
         val mailDataConverter = new EventMailDataConverter(ts, trs, List.of());
@@ -73,7 +73,7 @@ class NotificationMailSenderTest {
     void testSendMailSkipOnSuccess() {
         val ts = mock(TopologyStore.class);
         val trs = mock(TopologyRunInfoStore.class);
-        val mc = new MailNotificationConfig("localhost", 2525, false, "", "", List.of(), false);
+        val mc = new MailNotificationConfig("localhost", 2525, false, "", "", List.of(), true);
         val mailer = mock(Mailer.class);
         val ctr = new AtomicBoolean();
         val mailDataConverter = new EventMailDataConverter(ts, trs, List.of());
@@ -108,7 +108,7 @@ class NotificationMailSenderTest {
     void testSendMailForFailure() {
         val ts = mock(TopologyStore.class);
         val trs = mock(TopologyRunInfoStore.class);
-        val mc = new MailNotificationConfig("localhost", 2525, false, "", "", List.of(), true);
+        val mc = new MailNotificationConfig("localhost", 2525, false, "", "", List.of(), false);
         val mailer = mock(Mailer.class);
         val ctr = new AtomicBoolean();
         val mailDataConverter = new EventMailDataConverter(ts, trs, List.of());
@@ -143,7 +143,7 @@ class NotificationMailSenderTest {
     void testSendMailToDefault() {
         val ts = mock(TopologyStore.class);
         val trs = mock(TopologyRunInfoStore.class);
-        val mc = new MailNotificationConfig("localhost", 2525, false, "", "", List.of("test@email.com"), true);
+        val mc = new MailNotificationConfig("localhost", 2525, false, "", "", List.of("test@email.com"), false);
         val mailer = mock(Mailer.class);
         val ctr = new AtomicBoolean();
         val mailDataConverter = new EventMailDataConverter(ts, trs, List.of("test@email.com"));
@@ -177,7 +177,7 @@ class NotificationMailSenderTest {
     void testIgnoreEventTypeMismatch() {
         val ts = mock(TopologyStore.class);
         val trs = mock(TopologyRunInfoStore.class);
-        val mc = new MailNotificationConfig("localhost", 2525, false, "", "", List.of(), true);
+        val mc = new MailNotificationConfig("localhost", 2525, false, "", "", List.of(), false);
         val mailer = mock(Mailer.class);
         val ctr = new AtomicBoolean();
         val mailDataConverter = new EventMailDataConverter(ts, trs, List.of());
@@ -211,7 +211,7 @@ class NotificationMailSenderTest {
     void testIgnoreMailNoEmail() {
         val ts = mock(TopologyStore.class);
         val trs = mock(TopologyRunInfoStore.class);
-        val mc = new MailNotificationConfig("localhost", 2525, false, "", "", List.of(), true);
+        val mc = new MailNotificationConfig("localhost", 2525, false, "", "", List.of(), false);
         val mailer = mock(Mailer.class);
         val ctr = new AtomicBoolean();
         val mailDataConverter = new EventMailDataConverter(ts, trs, List.of());

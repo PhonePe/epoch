@@ -58,7 +58,7 @@ public class NotificationMailSender implements NotificationSender {
     @Override
     public void consume(EpochEvent epochEvent) {
         epochEvent.accept((EpochEventVisitor<Void>) stateChangeEvent -> {
-            if (NotificationUtils.mailToBeSkipped(stateChangeEvent, mailConfig::isEnableForSuccessfulRuns)) {
+            if (NotificationUtils.mailToBeSkipped(stateChangeEvent, mailConfig::isDisableForSuccessfulRuns)) {
                 return null;
             }
             mailDataConverter.convert(stateChangeEvent)

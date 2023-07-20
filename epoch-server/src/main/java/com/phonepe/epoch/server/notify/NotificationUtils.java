@@ -12,9 +12,9 @@ import java.util.function.Supplier;
 @UtilityClass
 @Slf4j
 public class NotificationUtils {
-    public boolean mailToBeSkipped(final EpochStateChangeEvent stateChangeEvent, Supplier<Boolean> isEnabled) {
+    public boolean mailToBeSkipped(final EpochStateChangeEvent stateChangeEvent, Supplier<Boolean> isDisabled) {
         val newState = (EpochTopologyRunState) stateChangeEvent.getMetadata().get(StateChangeEventDataTag.NEW_STATE);
-        if (newState == EpochTopologyRunState.SUCCESSFUL && !isEnabled.get()) {
+        if (newState == EpochTopologyRunState.SUCCESSFUL && isDisabled.get()) {
             log.info("Skipping mail for {}/{}/{} status {}",
                      stateChangeEvent.getMetadata().get(StateChangeEventDataTag.TOPOLOGY_ID),
                      stateChangeEvent.getMetadata().get(StateChangeEventDataTag.TOPOLOGY_RUN_ID),
