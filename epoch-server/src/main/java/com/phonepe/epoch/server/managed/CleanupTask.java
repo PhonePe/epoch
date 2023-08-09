@@ -28,10 +28,10 @@ import java.util.Objects;
 @Order(50)
 public class CleanupTask implements Managed {
 
-    private static final String CLEANUP_HANDLER_NAME = "CLEANUP_HANDLER";
+    public static final Duration DEFAULT_CLEANUP_INTERVAL = Duration.minutes(5);
+    public static final int DEFAULT_NUM_RUNS_PER_JOB = 5;
 
-    private static final Duration DEFAULT_CLEANUP_INTERVAL = Duration.minutes(5);
-    private static final int DEFAULT_NUM_RUNS_PER_JOB = 5;
+    public static final String CLEANUP_HANDLER_NAME = "CLEANUP_HANDLER";
 
     private final LeadershipManager leadershipManager;
     private final ScheduledSignal cleanupJobRunner;

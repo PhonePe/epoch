@@ -31,4 +31,7 @@ public class AppConfig extends Configuration {
     @Valid
     private NotificationConfig notify;
 
+    @Valid
+    private EpochOptionsConfig options;
+
 }

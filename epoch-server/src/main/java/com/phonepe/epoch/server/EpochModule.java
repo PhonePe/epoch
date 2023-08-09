@@ -7,6 +7,7 @@ import com.google.inject.name.Names;
 import com.phonepe.epoch.server.config.*;
 import com.phonepe.epoch.server.execution.TopologyExecutor;
 import com.phonepe.epoch.server.execution.TopologyExecutorImpl;
+import com.phonepe.epoch.server.managed.CleanupTask;
 import com.phonepe.epoch.server.notify.EventMailDataConverter;
 import com.phonepe.epoch.server.notify.NotificationBlackholeSender;
 import com.phonepe.epoch.server.notify.NotificationMailSender;
@@ -65,6 +66,15 @@ public class EpochModule extends AbstractModule {
     @Singleton
     public CuratorFramework curator(AppConfig config) {
         return ZkUtils.buildCurator(config.getZookeeper());
+    }
+
+    @Provides
+    @Singleton
+    public EpochOptionsConfig optionsConfig(final AppConfig appConfig) {
+        return Objects.requireNonNullElse(appConfig.getOptions(),
+                                          new EpochOptionsConfig()
+                                                  .setCleanupJobInterval(CleanupTask.DEFAULT_CLEANUP_INTERVAL)
+                                                  .setNumRunsPerJob(CleanupTask.DEFAULT_NUM_RUNS_PER_JOB));
     }
 
     @Provides
