@@ -19,6 +19,7 @@ import com.phonepe.epoch.server.utils.IgnoreInJacocoGeneratedReport;
 import com.phonepe.epoch.server.utils.ZkUtils;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.util.Duration;
+import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.curator.framework.CuratorFramework;
 
@@ -33,6 +34,7 @@ import java.util.concurrent.SynchronousQueue;
  *
  */
 @IgnoreInJacocoGeneratedReport(reason = "guava module .. nothing to test")
+@Slf4j
 public class EpochModule extends AbstractModule {
 
 
@@ -71,10 +73,12 @@ public class EpochModule extends AbstractModule {
     @Provides
     @Singleton
     public EpochOptionsConfig optionsConfig(final AppConfig appConfig) {
-        return Objects.requireNonNullElse(appConfig.getOptions(),
+        val options = Objects.requireNonNullElse(appConfig.getOptions(),
                                           new EpochOptionsConfig()
                                                   .setCleanupJobInterval(CleanupTask.DEFAULT_CLEANUP_INTERVAL)
                                                   .setNumRunsPerJob(CleanupTask.DEFAULT_NUM_RUNS_PER_JOB));
+        log.info("Epoch options: {}", options);
+        return options;
     }
 
     @Provides

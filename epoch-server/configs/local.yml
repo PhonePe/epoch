@@ -51,3 +51,6 @@ notify:
   defaultEmails:
     - ${DEV_EMAIL}
 
+options:
+  cleanupJobInterval: 30m
+  numRunsPerJob: 20
