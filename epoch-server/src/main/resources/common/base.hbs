@@ -69,6 +69,20 @@
 
 {{/block}}
 <script language="JavaScript">
+function formatBytes(data) {
+    const decimals = 2;
+    const bytes = data * 1024 * 1024;
+    if (bytes === 0) return '0 Bytes';
+
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
 (function() {
   'use strict';
   $.fn.dataTable.ext.errMode = 'none';
@@ -218,17 +232,7 @@ $(document).ready(function() {
 
     function formatBytes(data, type, row, meta) {
         if(type === 'display') {
-            const decimals = 2;
-            const bytes = data * 1024 * 1024;
-            if (bytes === 0) return '0 Bytes';
-
-            const k = 1024;
-            const dm = decimals < 0 ? 0 : decimals;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+            return formatBytes(data);
         }
         return data;
     }
