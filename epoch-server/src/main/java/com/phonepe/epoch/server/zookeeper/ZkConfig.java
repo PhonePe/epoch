@@ -13,6 +13,4 @@ public class ZkConfig {
     private String connectionString;
 
     private String nameSpace;
-
-    private int port;
 }
