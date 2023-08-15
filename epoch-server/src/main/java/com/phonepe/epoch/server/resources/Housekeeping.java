@@ -2,7 +2,6 @@ package com.phonepe.epoch.server.resources;
 
 import com.google.inject.Inject;
 import com.phonepe.epoch.server.managed.LeadershipManager;
-import io.dropwizard.util.Maps;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

@@ -5,5 +5,5 @@ then cd .. && mvn clean install -DskipTests -Plocal -pl !epoch-server && cd epoc
 fi
 export TEAM_ID=infra
 export DROVE_APP_NAME=epoch
-mvn compile -Plocal exec:java -Dexec.mainClass="com.phonepe.epoch.server.App" -Duser.timezone=IST -DlocalConfig=true -Dexec.args="server configs/local-dr.yml"
+mvn compile -Plocal exec:java -Dexec.mainClass="com.phonepe.epoch.server.App" -Duser.timezone=IST -DlocalConfig=true -Dexec.args="server configs/local.yml"
 #mvn clean install -DskipTests -Plocal && java -jar -XX:+UseG1GC -Xms1g -Xmx1g -DlocalConfig=true -Ddb.shards=1 target/epoch-server-1.0-SNAPSHOT.jar server config/local.yml

@@ -98,15 +98,15 @@
                                                                                        oninput="document.getElementById('cpu-value').textContent = this.value" required>
                                                                             </div>
                                                                             <div class="col-sm-2">
-                                                                                <small id="cpu-value">1</small>
+                                                                                <small id="cpu-value">{{#getresource details.topology.resources "CPU"}}{{/getresource}}</small>
                                                                             </div>
                                                                         </div>
                                                                         <div class="form-group row">
                                                                             <label for="memory" class="col-md-4 col-form-label">Memory (MB)</label>
                                                                             <div class="col-md-6">
                                                                                 <input type="range" class="form-control" id="memory" name="memory"
-                                                                                       value="{{#getresource details.topology.resources "MEMORY"}}{{/getresource}}" min="128" max="10240"
-                                                                                       oninput="document.getElementById('memory-value').textContent = this.value" required>
+                                                                                       value="{{#getresource details.topology.resources "MEMORY"}}{{/getresource}}" min="128" max="100000"
+                                                                                       oninput="document.getElementById('memory-value').textContent = formatBytes(parseInt(this.value))" required>
                                                                             </div>
                                                                             <div class="col-sm-2">
                                                                                 <small id="memory-value">{{#getresource details.topology.resources "MEMORY"}}{{/getresource}}</small>
@@ -127,12 +127,12 @@
                                                                                 </div>
                                                                                 <div class="row">
                                                                                     <div class="col env-vars">
-                                                                                        <div class="form-group row env-row-prototype close-row d-none">
+                                                                                        <div class="form-group row env-row-prototype close-row d-none" id="envRowPrototype">
                                                                                             <div class="col-sm-4">
-                                                                                                <input type="text" class="form-control env-name" placeholder="Variable Name" required>
+                                                                                                <input type="text" class="form-control env-name" name="env-name" placeholder="Variable Name" required>
                                                                                             </div>
                                                                                             <div class="col-sm-6">
-                                                                                                <input type="text" class="form-control env-val" placeholder="Variable Value" required>
+                                                                                                <input type="text" class="form-control env-val" name="env-val" placeholder="Variable Value" required>
                                                                                             </div>
                                                                                             <div class="col-sm-2">
                                                                                                 <button type="button" class="btn btn-outline-danger px-3 env-delete">
@@ -159,15 +159,15 @@
                                                                                 </div>
                                                                                 <div class="row">
                                                                                     <div class="col volumes">
-                                                                                        <div class="form-group row vol-row-prototype close-row d-none">
+                                                                                        <div class="form-group row vol-row-prototype close-row d-none" id="volRowPrototype">
                                                                                             <div class="col-sm-4">
-                                                                                                <input type="text" class="form-control vol-host-path" placeholder="Host Path" required>
+                                                                                                <input type="text" class="form-control vol-host-path" name="host-path" placeholder="Host Path" required>
                                                                                             </div>
                                                                                             <div class="col-sm-4">
-                                                                                                <input type="text" class="form-control vol-cont-path" placeholder="Docker Path" required>
+                                                                                                <input type="text" class="form-control vol-cont-path" name="cont-path" placeholder="Docker Path" required>
                                                                                             </div>
                                                                                             <div class="col-sm-2">
-                                                                                                <select class="form-control vol-mode">
+                                                                                                <select class="form-control vol-mode" name="mount-mode">
                                                                                                     <option value="READ_ONLY">RO</option>
                                                                                                     <option value="READ_WRITE">RW</option>
                                                                                                 </select>
@@ -270,37 +270,6 @@
         </table>`;
         return (str);
     }
-
-    $(document).on('click', '.env-add', e => {
-        const newRow = $(document).find('.env-row-prototype')
-            .clone()
-            .removeClass('env-row-prototype')
-            .removeClass('d-none')
-            .addClass('env-row');
-        newRow.find('.env-name').attr('name', 'env-name');
-        newRow.find('.env-val').attr('name', 'env-val');
-        $('.env-vars').append(newRow);
-    });
-
-    $(document).on('click', '.env-delete', e => {
-        $(e.target).closest('.env-row').remove();
-    });
-
-    $(document).on('click', '.vol-add', e => {
-        const newRow = $(document).find('.vol-row-prototype')
-            .clone()
-            .removeClass('vol-row-prototype')
-            .removeClass('d-none')
-            .addClass('vol-row');
-        newRow.find('.vol-host-path').attr('name', 'vol-host-path');
-        newRow.find('.vol-cont-path').attr('name', 'vol-cont-path');
-        newRow.find('.vol-mode').attr('name', 'vol-mode');
-        $('.volumes').append(newRow);
-    });
-
-    $(document).on('click', '.vol-delete', e => {
-        $(e.target).closest('.vol-row').remove();
-    });
 
     $(document).on('click', 'a.log-link',
         e => {
@@ -427,8 +396,50 @@
                                             "PUT",
                                             "/apis/v1/topologies/{{topologyId}}/unpause",
                                             () => location.reload()));
-    $('#edit').on('click', function() {
-        $('#editTopology').modal('show');
+
+    $(document).ready(function() {
+        var originalEnvRowCopy = $(".env-row-prototype").clone();
+        var originalVolRowCopy = $(".vol-row-prototype").clone();
+
+        $(document).on('click', '.env-add', e => {
+            var newRow = originalEnvRowCopy.clone().removeClass("d-none env-row-prototype");
+            $(".env-vars").append(newRow);
+        });
+
+        $(document).on('click', '.env-delete', e => {
+            $(e.currentTarget).parents("#envRowPrototype").remove();
+        });
+
+        $(document).on('click', '.vol-add', e => {
+            var newRow = originalVolRowCopy.clone().removeClass("d-none vol-row-prototype");
+            $(".volumes").append(newRow);
+        });
+
+        $(document).on('click', '.vol-delete', e => {
+            $(e.currentTarget).parents("#volRowPrototype").remove();
+        });
+
+        $('#edit').on('click', function() {
+            $(".env-vars").empty();
+            $(".volumes").empty();
+            {{#each details.topology.task.env}}
+                var row = originalEnvRowCopy.clone().removeClass("d-none env-row-prototype");
+                row.find(".env-name").val("{{@key}}");
+                row.find(".env-val").val("{{this}}");
+                $(".env-vars").append(row);
+            {{/each}}
+
+            {{#each details.topology.task.volumes}}
+                console.log("path =" + "{{this.pathInContainer}}");
+                var row = originalVolRowCopy.clone().removeClass("d-none vol-row-prototype");
+                row.find(".vol-host-path").val("{{this.pathOnHost}}");
+                row.find(".vol-cont-path").val("{{this.pathInContainer}}");
+                row.find(".vol-mode").val("{{this.mode}}");
+                $(".volumes").append(row);
+            {{/each}}
+
+            $('#editTopology').modal('show');
+        });
     });
 
     $('#submitEditTopology').on('click', function(e) {
@@ -436,6 +447,19 @@
         if($('#edit-topology-form').valid()) {
             updateTopology();
         }
+    });
+
+    $('#editTopology').on('hidden.bs.modal', function() {
+        console.log("we be resetting");
+        $("#edit-topology-form")[0].reset();
+
+        // Reset the display for the memory slider
+        var memoryValue = $("#memory").val();
+        $("#memory-value").text(formatBytes(parseInt(memoryValue)));
+
+        // Reset the display for the cpu slider
+        var cpuValue = $("#cpus").val();
+        $("#cpu-value").text(cpuValue);
     });
 
     function updateTopology() {
@@ -456,9 +480,9 @@
         }
         tdef['env'] = env;
         var volumes = [];
-        const hostPaths = inputs.getAll('vol-host-path');
-        const contPaths = inputs.getAll('vol-cont-path');
-        const mModes = inputs.getAll('vol-mode');
+        const hostPaths = inputs.getAll('host-path');
+        const contPaths = inputs.getAll('cont-path');
+        const mModes = inputs.getAll('mount-mode');
         for(i = 0; i < hostPaths.length; i++) {
             var volDef = {};
             volDef['pathOnHost'] = hostPaths[i];
