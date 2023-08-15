@@ -1,5 +1,6 @@
 package com.phonepe.epoch.server.resources;
 
+import com.phonepe.epoch.models.topology.EpochTopologyEditRequest;
 import com.phonepe.epoch.models.topology.SimpleTopologyCreateRequest;
 import com.phonepe.epoch.server.TestBase;
 import com.phonepe.epoch.server.TestUtils;
@@ -45,6 +46,7 @@ class UITest extends TestBase {
         val details = EpochUtils.detailsFrom(topo);
         val saveCalled = new AtomicBoolean();
         val scheduleCalled = new AtomicBoolean();
+        val updateCalled = new AtomicBoolean();
         when(topologyStore.save(any())).thenAnswer(invocationMock -> {
             saveCalled.set(true);
             return Optional.of(details);
@@ -67,6 +69,27 @@ class UITest extends TestBase {
         assertNotNull(r);
         assertTrue(saveCalled.get());
         assertTrue(scheduleCalled.get());
+        assertFalse(updateCalled.get());
+
+        when(topologyStore.update(anyString(), any(), any())).thenAnswer(invocationMock -> {
+            updateCalled.set(true);
+            return Optional.of(details);
+        });
+        when(topologyStore.get(any())).thenAnswer(invocationMock -> Optional.of(details));
+        scheduleCalled.set(false);
+        saveCalled.set(false);
+        val updateRequest = new EpochTopologyEditRequest("* * * * *",
+                                                         "docker.io/bash",
+                                                         4,
+                                                         512,
+                                                         "test@x.com",
+                                                         Map.of(),
+                                                         List.of());
+        val updateResponse = ui.updateTopology("TEST_TOPO", updateRequest);
+        assertNotNull(updateResponse);
+        assertTrue(updateCalled.get());
+        assertTrue(scheduleCalled.get());
+        assertFalse(saveCalled.get());
     }
 
     @Test

@@ -107,6 +107,40 @@ class ApisTest extends TestBase {
     }
 
     @Test
+    void testUpdateSuccess() {
+        val topology = TestUtils.generateTopologyDesc(1, new MailNotificationSpec(List.of("test@email.com")));
+        when(topologyStore.get(anyString())).thenReturn(Optional.of(EpochUtils.detailsFrom(topology)));
+        when(topologyStore.update(anyString(), any(), any()))
+                .thenAnswer(invocationMock -> Optional.of(EpochUtils.detailsFrom(
+                        invocationMock.getArgument(1, EpochTopology.class))));
+        when(scheduler.schedule(anyString(), any(), any())).thenReturn(Optional.of("TestSched"));
+        try (val r = EXT.target("/v1/topologies")
+                .request()
+                .put(Entity.json(topology))) {
+            assertEquals(HttpStatus.SC_OK, r.getStatus());
+            val apiR = r.readEntity(new GenericType<ApiResponse<EpochTopologyDetails>>() {
+            });
+            assertEquals(ApiErrorCode.SUCCESS, apiR.getStatus());
+            assertEquals(topology, apiR.getData().getTopology());
+        }
+    }
+
+    @Test
+    void testUpdateFailOnNotExists() {
+        val topology = TestUtils.generateTopologyDesc(1, new MailNotificationSpec(List.of("test@email.com")));
+        when(topologyStore.get(anyString())).thenReturn(Optional.empty());
+        try (val r = EXT.target("/v1/topologies")
+                .request()
+                .put(Entity.json(topology))) {
+            assertEquals(HttpStatus.SC_OK, r.getStatus());
+            val apiR = r.readEntity(new GenericType<ApiResponse<EpochTopologyDetails>>() {
+            });
+            assertEquals(ApiErrorCode.FAILED, apiR.getStatus());
+            assertNull(apiR.getData());
+        }
+    }
+
+    @Test
     void testFailSave() {
         when(topologyStore.get(anyString())).thenReturn(Optional.empty());
         when(topologyStore.save(any())).thenReturn(Optional.empty());
