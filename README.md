@@ -40,5 +40,5 @@ The following shows the various states of a topology <br>
 ### Zookeeper for storing tasks
 
 Epoch uses Zookeeper to store the tasks and topologies. The following diagram shows the structure of the data in Zookeeper
-<img src="resources/zkDataStructure.png" width="60%">
+<img src="resources/zkDataStructure.png" width="80%">
 
