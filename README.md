@@ -26,19 +26,19 @@ _TOPOLOGY:_  A topology is a definition of how the task is run - it can be sched
 
 As explained earlier, a task is a stand-alone unit of execution. <br> 
 The following diagram shows the various states of a task. This is inline with the states of a task in Drove.<br>
-![taskRunStates.png](resources/taskRunStates.png)
+![taskRunStates.png](resources/taskRunStates.png){height="50%" width="50%"}
 
 The state of the task determines the state of a topology run.<br>
 The following diagram shows the various states of a specific run of the Topology <br>
-![taskRunStates.png](resources/topologyRunStates.png)
+![taskRunStates.png](resources/topologyRunStates.png){height="50%" width="50%"}
 
 And finally, the above is only applicable if the Topology is not PAUSED. This is purely determined by the state of the Topology, set using the UI<br>
 The following shows the various states of a topology
-![taskRunStates.png](resources/topologyStates.png)
+![taskRunStates.png](resources/topologyStates.png){height="50%" width="50%"}
 
 
 ### Zookeeper for storing tasks
 
 Epoch uses Zookeeper to store the tasks and topologies. The following diagram shows the structure of the data in Zookeeper
-![zkData.png](resources/zkDataStructure.png)
+![zkData.png](resources/zkDataStructure.png){height="50%" width="50%"}
 
