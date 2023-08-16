@@ -11,8 +11,8 @@ Think of it being very similar to Chronos, but on Drove and not Mesos.
 
 - Authentication and Authorization using Olympus
 - Self-serve UI for creating and managing tasks
-- Schedule a one time task
-- Schedule a recurring task
+- Ability to create a topology and schedule a recurring task
+- Ability to run the above topology instantly
 
 ## Internals
 
@@ -22,7 +22,6 @@ _TASK:_ The primary unit of execution in Epoch is a Task. A task is a stand-alon
 Drove. <br>
 _TOPOLOGY:_  A topology is a definition of how the task is run - it can be scheduled to run at a particular time or at a
 recurring intervals. <br>
-
 - _Instant Run:_ A topology can be run instantly at a particular time
 - _Scheduled Run:_ Every topology is created with a QUARTZ cron expression. This expression determines the schedule of
   the topology. <br>
@@ -30,6 +29,8 @@ recurring intervals. <br>
 > :warning: **Tasks On Drove**: Today, Drove only supports running tasks that are packaged as docker images. So, the
 > task that you want to run on Drove should be packaged as a docker image and pushed to the Docker registry on
 > PhonePe. <br>
+
+
 > :information_source: **Quartz Cron**: Epoch uses Quartz cron expressions to schedule tasks. You can read more about
 > Quartz cron expressions [here](http://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html)
 
@@ -37,7 +38,7 @@ recurring intervals. <br>
 
 The first important aspect is to understand Leader Election and how requests are routed across different epoch
 instances. <br>
-A single Epoch node is the leader to all requests from the UI, and is responsible for running all Tasks, and doing the
+A single Epoch node is the leader to all requests from the UI, and is responsible for running all Topologies/Tasks, and doing the
 various state management. <br>
 The remaining nodes route requests to the leader node. <br>
 This is done using a simple Zookeeper based leader election, and a Routing Servlet Filter. <br>
@@ -68,6 +69,7 @@ The state of the task determines the state of a topology run.<br>
 The following diagram shows the various states of a specific run of the Topology <br>
 
 <img src="resources/topologyRunStates.png" width="50%">
+
 
 And finally, the above is only applicable if the Topology is not PAUSED. This is purely determined by the state of the
 Topology, set using the UI<br>
