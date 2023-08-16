@@ -61,6 +61,7 @@ A TLDR version of the request routing is represented below <br>
 
 As explained earlier, a task is a stand-alone unit of execution. <br>
 The following diagram shows the various states of a task. This is inline with the states of a task in Drove.<br>
+
 <img src="resources/taskRunStates.png" width="60%">
 
 The state of the task determines the state of a topology run.<br>
