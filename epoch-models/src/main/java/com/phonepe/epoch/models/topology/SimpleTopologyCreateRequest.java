@@ -39,8 +39,8 @@ public record SimpleTopologyCreateRequest(
                 + "[a-zA-Z0-9-]{1,63}(?<!-)(?:\\.(?!-)[a-zA-Z0-9-]{1,63}(?<!-))*(?::[0-9]{1,5})?/)?((?![._-])"
                 + "(?:[a-z0-9._-]*)(?<![._-])(?:/(?![._-])[a-z0-9._-]*(?<![._-]))*)(?::(?![.-])[a-zA-Z0-9_.-]{1,128})"
                 + "?$") @Length(max = 2048) String docker,
-        @Range(min = 1, max = 40) int cpus,
-        @Range(min = 128, max = 10240) long memory,
+        @Range(min = 1, max = 40) int cpus, 
+        @Range(min = 128, max = 100000) long memory,
         @NotNull @Email String notifyEmail,
         Map<String, String> env,
         List<MountedVolume> volumes) {
