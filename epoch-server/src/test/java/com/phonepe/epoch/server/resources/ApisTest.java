@@ -272,9 +272,7 @@ class ApisTest extends TestBase {
     @Test
     void testPauseTopologySuccess() {
         val details = EpochUtils.detailsFrom(TestUtils.generateTopologyDesc(0, new MailNotificationSpec(List.of("test@email.com"))));
-        when(topologyStore.get(anyString()))
-                .thenReturn(Optional.of(details));
-        when(topologyStore.update(details.getId(), details.getTopology(), PAUSED))
+        when(topologyStore.updateState(details.getId(), PAUSED))
                 .thenAnswer(invocationMock -> Optional.of(new EpochTopologyDetails(details.getId(),
                                                                                    details.getTopology(),
                                                                                    PAUSED,
@@ -293,7 +291,7 @@ class ApisTest extends TestBase {
 
     @Test
     void testPauseTopologyFail() {
-        when(topologyStore.update(anyString(), any(EpochTopology.class), any(EpochTopologyState.class))).thenReturn(Optional.empty());
+        when(topologyStore.updateState(anyString(), any(EpochTopologyState.class))).thenReturn(Optional.empty());
         try (val r = EXT.target("/v1/topologies/TEST_TOPO-0/pause")
                 .request()
                 .put(Entity.json(""))) {
@@ -309,9 +307,7 @@ class ApisTest extends TestBase {
     void testUnpauseTopologySuccess() {
         val details = EpochUtils.detailsFrom(TestUtils.generateTopologyDesc(0, new MailNotificationSpec(List.of("test@email.com"))));
         val called = new AtomicBoolean();
-        when(topologyStore.get(anyString()))
-                .thenReturn(Optional.of(details));
-        when(topologyStore.update(details.getId(), details.getTopology(), ACTIVE))
+        when(topologyStore.updateState(details.getId(), ACTIVE))
                 .thenAnswer(invocationMock -> {
                     called.set(true);
                     return Optional.of(details);
@@ -329,7 +325,7 @@ class ApisTest extends TestBase {
 
     @Test
     void testUnpauseTopologyFail() {
-        when(topologyStore.update(anyString(), any(EpochTopology.class), any(EpochTopologyState.class))).thenReturn(Optional.empty());
+        when(topologyStore.updateState(anyString(), any(EpochTopologyState.class))).thenReturn(Optional.empty());
         try (val r = EXT.target("/v1/topologies/TEST_TOPO-0/unpause")
                 .request()
                 .put(Entity.json(""))) {
