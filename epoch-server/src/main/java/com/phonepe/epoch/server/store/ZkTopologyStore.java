@@ -64,6 +64,21 @@ public class ZkTopologyStore implements TopologyStore {
     }
 
     @Override
+    public Optional<EpochTopologyDetails> updateState(String id, EpochTopologyState state) {
+        val updated = get(id)
+                .map(old -> new EpochTopologyDetails(old.getId(),
+                                                     old.getTopology(),
+                                                     state,
+                                                     old.getCreated(),
+                                                     new Date()))
+                .orElse(null);
+        if(null == updated) {
+            return Optional.empty();
+        }
+        return saveTopology(updated, id);
+    }
+
+    @Override
     public Optional<EpochTopologyDetails> update(String id, EpochTopology topology, EpochTopologyState state) {
         val updated = get(id)
                 .map(old -> new EpochTopologyDetails(old.getId(),

@@ -55,8 +55,7 @@ class TopologyRecoveryTest extends TestBase {
                                                                                          null),
                                                          new EpochTaskTriggerCron("0/2 * * ? * * *"),
                                                          BlackholeNotificationSpec.DEFAULT))
-                        .flatMap(topology -> i % 2 == 0 ? ts.update(topologyId(topology.getTopology()),
-                                                                    topology.getTopology(),
+                        .flatMap(topology -> i % 2 == 0 ? ts.updateState(topologyId(topology.getTopology()),
                                                                     EpochTopologyState.DELETED)
                                                         : Optional.of(topology))
                         .orElse(null))

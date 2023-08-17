@@ -48,10 +48,10 @@ class ZkTopologyStoreTest extends TestBase {
                     assertEquals(topo, ts.save(topo).map(EpochTopologyDetails::getTopology).orElse(null));
                     assertEquals(EpochTopologyState.ACTIVE,
                                  ts.save(topo).map(EpochTopologyDetails::getState).orElse(null));
-                    assertEquals(EpochTopologyState.PAUSED, ts.update(topologyId, topo, EpochTopologyState.PAUSED)
+                    assertEquals(EpochTopologyState.PAUSED, ts.updateState(topologyId, EpochTopologyState.PAUSED)
                             .map(EpochTopologyDetails::getState)
                             .orElse(null));
-                    assertNull(ts.update("Wrong", topo, EpochTopologyState.PAUSED)
+                    assertNull(ts.updateState("Wrong", EpochTopologyState.PAUSED)
                                        .map(EpochTopologyDetails::getState)
                                        .orElse(null));
                     assertTrue(ts.delete(topologyId));

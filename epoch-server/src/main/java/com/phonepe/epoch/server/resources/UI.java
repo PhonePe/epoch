@@ -116,18 +116,18 @@ public class UI {
     @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
     public Response createSimpleTopology(@Valid final SimpleTopologyCreateRequest request) {
         val topology = new EpochTopology(
-                request.name(),
+                request.getName(),
                 new EpochContainerExecutionTask("docker-task",
-                                                new DockerCoordinates(request.docker(), Duration.seconds(120)),
-                                                List.of(new CPURequirement(request.cpus()),
-                                                        new MemoryRequirement(request.memory())),
-                                                request.volumes(),
+                                                new DockerCoordinates(request.getDocker(), Duration.seconds(120)),
+                                                List.of(new CPURequirement(request.getCpus()),
+                                                        new MemoryRequirement(request.getMemory())),
+                                                request.getVolumes(),
                                                 LocalLoggingSpec.DEFAULT,
                                                 new AnyPlacementPolicy(),
                                                 Map.of(),
-                                                request.env()),
-                new EpochTaskTriggerCron(request.cron()),
-                new MailNotificationSpec(List.of(request.notifyEmail())));
+                                                request.getEnv()),
+                new EpochTaskTriggerCron(request.getCron()),
+                new MailNotificationSpec(List.of(request.getNotifyEmail())));
         val topologyId = topologyId(topology);
         if (topologyStore.get(topologyId).isPresent()) {
             return redirectToHome();
@@ -156,16 +156,16 @@ public class UI {
         val topology = new EpochTopology(
                 topologyId,
                 new EpochContainerExecutionTask("docker-task",
-                                                new DockerCoordinates(request.docker(), Duration.seconds(120)),
-                                                List.of(new CPURequirement(request.cpus()),
-                                                        new MemoryRequirement(request.memory())),
-                                                request.volumes(),
+                                                new DockerCoordinates(request.getDocker(), Duration.seconds(120)),
+                                                List.of(new CPURequirement(request.getCpus()),
+                                                        new MemoryRequirement(request.getMemory())),
+                                                request.getVolumes(),
                                                 LocalLoggingSpec.DEFAULT,
                                                 new AnyPlacementPolicy(),
                                                 Map.of(),
-                                                request.env()),
-                new EpochTaskTriggerCron(request.cron()),
-                new MailNotificationSpec(List.of(request.notifyEmail())));
+                                                request.getEnv()),
+                new EpochTaskTriggerCron(request.getCron()),
+                new MailNotificationSpec(List.of(request.getNotifyEmail())));
 
         val saved = topologyStore.update(topologyId, topology, topologyDetails.get().getState());
         saved.ifPresent(epochTopologyDetails -> {

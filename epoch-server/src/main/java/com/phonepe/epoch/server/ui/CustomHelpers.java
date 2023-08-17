@@ -21,8 +21,8 @@ import com.phonepe.drove.models.application.requirements.MemoryRequirement;
 import com.phonepe.drove.models.application.requirements.ResourceRequirementVisitor;
 import com.phonepe.epoch.models.tasks.EpochCompositeTask;
 import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
+import com.phonepe.epoch.models.tasks.EpochTask;
 import com.phonepe.epoch.models.tasks.EpochTaskVisitor;
-import com.phonepe.epoch.server.ui.views.TopologyDetailsView;
 import com.phonepe.epoch.server.utils.IgnoreInJacocoGeneratedReport;
 import lombok.experimental.UtilityClass;
 import lombok.val;
@@ -38,7 +38,7 @@ import java.util.Objects;
 public class CustomHelpers {
     public static Object eqstr(Object lhs, Options options) throws IOException {
         val rhs = options.param(0, null);
-        boolean result = Objects.equals(Objects.toString(lhs), Objects.toString(rhs));
+        val result = Objects.equals(Objects.toString(lhs), Objects.toString(rhs));
         if (options.tagType == TagType.SECTION) {
             return result ? options.fn() : options.inverse();
         }
@@ -47,36 +47,32 @@ public class CustomHelpers {
                : options.hash("no", false);
     }
 
-    public static Object getresource(Object context, Options options) {
-        final TopologyDetailsView topologyDetailsView = ((TopologyDetailsView) options.context.model());
+    public static Long getresource(String key, EpochTask task) {
+        return task.accept(new EpochTaskVisitor<>() {
+            @Override
+            public Long visit(final EpochCompositeTask composite) {
+                return 1L;
+            }
 
-        final String key = options.param(0);
-        return topologyDetailsView.getDetails().getTopology()
-                .getTask().accept(new EpochTaskVisitor<>() {
-                    @Override
-                    public Object visit(final EpochCompositeTask composite) {
-                        return null;
-                    }
+            @Override
+            public Long visit(final EpochContainerExecutionTask containerExecution) {
+                return containerExecution.getResources().stream()
+                        .filter(resourceRequirement -> resourceRequirement.getType().name().equals(key))
+                        .map(resourceRequirement -> resourceRequirement
+                                .accept(new ResourceRequirementVisitor<Long>() {
+                                    @Override
+                                    public Long visit(final CPURequirement cpuRequirement) {
+                                        return cpuRequirement.getCount();
+                                    }
 
-                    @Override
-                    public Object visit(final EpochContainerExecutionTask containerExecution) {
-                        return containerExecution.getResources().stream()
-                                .filter(resourceRequirement -> resourceRequirement.getType().name().equals(key))
-                                .map(resourceRequirement -> resourceRequirement
-                                        .accept(new ResourceRequirementVisitor<Long>() {
-                                            @Override
-                                            public Long visit(final CPURequirement cpuRequirement) {
-                                                return cpuRequirement.getCount();
-                                            }
-
-                                            @Override
-                                            public Long visit(final MemoryRequirement memoryRequirement) {
-                                                return memoryRequirement.getSizeInMB();
-                                            }
-                                        }))
-                                .findFirst().orElse(1L);
-                    }
-                });
+                                    @Override
+                                    public Long visit(final MemoryRequirement memoryRequirement) {
+                                        return memoryRequirement.getSizeInMB();
+                                    }
+                                }))
+                        .findFirst().orElse(1L);
+            }
+        });
     }
 
     public static CharSequence env(final String envVar) {

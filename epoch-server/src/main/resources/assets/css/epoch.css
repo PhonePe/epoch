@@ -75,20 +75,6 @@ div.dataTables_wrapper div.dataTables_filter {
     margin-bottom: .25rem;
 }
 
-#my-input {
-    transform: scaleX(0);
-    opacity: 0;
-    transition: opacity .25s, transform .25s;
-    transform-origin: 0 0;
-    float: right;
-    display: block;
-}
-
-#my-input.show {
-    transform: scaleX(1);
-    opacity: 1;
-}
-
 .overlay {
     position: fixed;
     top: 0;

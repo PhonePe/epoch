@@ -91,6 +91,23 @@ public class CachingProxyTopologyStore implements TopologyStore {
         }
     }
 
+
+    @Override
+    public Optional<EpochTopologyDetails> updateState(String id, EpochTopologyState state) {
+        val stamp = lock.writeLock();
+        try {
+            val saved = root.updateState(id, state);
+            if (saved.isPresent()) {
+                val data = saved.get();
+                cache.put(data.getId(), data);
+            }
+            return saved;
+        }
+        finally {
+            lock.unlock(stamp);
+        }
+    }
+
     @Override
     public Optional<EpochTopologyDetails> update(final String id, final EpochTopology topology,
                                                  final EpochTopologyState state) {

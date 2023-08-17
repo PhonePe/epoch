@@ -94,22 +94,22 @@
                                                                             <label for="cpus" class="col-md-4 col-form-label">Number of CPUs</label>
                                                                             <div class="col-md-6">
                                                                                 <input type="range" class="form-control" id="cpus" name="cpus"
-                                                                                       value="{{#getresource details.topology.resources "CPU"}}{{/getresource}}" min="1" max="40"
+                                                                                       value="{{getresource "CPU" details.topology.task}}" min="1" max="40"
                                                                                        oninput="document.getElementById('cpu-value').textContent = this.value" required>
                                                                             </div>
                                                                             <div class="col-sm-2">
-                                                                                <small id="cpu-value">{{#getresource details.topology.resources "CPU"}}{{/getresource}}</small>
+                                                                                <small id="cpu-value">{{getresource "CPU" details.topology.task}}</small>
                                                                             </div>
                                                                         </div>
                                                                         <div class="form-group row">
                                                                             <label for="memory" class="col-md-4 col-form-label">Memory (MB)</label>
                                                                             <div class="col-md-6">
                                                                                 <input type="range" class="form-control" id="memory" name="memory"
-                                                                                       value="{{#getresource details.topology.resources "MEMORY"}}{{/getresource}}" min="128" max="100000"
+                                                                                       value="{{getresource "MEMORY" details.topology.task}}" min="128" max="100000"
                                                                                        oninput="document.getElementById('memory-value').textContent = formatBytes(parseInt(this.value))" required>
                                                                             </div>
                                                                             <div class="col-sm-2">
-                                                                                <small id="memory-value">{{#getresource details.topology.resources "MEMORY"}}{{/getresource}}</small>
+                                                                                <small id="memory-value">{{getresource "MEMORY" details.topology.task}}</small>
                                                                             </div>
                                                                         </div>
 

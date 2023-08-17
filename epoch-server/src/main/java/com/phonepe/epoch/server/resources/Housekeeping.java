@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import com.phonepe.epoch.server.managed.LeadershipManager;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 
 import javax.annotation.security.PermitAll;
 import javax.ws.rs.Consumes;
@@ -13,7 +14,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Map;
-import java.util.Optional;
 
 @Path("/housekeeping")
 @Produces(MediaType.APPLICATION_JSON)
@@ -28,10 +28,10 @@ public class Housekeeping {
     @GET
     @Path("/v1/leader")
     public Response leader() {
-        final Optional<String> leader = manager.leader();
-        if (leader.isPresent()) {
-            return Response.ok(Map.of("leader", leader.get())).build();
-        }
-        return Response.status(Response.Status.NOT_FOUND).entity(Map.of("leader", "no leader available")).build();
+        val leader = manager.leader();
+        return leader
+                .map(s -> Response.ok(Map.of("leader", s)).build())
+                .orElseGet(() -> Response.status(
+                        Response.Status.NOT_FOUND).entity(Map.of("leader", "no leader available")).build());
     }
 }
