@@ -54,6 +54,7 @@ class ZkTopologyStoreTest extends TestBase {
                     assertNull(ts.updateState("Wrong", EpochTopologyState.PAUSED)
                                        .map(EpochTopologyDetails::getState)
                                        .orElse(null));
+                    assertEquals(EpochTopologyState.ACTIVE, ts.update(topologyId, topo, EpochTopologyState.ACTIVE));
                     assertTrue(ts.delete(topologyId));
                     assertNull(ts.get(topologyId).orElse(null));
                 }
