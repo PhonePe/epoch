@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 
 import static com.phonepe.epoch.server.utils.EpochUtils.detailsFrom;
 
@@ -33,6 +34,10 @@ public class ZkTopologyStore implements TopologyStore {
     public ZkTopologyStore(CuratorFramework curatorFramework, ObjectMapper mapper) {
         this.curatorFramework = curatorFramework;
         this.mapper = mapper;
+    }
+
+    private static String path(String id) {
+        return DATA_PATH + "/" + id;
     }
 
     @Override
@@ -65,32 +70,20 @@ public class ZkTopologyStore implements TopologyStore {
 
     @Override
     public Optional<EpochTopologyDetails> updateState(String id, EpochTopologyState state) {
-        val updated = get(id)
-                .map(old -> new EpochTopologyDetails(old.getId(),
-                                                     old.getTopology(),
-                                                     state,
-                                                     old.getCreated(),
-                                                     new Date()))
-                .orElse(null);
-        if(null == updated) {
-            return Optional.empty();
-        }
-        return saveTopology(updated, id);
+        return update(id, old -> new EpochTopologyDetails(old.getId(),
+                                                          old.getTopology(),
+                                                          state,
+                                                          old.getCreated(),
+                                                          new Date()));
     }
 
     @Override
     public Optional<EpochTopologyDetails> update(String id, EpochTopology topology, EpochTopologyState state) {
-        val updated = get(id)
-                .map(old -> new EpochTopologyDetails(old.getId(),
-                                                     topology,
-                                                     state,
-                                                     old.getCreated(),
-                                                     new Date()))
-                .orElse(null);
-        if(null == updated) {
-            return Optional.empty();
-        }
-        return saveTopology(updated, id);
+        return update(id, old -> new EpochTopologyDetails(old.getId(),
+                                                          topology,
+                                                          state,
+                                                          old.getCreated(),
+                                                          new Date()));
     }
 
     @Override
@@ -98,13 +91,20 @@ public class ZkTopologyStore implements TopologyStore {
         return ZkUtils.deleteNode(curatorFramework, path(id));
     }
 
-    private static String path(String id) {
-        return DATA_PATH + "/" + id;
-    }
-
     private Optional<EpochTopologyDetails> saveTopology(EpochTopologyDetails details, String id) {
         return ZkUtils.setNodeData(curatorFramework, path(id), mapper, details)
                ? get(id)
                : Optional.empty();
+    }
+
+    private Optional<EpochTopologyDetails> update(final String id,
+                                                  final UnaryOperator<EpochTopologyDetails> updateFunction) {
+        val updated = get(id)
+                .map(updateFunction)
+                .orElse(null);
+        if (null == updated) {
+            return Optional.empty();
+        }
+        return saveTopology(updated, id);
     }
 }
