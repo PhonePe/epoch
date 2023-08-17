@@ -36,7 +36,7 @@ public class CachingProxyTopologyStore implements TopologyStore {
         leadershipEnsurer.onLeadershipStateChange().connect(leader -> {
             val stamp = lock.writeLock();
             try {
-                log.info("Clearing topology cache. New leader: {}", leader.toString());
+                log.info("Clearing topology cache. New leader: {}", leader);
                 cache.clear(); //Nuke the cache and rebuild
             }
             finally {
