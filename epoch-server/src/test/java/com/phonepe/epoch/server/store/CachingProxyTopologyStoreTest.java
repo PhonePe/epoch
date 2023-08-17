@@ -61,6 +61,12 @@ class CachingProxyTopologyStoreTest extends TestBase {
                     assertNull(ts.updateState("Wrong", EpochTopologyState.PAUSED)
                                        .map(EpochTopologyDetails::getState)
                                        .orElse(null));
+                    assertEquals(EpochTopologyState.ACTIVE, ts.update(topologyId, topo, EpochTopologyState.ACTIVE)
+                            .map(EpochTopologyDetails::getState)
+                            .orElse(null));
+                    assertNull(ts.update("Wrong", topo, EpochTopologyState.PAUSED)
+                                       .map(EpochTopologyDetails::getState)
+                                       .orElse(null));
                     assertTrue(ts.delete(topologyId));
                     assertNull(ts.get(topologyId).orElse(null));
                 }
