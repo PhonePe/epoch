@@ -127,7 +127,7 @@ public class UI {
                                                 Map.of(),
                                                 request.getEnv()),
                 new EpochTaskTriggerCron(request.getCron()),
-                new MailNotificationSpec(List.of(request.getNotifyEmail())));
+                new MailNotificationSpec(List.of(request.getNotifyEmail().split(","))));
         val topologyId = topologyId(topology);
         if (topologyStore.get(topologyId).isPresent()) {
             return redirectToHome();
@@ -165,7 +165,7 @@ public class UI {
                                                 Map.of(),
                                                 request.getEnv()),
                 new EpochTaskTriggerCron(request.getCron()),
-                new MailNotificationSpec(List.of(request.getNotifyEmail())));
+                new MailNotificationSpec(List.of(request.getNotifyEmail().split(","))));
 
         val saved = topologyStore.update(topologyId, topology, topologyDetails.get().getState());
         saved.ifPresent(epochTopologyDetails -> {

@@ -5,12 +5,13 @@ import lombok.Value;
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.Range;
 
-import javax.validation.constraints.Email;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import java.util.List;
 import java.util.Map;
+
+import static com.phonepe.epoch.models.topology.RegexUtils.EMAILS_REGEX;
 
 /**
  *
@@ -56,7 +57,7 @@ public class SimpleTopologyCreateRequest {
     long memory;
 
     @NotNull
-    @Email
+    @Pattern(regexp = EMAILS_REGEX, message = "Invalid email(s) format")
     String notifyEmail;
 
     Map<String, String> env;

@@ -91,7 +91,6 @@ public class CachingProxyTopologyStore implements TopologyStore {
         }
     }
 
-
     @Override
     public Optional<EpochTopologyDetails> updateState(String id, EpochTopologyState state) {
         val stamp = lock.writeLock();
@@ -109,7 +108,8 @@ public class CachingProxyTopologyStore implements TopologyStore {
     }
 
     @Override
-    public Optional<EpochTopologyDetails> update(final String id, final EpochTopology topology,
+    public Optional<EpochTopologyDetails> update(final String id,
+                                                 final EpochTopology topology,
                                                  final EpochTopologyState state) {
         val stamp = lock.writeLock();
         try {

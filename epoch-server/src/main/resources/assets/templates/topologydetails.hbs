@@ -104,7 +104,7 @@
                                                                         <div class="form-group row">
                                                                             <label for="memory" class="col-md-4 col-form-label">Memory (MB)</label>
                                                                             <div class="col-md-6">
-                                                                                <input type="range" class="form-control" id="memory" name="memory"
+                                                                                <input type="range" class="form-control" id="memory" name="memory" step="128"
                                                                                        value="{{getresource "MEMORY" details.topology.task}}" min="128" max="100000"
                                                                                        oninput="document.getElementById('memory-value').textContent = formatBytes(parseInt(this.value))" required>
                                                                             </div>
@@ -161,10 +161,10 @@
                                                                                     <div class="col volumes">
                                                                                         <div class="form-group row vol-row-prototype close-row d-none" id="volRowPrototype">
                                                                                             <div class="col-sm-4">
-                                                                                                <input type="text" class="form-control vol-host-path" name="host-path" placeholder="Host Path" required>
+                                                                                                <input type="text" class="form-control vol-host-path" name="host-path" placeholder="Host directory" required>
                                                                                             </div>
                                                                                             <div class="col-sm-4">
-                                                                                                <input type="text" class="form-control vol-cont-path" name="cont-path" placeholder="Docker Path" required>
+                                                                                                <input type="text" class="form-control vol-cont-path" name="cont-path" placeholder="Mount path inside container" required>
                                                                                             </div>
                                                                                             <div class="col-sm-2">
                                                                                                 <select class="form-control vol-mode" name="mount-mode">
@@ -185,9 +185,9 @@
                                                                         <div class="form-group row">
                                                                             <label for="notifyEmail" class="col-md-4 col-form-label">Notification Email</label>
                                                                             <div class="col-md-8">
-                                                                                <input type="email" class="form-control" id="notifyEmail" name="notifyEmail"
-                                                                                       value="{{details.topology.notify.emails.0}}"
-                                                                                       placeholder="Email ID to notify one success and failure" required>
+                                                                                <input type="text" class="form-control" id="notifyEmail" name="notifyEmail"
+                                                                                       value="{{join "," details.topology.notify.emails}}"
+                                                                                       placeholder="Email IDs to notify on success and failure (comma separated)" required>
                                                                             </div>
                                                                         </div>
                                                                     </div>

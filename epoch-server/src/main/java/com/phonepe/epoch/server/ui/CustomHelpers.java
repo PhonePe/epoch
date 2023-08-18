@@ -28,6 +28,7 @@ import lombok.experimental.UtilityClass;
 import lombok.val;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -77,5 +78,9 @@ public class CustomHelpers {
 
     public static CharSequence env(final String envVar) {
         return System.getenv(envVar);
+    }
+
+    public static String join(final CharSequence delimited, final List<String> strings) {
+        return String.join(delimited, strings);
     }
 }
