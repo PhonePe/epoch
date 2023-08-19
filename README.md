@@ -77,11 +77,11 @@ The following shows the various states of a topology <br>
 
 <img src="resources/topologyStates.png" width="40%">
 
+#### What does a full create flow look like?
+<img src="resources/createFlowDiagram.png" width="80%">
+
 #### Zookeeper for storing tasks, runs and topologies
 
 Epoch uses Zookeeper to store the tasks and topologies. The following diagram shows the structure of the data in
 Zookeeper
 <img src="resources/zkDataStructure.png" width="80%">
-
-#### What does a full create flow look like?
-<img src="resources/createFlowDiagram.png" width="80%">
