@@ -83,3 +83,5 @@ Epoch uses Zookeeper to store the tasks and topologies. The following diagram sh
 Zookeeper
 <img src="resources/zkDataStructure.png" width="80%">
 
+#### What does a full create flow look like?
+<img src="resources/createFlowDiagram.png" width="80%">
