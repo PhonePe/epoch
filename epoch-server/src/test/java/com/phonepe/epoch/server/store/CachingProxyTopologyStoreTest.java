@@ -6,9 +6,7 @@ import com.phonepe.epoch.models.tasks.EpochTask;
 import com.phonepe.epoch.models.topology.EpochTopology;
 import com.phonepe.epoch.models.topology.EpochTopologyDetails;
 import com.phonepe.epoch.models.topology.EpochTopologyState;
-import com.phonepe.epoch.models.triggers.EpochTaskTriggerAt;
 import com.phonepe.epoch.models.triggers.EpochTaskTriggerCron;
-import com.phonepe.epoch.models.triggers.EpochTriggerVisitor;
 import com.phonepe.epoch.server.TestBase;
 import com.phonepe.epoch.server.TestUtils;
 import com.phonepe.epoch.server.managed.LeadershipManager;
@@ -75,7 +73,7 @@ class CachingProxyTopologyStoreTest extends TestBase {
 
                     assertEquals(updatedTimeSpec, ts.update(topologyId, updatedTopo)
                             .map(EpochTopologyDetails::getTopology)
-                            .map(t-> TestUtils.getTimeSpect(t.getTrigger()))
+                            .map(t-> TestUtils.getTimeSpec(t.getTrigger()))
                             .orElse(null));
                     assertNull(ts.update("Wrong", topo)
                                        .map(EpochTopologyDetails::getState)

@@ -12,7 +12,6 @@ import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
 import com.phonepe.epoch.models.topology.EpochTaskRunState;
 import com.phonepe.epoch.models.topology.EpochTopology;
-import com.phonepe.epoch.models.topology.EpochTopologyEditRequest;
 import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
 import com.phonepe.epoch.models.topology.EpochTopologyRunTaskInfo;
 import com.phonepe.epoch.models.topology.EpochTopologyRunType;
@@ -102,7 +101,7 @@ public class TestUtils {
                 new Date());
     }
 
-    public static String getTimeSpect(EpochTaskTrigger trigger) {
+    public static String getTimeSpec(EpochTaskTrigger trigger) {
         return trigger.accept(new EpochTriggerVisitor<>() {
             @Override
             public String visit(final EpochTaskTriggerAt at) {
