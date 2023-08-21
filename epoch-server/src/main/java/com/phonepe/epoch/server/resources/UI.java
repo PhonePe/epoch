@@ -177,7 +177,7 @@ public class UI {
                                      .build());
 
         });
-        return redirectToHome();
+        return Response.accepted().build();
     }
 
     private static Response redirectToHome() {

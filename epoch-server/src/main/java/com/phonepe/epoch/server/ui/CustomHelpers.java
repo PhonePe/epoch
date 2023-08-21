@@ -81,6 +81,9 @@ public class CustomHelpers {
     }
 
     public static String join(final CharSequence delimited, final List<String> strings) {
+        if (strings == null || strings.isEmpty()) {
+            return "";
+        }
         return String.join(delimited, strings);
     }
 }
