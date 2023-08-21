@@ -18,7 +18,7 @@ import javax.validation.constraints.Size;
 public class EpochTopology {
 
     @NotEmpty(message = "- Please provide an understandable name for the topology")
-    @Pattern(regexp = "[0-9a-zA-Z_-]+", message = "- Only alphanumeric - and _ allowed")
+    @Pattern(regexp = Regexes.TOPOLOGY_NAME_REGEX, message = "- Only alphanumeric - and _ allowed")
     @Size(min = 1, max = 255, message = "- Min length is 1, max 255")
     String name;
 
