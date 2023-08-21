@@ -6,7 +6,9 @@ import com.phonepe.epoch.models.tasks.EpochTask;
 import com.phonepe.epoch.models.topology.EpochTopology;
 import com.phonepe.epoch.models.topology.EpochTopologyDetails;
 import com.phonepe.epoch.models.topology.EpochTopologyState;
+import com.phonepe.epoch.models.triggers.EpochTaskTriggerAt;
 import com.phonepe.epoch.models.triggers.EpochTaskTriggerCron;
+import com.phonepe.epoch.models.triggers.EpochTriggerVisitor;
 import com.phonepe.epoch.server.TestBase;
 import com.phonepe.epoch.server.TestUtils;
 import com.phonepe.epoch.server.managed.LeadershipManager;
@@ -61,10 +63,21 @@ class CachingProxyTopologyStoreTest extends TestBase {
                     assertNull(ts.updateState("Wrong", EpochTopologyState.PAUSED)
                                        .map(EpochTopologyDetails::getState)
                                        .orElse(null));
-                    assertEquals(EpochTopologyState.ACTIVE, ts.update(topologyId, topo, EpochTopologyState.ACTIVE)
-                            .map(EpochTopologyDetails::getState)
+
+                    final String updatedTimeSpec = "2 * * ? * * *";
+                    val updatedTopo = new EpochTopology("test-topo",
+                                                        new EpochCompositeTask(IntStream.rangeClosed(1, 10)
+                                                                                       .<EpochTask>mapToObj(TestUtils::genContainerTask)
+                                                                                       .toList(),
+                                                                               EpochCompositeTask.CompositionType.ALL),
+                                                        new EpochTaskTriggerCron(updatedTimeSpec),
+                                                        new MailNotificationSpec(List.of("test@email.com")));
+
+                    assertEquals(updatedTimeSpec, ts.update(topologyId, updatedTopo)
+                            .map(EpochTopologyDetails::getTopology)
+                            .map(t-> TestUtils.getTimeSpect(t.getTrigger()))
                             .orElse(null));
-                    assertNull(ts.update("Wrong", topo, EpochTopologyState.PAUSED)
+                    assertNull(ts.update("Wrong", topo)
                                        .map(EpochTopologyDetails::getState)
                                        .orElse(null));
                     assertTrue(ts.delete(topologyId));

@@ -16,7 +16,10 @@ import com.phonepe.epoch.models.topology.EpochTopologyEditRequest;
 import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
 import com.phonepe.epoch.models.topology.EpochTopologyRunTaskInfo;
 import com.phonepe.epoch.models.topology.EpochTopologyRunType;
+import com.phonepe.epoch.models.triggers.EpochTaskTrigger;
 import com.phonepe.epoch.models.triggers.EpochTaskTriggerAt;
+import com.phonepe.epoch.models.triggers.EpochTaskTriggerCron;
+import com.phonepe.epoch.models.triggers.EpochTriggerVisitor;
 import com.phonepe.epoch.server.managed.LeadershipManager;
 import io.appform.signals.signals.ConsumingFireForgetSignal;
 import io.dropwizard.util.Duration;
@@ -97,6 +100,20 @@ public class TestUtils {
                 EpochTopologyRunType.INSTANT,
                 new Date(),
                 new Date());
+    }
+
+    public static String getTimeSpect(EpochTaskTrigger trigger) {
+        return trigger.accept(new EpochTriggerVisitor<>() {
+            @Override
+            public String visit(final EpochTaskTriggerAt at) {
+                return null;
+            }
+
+            @Override
+            public String visit(final EpochTaskTriggerCron cron) {
+                return cron.getTimeSpec();
+            }
+        });
     }
 
     public static LeadershipManager createLeadershipManager(boolean initialValue) {

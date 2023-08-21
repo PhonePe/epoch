@@ -4,6 +4,7 @@ import com.phonepe.epoch.models.topology.EpochTopologyEditRequest;
 import com.phonepe.epoch.models.topology.SimpleTopologyCreateRequest;
 import com.phonepe.epoch.server.TestBase;
 import com.phonepe.epoch.server.TestUtils;
+import com.phonepe.epoch.server.engine.TopologyEngine;
 import com.phonepe.epoch.server.event.EpochEventBus;
 import com.phonepe.epoch.server.managed.Scheduler;
 import com.phonepe.epoch.server.store.TopologyStore;
@@ -55,7 +56,7 @@ class UITest extends TestBase {
             scheduleCalled.set(true);
             return Optional.of("TR1");
         });
-        val ui = new UI(topologyStore, scheduler, epochEventbus, MAPPER);
+        val ui = new UI(new TopologyEngine(topologyStore, scheduler, epochEventbus), MAPPER);
 
         val request = new SimpleTopologyCreateRequest("TEST_TOPO",
                                                       "* * * * *",
@@ -71,7 +72,7 @@ class UITest extends TestBase {
         assertTrue(scheduleCalled.get());
         assertFalse(updateCalled.get());
 
-        when(topologyStore.update(anyString(), any(), any())).thenAnswer(invocationMock -> {
+        when(topologyStore.update(anyString(), any())).thenAnswer(invocationMock -> {
             updateCalled.set(true);
             return Optional.of(details);
         });
@@ -102,7 +103,7 @@ class UITest extends TestBase {
             saveCalled.set(true);
             return Optional.of(details);
         });
-        val ui = new UI(topologyStore, scheduler, epochEventbus, MAPPER);
+        val ui = new UI(new TopologyEngine(topologyStore, scheduler, epochEventbus), MAPPER);
 
         val request = new SimpleTopologyCreateRequest("TEST_TOPO",
                                                       "* * * * *",

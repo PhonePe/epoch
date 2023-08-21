@@ -78,10 +78,10 @@ public class ZkTopologyStore implements TopologyStore {
     }
 
     @Override
-    public Optional<EpochTopologyDetails> update(String id, EpochTopology topology, EpochTopologyState state) {
+    public Optional<EpochTopologyDetails> update(String id, EpochTopology topology) {
         return update(id, old -> new EpochTopologyDetails(old.getId(),
                                                           topology,
-                                                          state,
+                                                          old.getState(),
                                                           old.getCreated(),
                                                           new Date()));
     }

@@ -16,6 +16,6 @@ public interface TopologyStore {
     Optional<EpochTopologyDetails> get(final String id);
     List<EpochTopologyDetails> list(Predicate<EpochTopologyDetails> filter);
     Optional<EpochTopologyDetails> updateState(final String id, final EpochTopologyState state);
-    Optional<EpochTopologyDetails> update(final String id, final EpochTopology topology, final EpochTopologyState state);
+    Optional<EpochTopologyDetails> update(final String id, final EpochTopology topology);
     boolean delete(final String id);
 }

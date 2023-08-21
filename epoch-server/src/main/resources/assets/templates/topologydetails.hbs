@@ -493,8 +493,8 @@
         tdef['volumes'] = volumes;
         console.log(JSON.stringify(tdef));
         $.ajax({
-            type: 'post',
-            url: '/topologies/' + inputs.get('name') + '/update',
+            type: 'put',
+            url: '/apis/v1/topologies/' + inputs.get('name'),
             data: JSON.stringify(tdef),
             contentType: "application/json; charset=utf-8",
             traditional: true,

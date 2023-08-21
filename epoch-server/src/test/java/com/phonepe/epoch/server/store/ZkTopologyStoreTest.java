@@ -1,8 +1,11 @@
 package com.phonepe.epoch.server.store;
 
 import com.phonepe.epoch.models.notification.MailNotificationSpec;
+import com.phonepe.epoch.models.notification.NotificationSpec;
 import com.phonepe.epoch.models.tasks.EpochCompositeTask;
+import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
 import com.phonepe.epoch.models.tasks.EpochTask;
+import com.phonepe.epoch.models.tasks.EpochTaskVisitor;
 import com.phonepe.epoch.models.topology.EpochTopology;
 import com.phonepe.epoch.models.topology.EpochTopologyDetails;
 import com.phonepe.epoch.models.topology.EpochTopologyState;
@@ -17,6 +20,7 @@ import org.apache.curator.test.TestingCluster;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.phonepe.epoch.server.utils.EpochUtils.topologyId;
@@ -55,7 +59,7 @@ class ZkTopologyStoreTest extends TestBase {
                                        .map(EpochTopologyDetails::getState)
                                        .orElse(null));
                     assertEquals(EpochTopologyState.ACTIVE,
-                                 ts.update(topologyId, topo, EpochTopologyState.ACTIVE)
+                                 ts.updateState(topologyId, EpochTopologyState.ACTIVE) // todo
                                          .map(EpochTopologyDetails::getState).orElse(EpochTopologyState.DELETED));
                     assertTrue(ts.delete(topologyId));
                     assertNull(ts.get(topologyId).orElse(null));

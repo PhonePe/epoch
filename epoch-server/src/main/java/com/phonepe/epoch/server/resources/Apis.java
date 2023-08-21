@@ -4,6 +4,7 @@ import com.phonepe.drove.models.api.ApiResponse;
 import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.topology.*;
 import com.phonepe.epoch.server.auth.models.EpochUserRole;
+import com.phonepe.epoch.server.engine.TopologyEngine;
 import com.phonepe.epoch.server.managed.DroveClientManager;
 import com.phonepe.epoch.server.managed.Scheduler;
 import com.phonepe.epoch.server.remote.CancelResponse;
@@ -37,6 +38,7 @@ import static com.phonepe.epoch.server.utils.EpochUtils.*;
 public class Apis {
     private final TopologyStore topologyStore;
     private final TopologyRunInfoStore runInfoStore;
+    private final TopologyEngine topologyEngine;
 
     private final Scheduler scheduler;
     private final DroveClientManager clientManager;
@@ -46,11 +48,13 @@ public class Apis {
     public Apis(
             TopologyStore topologyStore,
             TopologyRunInfoStore runInfoStore,
+            final TopologyEngine topologyEngine,
             Scheduler scheduler,
             DroveClientManager clientManager,
             TaskExecutionEngine taskExecutionEngine) {
         this.topologyStore = topologyStore;
         this.runInfoStore = runInfoStore;
+        this.topologyEngine = topologyEngine;
         this.scheduler = scheduler;
         this.clientManager = clientManager;
         this.taskExecutionEngine = taskExecutionEngine;
@@ -76,12 +80,26 @@ public class Apis {
     @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
     public ApiResponse<EpochTopologyDetails> update(@NotNull @Valid final EpochTopology topology) {
         val topologyId = topologyId(topology);
-        val saved = topologyStore.update(topologyId, topology, EpochTopologyState.ACTIVE);
+        final Optional<EpochTopologyDetails> topologyDetails = topologyStore.get(topologyId);
+        if (topologyDetails.isEmpty()) {
+            return ApiResponse.failure("Topology " + topology.getName() + " doesn't exist with ID: " + topologyId);
+        }
+        val saved = topologyStore.update(topologyId, topology);
         saved.ifPresent(epochTopologyDetails -> {
             runInfoStore.deleteAll(topologyId);
             scheduleTopology(epochTopologyDetails, scheduler, new Date());
         });
         return saved
+                .map(ApiResponse::success)
+                .orElseGet(() -> ApiResponse.failure("Could not update topology"));
+    }
+
+    @PUT
+    @Path("/topologies/{topologyId}")
+    @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
+    public ApiResponse<EpochTopologyDetails> edit(@NotNull @Valid final EpochTopologyEditRequest request,
+                                                  @NotEmpty @PathParam("topologyId") final String topologyId) {
+        return topologyEngine.updateTopology(topologyId, request)
                 .map(ApiResponse::success)
                 .orElseGet(() -> ApiResponse.failure("Could not update topology"));
     }

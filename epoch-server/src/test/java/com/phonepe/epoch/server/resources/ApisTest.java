@@ -8,6 +8,7 @@ import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.topology.*;
 import com.phonepe.epoch.server.TestBase;
 import com.phonepe.epoch.server.TestUtils;
+import com.phonepe.epoch.server.engine.TopologyEngine;
 import com.phonepe.epoch.server.managed.DroveClientManager;
 import com.phonepe.epoch.server.managed.Scheduler;
 import com.phonepe.epoch.server.remote.CancelResponse;
@@ -53,11 +54,14 @@ class ApisTest extends TestBase {
 
     private static final TaskExecutionEngine taskExecutionEngine = mock(TaskExecutionEngine.class);
 
+    private static final TopologyEngine topologyEngine= mock(TopologyEngine.class);
+
 
     private static final ResourceExtension EXT = ResourceExtension.builder()
             .setMapper(MAPPER)
             .addResource(new Apis(topologyStore,
                                   topologyRunInfoStore,
+                                  topologyEngine,
                                   scheduler,
                                   droveClientManager,
                                   taskExecutionEngine))
@@ -68,6 +72,7 @@ class ApisTest extends TestBase {
         Mockito.reset(topologyStore);
         Mockito.reset(topologyRunInfoStore);
         Mockito.reset(scheduler);
+        Mockito.reset(droveClientManager);
         Mockito.reset(droveClientManager);
         Mockito.reset(taskExecutionEngine);
     }
@@ -110,7 +115,7 @@ class ApisTest extends TestBase {
     void testUpdateSuccess() {
         val topology = TestUtils.generateTopologyDesc(1, new MailNotificationSpec(List.of("test@email.com")));
         when(topologyStore.get(anyString())).thenReturn(Optional.of(EpochUtils.detailsFrom(topology)));
-        when(topologyStore.update(anyString(), any(), any()))
+        when(topologyStore.update(anyString(), any()))
                 .thenAnswer(invocationMock -> Optional.of(EpochUtils.detailsFrom(
                         invocationMock.getArgument(1, EpochTopology.class))));
         when(scheduler.schedule(anyString(), any(), any())).thenReturn(Optional.of("TestSched"));
