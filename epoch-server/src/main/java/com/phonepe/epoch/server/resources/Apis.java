@@ -120,6 +120,7 @@ public class Apis {
                 .orElseGet(() -> ApiResponse.failure("Could not update topology"));
     }
 
+
     @GET
     @Path("/topologies")
     public ApiResponse<List<EpochTopologyDetails>> listTopologies() {
