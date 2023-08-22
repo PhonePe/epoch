@@ -1,6 +1,5 @@
 package com.phonepe.epoch.server.engine;
 
-import com.google.inject.Inject;
 import com.phonepe.drove.models.application.executable.DockerCoordinates;
 import com.phonepe.drove.models.application.logging.LocalLoggingSpec;
 import com.phonepe.drove.models.application.placement.policies.AnyPlacementPolicy;
@@ -10,7 +9,7 @@ import com.phonepe.epoch.models.notification.MailNotificationSpec;
 import com.phonepe.epoch.models.tasks.EpochContainerExecutionTask;
 import com.phonepe.epoch.models.topology.EpochTopology;
 import com.phonepe.epoch.models.topology.EpochTopologyDetails;
-import com.phonepe.epoch.models.topology.EpochTopologyEditRequest;
+import com.phonepe.epoch.models.topology.SimpleTopologyEditRequest;
 import com.phonepe.epoch.models.topology.EpochTopologyState;
 import com.phonepe.epoch.models.topology.SimpleTopologyCreateRequest;
 import com.phonepe.epoch.models.triggers.EpochTaskTriggerCron;
@@ -24,6 +23,7 @@ import io.dropwizard.util.Duration;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
 
+import javax.inject.Inject;
 import javax.validation.Valid;
 import javax.ws.rs.PathParam;
 import java.util.Date;
@@ -34,7 +34,7 @@ import java.util.Optional;
 import static com.phonepe.epoch.server.utils.EpochUtils.scheduleTopology;
 import static com.phonepe.epoch.server.utils.EpochUtils.topologyId;
 
-@RequiredArgsConstructor(onConstructor = @__(@Inject))
+@RequiredArgsConstructor(onConstructor_ = {@Inject})
 public class TopologyEngine {
 
     private final TopologyStore topologyStore;
@@ -56,7 +56,7 @@ public class TopologyEngine {
                 new EpochTaskTriggerCron(request.getCron()),
                 new MailNotificationSpec(List.of(request.getNotifyEmail().split(","))));
         val topologyId = topologyId(topology);
-        final Optional<EpochTopologyDetails> existingTopology = topologyStore.get(topologyId);
+        val existingTopology = topologyStore.get(topologyId);
         if (existingTopology.isPresent()) {
             return existingTopology; // todo, create an error here
         }
@@ -74,7 +74,7 @@ public class TopologyEngine {
     }
 
     public Optional<EpochTopologyDetails> updateTopology(@PathParam("topologyId") String topologyId,
-                                                         @Valid final EpochTopologyEditRequest request) {
+                                                         @Valid final SimpleTopologyEditRequest request) {
         final Optional<EpochTopologyDetails> topologyDetails = topologyStore.get(topologyId);
         if (topologyDetails.isEmpty()) {
             return Optional.empty();

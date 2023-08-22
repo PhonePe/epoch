@@ -54,7 +54,7 @@ class ApisTest extends TestBase {
 
     private static final TaskExecutionEngine taskExecutionEngine = mock(TaskExecutionEngine.class);
 
-    private static final TopologyEngine topologyEngine= mock(TopologyEngine.class);
+    private static final TopologyEngine topologyEngine = mock(TopologyEngine.class);
 
 
     private static final ResourceExtension EXT = ResourceExtension.builder()
@@ -73,7 +73,7 @@ class ApisTest extends TestBase {
         Mockito.reset(topologyRunInfoStore);
         Mockito.reset(scheduler);
         Mockito.reset(droveClientManager);
-        Mockito.reset(droveClientManager);
+        Mockito.reset(topologyEngine);
         Mockito.reset(taskExecutionEngine);
     }
 

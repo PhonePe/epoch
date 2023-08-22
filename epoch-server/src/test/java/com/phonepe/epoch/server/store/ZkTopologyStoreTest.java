@@ -58,9 +58,18 @@ class ZkTopologyStoreTest extends TestBase {
                     assertNull(ts.updateState("Wrong", EpochTopologyState.PAUSED)
                                        .map(EpochTopologyDetails::getState)
                                        .orElse(null));
-                    assertEquals(EpochTopologyState.ACTIVE,
-                                 ts.updateState(topologyId, EpochTopologyState.ACTIVE) // todo
-                                         .map(EpochTopologyDetails::getState).orElse(EpochTopologyState.DELETED));
+                    val updatedTimeSpec = "2 * * ? * * *";
+                    val updatedTopo = new EpochTopology("test-topo",
+                                                        new EpochCompositeTask(IntStream.rangeClosed(1, 10)
+                                                                                .<EpochTask>mapToObj(TestUtils::genContainerTask)
+                                                                                .toList(),
+                                                                        EpochCompositeTask.CompositionType.ALL),
+                                                        new EpochTaskTriggerCron(updatedTimeSpec),
+                                                        new MailNotificationSpec(List.of("test@email.com")));
+                    assertEquals(updatedTimeSpec, ts.update(topologyId, updatedTopo)
+                            .map(EpochTopologyDetails::getTopology)
+                            .map(t-> TestUtils.getTimeSpec(t.getTrigger()))
+                            .orElse(null));
                     assertTrue(ts.delete(topologyId));
                     assertNull(ts.get(topologyId).orElse(null));
                 }

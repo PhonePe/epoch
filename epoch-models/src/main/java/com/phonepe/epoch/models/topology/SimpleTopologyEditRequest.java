@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 @Value
-public class EpochTopologyEditRequest {
+public class SimpleTopologyEditRequest {
 
     @NotEmpty
     @Pattern(regexp = Regexes.QUARTZ_CRON_REGEX,

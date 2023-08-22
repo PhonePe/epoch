@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.phonepe.epoch.models.topology.EpochTopologyDetails;
-import com.phonepe.epoch.models.topology.EpochTopologyEditRequest;
+import com.phonepe.epoch.models.topology.SimpleTopologyEditRequest;
 import com.phonepe.epoch.models.topology.SimpleTopologyCreateRequest;
 import com.phonepe.epoch.server.auth.models.EpochUser;
 import com.phonepe.epoch.server.auth.models.EpochUserRole;
@@ -93,7 +93,7 @@ public class UI {
     @POST
     @Path("/topologies/{topologyId}/update")
     @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
-    public Response updateTopology(@PathParam("topologyId")String topologyId, @Valid final EpochTopologyEditRequest request) {
+    public Response updateTopology(@PathParam("topologyId")String topologyId, @Valid final SimpleTopologyEditRequest request) {
         topologyEngine.updateTopology(topologyId, request);
         return redirectToHome();
     }

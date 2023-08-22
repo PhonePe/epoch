@@ -62,7 +62,7 @@ class CachingProxyTopologyStoreTest extends TestBase {
                                        .map(EpochTopologyDetails::getState)
                                        .orElse(null));
 
-                    final String updatedTimeSpec = "2 * * ? * * *";
+                    val updatedTimeSpec = "2 * * ? * * *";
                     val updatedTopo = new EpochTopology("test-topo",
                                                         new EpochCompositeTask(IntStream.rangeClosed(1, 10)
                                                                                        .<EpochTask>mapToObj(TestUtils::genContainerTask)

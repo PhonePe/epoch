@@ -1,6 +1,6 @@
 package com.phonepe.epoch.server.resources;
 
-import com.phonepe.epoch.models.topology.EpochTopologyEditRequest;
+import com.phonepe.epoch.models.topology.SimpleTopologyEditRequest;
 import com.phonepe.epoch.models.topology.SimpleTopologyCreateRequest;
 import com.phonepe.epoch.server.TestBase;
 import com.phonepe.epoch.server.TestUtils;
@@ -79,13 +79,13 @@ class UITest extends TestBase {
         when(topologyStore.get(any())).thenAnswer(invocationMock -> Optional.of(details));
         scheduleCalled.set(false);
         saveCalled.set(false);
-        val updateRequest = new EpochTopologyEditRequest("* * * * *",
-                                                         "docker.io/bash",
-                                                         4,
-                                                         512,
-                                                         "test@x.com",
-                                                         Map.of(),
-                                                         List.of());
+        val updateRequest = new SimpleTopologyEditRequest("* * * * *",
+                                                          "docker.io/bash",
+                                                          4,
+                                                          512,
+                                                          "test@x.com",
+                                                          Map.of(),
+                                                          List.of());
         val updateResponse = ui.updateTopology("TEST_TOPO", updateRequest);
         assertNotNull(updateResponse);
         assertTrue(updateCalled.get());

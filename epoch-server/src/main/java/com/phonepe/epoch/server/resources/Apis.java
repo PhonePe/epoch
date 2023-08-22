@@ -96,7 +96,7 @@ public class Apis {
     @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
     public ApiResponse<EpochTopologyDetails> update(@NotNull @Valid final EpochTopology topology) {
         val topologyId = topologyId(topology);
-        final Optional<EpochTopologyDetails> topologyDetails = topologyStore.get(topologyId);
+        val topologyDetails = topologyStore.get(topologyId);
         if (topologyDetails.isEmpty()) {
             return ApiResponse.failure("Topology " + topology.getName() + " doesn't exist with ID: " + topologyId);
         }
@@ -113,7 +113,7 @@ public class Apis {
     @PUT
     @Path("/topologies/{topologyId}")
     @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
-    public ApiResponse<EpochTopologyDetails> edit(@NotNull @Valid final EpochTopologyEditRequest request,
+    public ApiResponse<EpochTopologyDetails> edit(@NotNull @Valid final SimpleTopologyEditRequest request,
                                                   @NotEmpty @PathParam("topologyId") final String topologyId) {
         return topologyEngine.updateTopology(topologyId, request)
                 .map(ApiResponse::success)
