@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.val;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.validation.Valid;
 import javax.ws.rs.PathParam;
 import java.util.Date;
@@ -35,6 +36,7 @@ import static com.phonepe.epoch.server.utils.EpochUtils.scheduleTopology;
 import static com.phonepe.epoch.server.utils.EpochUtils.topologyId;
 
 @RequiredArgsConstructor(onConstructor_ = {@Inject})
+@Singleton
 public class TopologyEngine {
 
     private final TopologyStore topologyStore;
