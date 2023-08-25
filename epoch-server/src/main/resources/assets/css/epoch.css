@@ -124,11 +124,11 @@ div.dataTables_wrapper div.dataTables_filter {
     overflow: auto;
 }
 
-@media screen and (max-width: 700px){
-    .box{
+@media screen and (max-width: 700px) {
+    .box {
         width: 70%;
     }
-    .popup{
+    .popup {
         width: 70%;
     }
 }
