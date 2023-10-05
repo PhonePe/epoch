@@ -21,7 +21,6 @@ import static com.cronutils.model.CronType.QUARTZ;
 /**
  *
  */
-@Slf4j
 public class ExecutionTimeCalculator {
     public Optional<Duration> executionTime(final EpochTaskTrigger trigger, final Date currTime) {
         return trigger.accept(new EpochTriggerVisitor<>() {
@@ -33,8 +32,6 @@ public class ExecutionTimeCalculator {
 
             @Override
             public Optional<Duration> visit(EpochTaskTriggerCron cron) {
-                log.info("YOLO Calculating next execution time for cron: {}", cron.getTimeSpec());
-
                 val cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(QUARTZ);
                 val parser = new CronParser(cronDefinition);
                 val executionTime = ExecutionTime.forCron(parser.parse(cron.getTimeSpec()));
