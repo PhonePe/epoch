@@ -68,39 +68,40 @@ public class TopologyRecovery implements Managed {
                 .stream()
                 .collect(Collectors.toMap(EpochTopologyDetails::getId, Function.identity()));
         log.info("Recovering topologies: {}", topologies.keySet());
-        topologies.forEach((tId, t) -> {
+        topologies.forEach((tId, topologyDetails) -> {
             val activeRuns = runInfoStore.list(tId, run -> run.getState().equals(EpochTopologyRunState.RUNNING));
 
             activeRuns.forEach(run -> {
                 try {
                     val status = scheduler.recover(
-                            t.getId(),
+                            topologyDetails.getId(),
+                            EpochUtils.scheduleId(topologyDetails),
                             run.getRunId(),
                             new Date(),
                             run.getRunType());
                     if (status) {
                         log.info("Recovered {} topology run {}/{}",
                                  run.getRunType().name().toLowerCase(),
-                                 t.getId(),
+                                 topologyDetails.getId(),
                                  run.getRunId());
                     }
                     else {
                         log.info("Failed to recover {} topology run {}/{}",
                                  run.getRunType().name().toLowerCase(),
-                                 t.getId(),
+                                 topologyDetails.getId(),
                                  run.getRunId());
                     }
                 }
                 catch (Exception e) {
-                    log.error("Could not recover topology run " + t.getId() + "/" + run.getRunId()
+                    log.error("Could not recover topology run " + topologyDetails.getId() + "/" + run.getRunId()
                                       + ". Error: " + EpochUtils.errorMessage(e), e);
                 }
             });
             try {
-                scheduleTopology(t, scheduler, new Date());
+                scheduleTopology(topologyDetails, scheduler, new Date());
             }
             catch (Exception e) {
-                log.error("Could not reschedule topology " + t.getId() + ". Error: " + EpochUtils.errorMessage(e), e);
+                log.error("Could not reschedule topology " + topologyDetails.getId() + ". Error: " + EpochUtils.errorMessage(e), e);
             }
         });
     }

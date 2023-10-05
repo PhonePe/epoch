@@ -127,7 +127,7 @@ public class LeadershipManager implements LeaderSelectorListener, Managed, Serve
     public void stateChanged(CuratorFramework client, ConnectionState newState) {
         if (client.getConnectionStateErrorPolicy().isErrorState(newState) && started.get()) {
             log.error("ZK connection state went to {}. Will commit seppuku.", newState);
-            System.exit(-1);
+//            System.exit(-1);
         }
     }
 

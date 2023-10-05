@@ -52,7 +52,7 @@ class UITest extends TestBase {
             saveCalled.set(true);
             return Optional.of(details);
         });
-        when(scheduler.schedule(anyString(), any(), any())).thenAnswer(invocationOnMock -> {
+        when(scheduler.schedule(anyString(), anyString(), any(), any())).thenAnswer(invocationOnMock -> {
             scheduleCalled.set(true);
             return Optional.of("TR1");
         });

@@ -83,7 +83,7 @@ class ApisTest extends TestBase {
         when(topologyStore.save(any()))
                 .thenAnswer(invocationMock -> Optional.of(EpochUtils.detailsFrom(
                         invocationMock.getArgument(0, EpochTopology.class))));
-        when(scheduler.schedule(anyString(), any(), any())).thenReturn(Optional.of("TestSched"));
+        when(scheduler.schedule(anyString(), anyString(), any(), any())).thenReturn(Optional.of("TestSched"));
         val topology = TestUtils.generateTopologyDesc(1, new MailNotificationSpec(List.of("test@email.com")));
         try (val r = EXT.target("/v1/topologies")
                 .request()
@@ -118,7 +118,7 @@ class ApisTest extends TestBase {
         when(topologyStore.update(anyString(), any()))
                 .thenAnswer(invocationMock -> Optional.of(EpochUtils.detailsFrom(
                         invocationMock.getArgument(1, EpochTopology.class))));
-        when(scheduler.schedule(anyString(), any(), any())).thenReturn(Optional.of("TestSched"));
+        when(scheduler.schedule(anyString(), anyString(), any(), any())).thenReturn(Optional.of("TestSched"));
         try (val r = EXT.target("/v1/topologies")
                 .request()
                 .put(Entity.json(topology))) {

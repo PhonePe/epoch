@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.phonepe.epoch.server.utils.EpochUtils.scheduleTopology;
+import static com.phonepe.epoch.server.utils.EpochUtils.scheduleUpdatedTopology;
 import static com.phonepe.epoch.server.utils.EpochUtils.topologyId;
 
 @RequiredArgsConstructor(onConstructor_ = {@Inject})
@@ -97,7 +98,7 @@ public class TopologyEngine {
 
         val saved = topologyStore.update(topologyId, topology);
         saved.ifPresent(epochTopologyDetails -> {
-            scheduleTopology(epochTopologyDetails, scheduler, new Date());
+            scheduleUpdatedTopology(topologyDetails.get(), epochTopologyDetails, scheduler, new Date());
             eventBus.publish(EpochStateChangeEvent.builder()
                                      .type(EpochEventType.TOPOLOGY_STATE_CHANGED)
                                      .metadata(Map.of(StateChangeEventDataTag.TOPOLOGY_ID, topologyId,

@@ -7,6 +7,7 @@ import com.phonepe.epoch.models.triggers.EpochTaskTrigger;
 import com.phonepe.epoch.models.triggers.EpochTaskTriggerAt;
 import com.phonepe.epoch.models.triggers.EpochTaskTriggerCron;
 import com.phonepe.epoch.models.triggers.EpochTriggerVisitor;
+import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
 import java.time.Duration;
@@ -20,6 +21,7 @@ import static com.cronutils.model.CronType.QUARTZ;
 /**
  *
  */
+@Slf4j
 public class ExecutionTimeCalculator {
     public Optional<Duration> executionTime(final EpochTaskTrigger trigger, final Date currTime) {
         return trigger.accept(new EpochTriggerVisitor<>() {
@@ -31,6 +33,7 @@ public class ExecutionTimeCalculator {
 
             @Override
             public Optional<Duration> visit(EpochTaskTriggerCron cron) {
+                log.info("YOLO Calculating next execution time for cron: {}", cron.getTimeSpec());
 
                 val cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(QUARTZ);
                 val parser = new CronParser(cronDefinition);

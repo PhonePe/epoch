@@ -23,6 +23,7 @@ import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.Date;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -44,6 +45,7 @@ public class Scheduler implements Managed {
     private static final class EpochRunnableTask implements KaalTask<EpochRunnableTask, TaskData> {
 
         private final String topologyId;
+        private final String scheduleId;
         private final EpochTaskTrigger trigger;
         private final ExecutionTimeCalculator timeCalculator;
         private final EpochTopologyRunType runType;
@@ -51,10 +53,15 @@ public class Scheduler implements Managed {
         private final LeadershipManager leadershipManager;
 
         private EpochRunnableTask(
-                String topologyId, EpochTaskTrigger trigger,
-                ExecutionTimeCalculator timeCalculator, EpochTopologyRunType runType, TopologyExecutor topologyExecutor,
+                String topologyId,
+                String scheduleId,
+                EpochTaskTrigger trigger,
+                ExecutionTimeCalculator timeCalculator,
+                EpochTopologyRunType runType,
+                TopologyExecutor topologyExecutor,
                 LeadershipManager leadershipManager) {
             this.topologyId = topologyId;
+            this.scheduleId = scheduleId;
             this.trigger = trigger;
             this.timeCalculator = timeCalculator;
             this.runType = runType;
@@ -64,7 +71,7 @@ public class Scheduler implements Managed {
 
         @Override
         public String id() {
-            return topologyId;
+            return scheduleId;
         }
 
         @Override
@@ -194,28 +201,35 @@ public class Scheduler implements Managed {
         schedulerImpl.clear();
     }
 
+    public void delete(String scheduleId) {
+        schedulerImpl.delete(scheduleId);
+    }
+
     public ConsumingFireForgetSignal<TaskData> taskCompleted() {
         return taskCompleted;
     }
 
     public Optional<String> schedule(
             final String topologyId,
+            final String scheduleId,
             final EpochTaskTrigger trigger,
-            Date currTime) {
-        return schedule(topologyId, trigger, currTime, EpochTopologyRunType.SCHEDULED);
+            final Date currTime) {
+        return schedule(topologyId, scheduleId, trigger, currTime, EpochTopologyRunType.SCHEDULED);
     }
 
     public Optional<String> scheduleNow(String topologyId) {
         val currTime = new Date();
-        return schedule(topologyId, new EpochTaskTriggerAt(currTime), currTime, EpochTopologyRunType.INSTANT);
+        return schedule(topologyId, UUID.randomUUID().toString(), new EpochTaskTriggerAt(currTime), currTime, EpochTopologyRunType.INSTANT);
     }
 
     public boolean recover(
             String topologyId,
+            String scheduleId,
             String runId,
             Date currTime,
             EpochTopologyRunType runType) {
         return schedulerImpl.schedule(new EpochRunnableTask(topologyId,
+                                                            scheduleId,
                                                             null,
                                                             timeCalculator,
                                                             runType,
@@ -228,11 +242,12 @@ public class Scheduler implements Managed {
 
     private Optional<String> schedule(
             final String topologyId,
+            final String scheduleId,
             final EpochTaskTrigger trigger,
             Date currTime,
             EpochTopologyRunType runType) {
         return schedulerImpl.schedule(
-                new EpochRunnableTask(topologyId, trigger, timeCalculator, runType, topologyExecutor, leadershipManager),
+                new EpochRunnableTask(topologyId, scheduleId, trigger, timeCalculator, runType, topologyExecutor, leadershipManager),
                 currTime);
     }
 }

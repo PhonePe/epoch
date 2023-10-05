@@ -50,6 +50,10 @@ public class EpochUtils {
         return topologyId(topology.getName());
     }
 
+    public static String scheduleId(final EpochTopologyDetails topologyDetails) {
+        return topologyDetails.getId() + topologyDetails.getUpdated().getTime();
+    }
+
     public static String topologyId(final String topologyName) {
         return topologyName;
     }
@@ -58,13 +62,30 @@ public class EpochUtils {
         return new EpochTopologyDetails(topologyId(topology), topology, EpochTopologyState.ACTIVE, new Date(), new Date());
     }
 
-    public static void scheduleTopology(EpochTopologyDetails topologyDetails, Scheduler scheduler, Date currTime) {
-        val runId = scheduler.schedule(topologyDetails.getId(), topologyDetails.getTopology().getTrigger(), currTime);
+    public static void scheduleUpdatedTopology(final EpochTopologyDetails previousTopologyDetails,
+                                               final EpochTopologyDetails newTopologyDetails,
+                                               final Scheduler scheduler,
+                                               final Date currTime) {
+        val scheduleId = EpochUtils.scheduleId(previousTopologyDetails);
+        scheduler.delete(scheduleId);
+        log.info("Removed previous schedule with id: {}", scheduleId);
+        scheduleTopology(newTopologyDetails, scheduler, currTime);
+    }
+
+    public static void scheduleTopology(final EpochTopologyDetails topologyDetails,
+                                        final Scheduler scheduler,
+                                        final Date currTime) {
+        val scheduleId = EpochUtils.scheduleId(topologyDetails);
+        val runId = scheduler.schedule(
+                topologyDetails.getId(),
+                scheduleId,
+                topologyDetails.getTopology().getTrigger(),
+                currTime);
         if(runId.isPresent()) {
-            log.info("Scheduled topology {} for execution with run id: {}", topologyDetails.getId(), runId.get());
+            log.info("Scheduled topology {} for execution with run id: {} schedule id: {}", topologyDetails.getId(), runId.get(), scheduleId);
         }
         else {
-            log.warn("Could not schedule topology {} for execution", topologyDetails.getId());
+            log.warn("Could not schedule {} for topology {} for execution", scheduleId, topologyDetails.getId());
         }
     }
 

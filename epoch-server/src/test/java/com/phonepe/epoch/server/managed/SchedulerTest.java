@@ -3,6 +3,7 @@ package com.phonepe.epoch.server.managed;
 import com.phonepe.epoch.models.notification.BlackholeNotificationSpec;
 import com.phonepe.epoch.models.state.EpochTopologyRunState;
 import com.phonepe.epoch.models.topology.EpochTopology;
+import com.phonepe.epoch.models.topology.EpochTopologyDetails;
 import com.phonepe.epoch.models.topology.EpochTopologyRunInfo;
 import com.phonepe.epoch.models.topology.EpochTopologyRunType;
 import com.phonepe.epoch.models.triggers.EpochTaskTriggerAt;
@@ -11,6 +12,7 @@ import com.phonepe.epoch.server.TestUtils;
 import com.phonepe.epoch.server.execution.ExecuteCommand;
 import com.phonepe.epoch.server.execution.TopologyExecutor;
 import com.phonepe.epoch.server.store.InMemoryTopologyStore;
+import com.phonepe.epoch.server.utils.EpochUtils;
 import io.dropwizard.util.Strings;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -72,8 +74,8 @@ class SchedulerTest {
         s.start();
         lm.onLeadershipStateChange().dispatch(null);
         val currDate = new Date();
-        s.schedule(topoId1, topo1.getTrigger(), currDate);
-        s.schedule(topoId2, topo2.getTrigger(), currDate);
+        s.schedule(topoId1, topoId1, topo1.getTrigger(), currDate);
+        s.schedule(topoId2, topoId2, topo2.getTrigger(), currDate);
         TestUtils.waitUntil(() -> ctr.get() == 3);
         assertEquals(3, ctr.get());
         s.stop();
@@ -120,7 +122,8 @@ class SchedulerTest {
         val topoId = topologyId(topo);
 
         val ts = new InMemoryTopologyStore();
-        ts.save(topo);
+        val save = ts.save(topo);
+        assertTrue(save.isPresent());
         val topologyExecutor = createExecutor(EpochTopologyRunState.COMPLETED);
         val lm = createLeadershipManager(true);
 
@@ -133,7 +136,7 @@ class SchedulerTest {
         });
         s.start();
         lm.onLeadershipStateChange().dispatch(true);
-        assertTrue(s.schedule(topoId, topo.getTrigger(), new Date()).isPresent());
+        assertTrue(s.schedule(topoId, EpochUtils.scheduleId(save.get()), topo.getTrigger(), new Date()).isPresent());
         TestUtils.waitUntil(runCompleted::get);
         assertTrue(runCompleted.get());
         s.stop();
@@ -163,7 +166,7 @@ class SchedulerTest {
         });
         s.start();
         lm.onLeadershipStateChange().dispatch(null);
-        assertTrue(s.recover(topoId, "r1", new Date(), EpochTopologyRunType.SCHEDULED));
+        assertTrue(s.recover(topoId, "s1", "r1", new Date(), EpochTopologyRunType.SCHEDULED));
         TestUtils.waitUntil(runCompleted::get);
         assertTrue(runCompleted.get());
         s.stop();
@@ -180,7 +183,8 @@ class SchedulerTest {
         val topoId = topologyId(topo);
 
         val ts = new InMemoryTopologyStore();
-        ts.save(topo);
+        val saved = ts.save(topo);
+        assertTrue(saved.isPresent());
         val topologyExecutor = createExecutor(EpochTopologyRunState.COMPLETED);
         val lm = createLeadershipManager(false);
 
@@ -192,7 +196,7 @@ class SchedulerTest {
             }
         });
         s.start();
-        assertTrue(s.schedule(topoId, topo.getTrigger(), new Date()).isPresent());
+        assertTrue(s.schedule(topoId, EpochUtils.scheduleId(saved.get()), topo.getTrigger(), new Date()).isPresent());
         try {
             TestUtils.waitUntil(runCompleted::get, Duration.ofSeconds(3));
             fail("Should have failed");
@@ -218,7 +222,8 @@ class SchedulerTest {
         val topoId = topologyId(topo);
 
         val ts = new InMemoryTopologyStore();
-        ts.save(topo);
+        val saved = ts.save(topo);
+        assertTrue(saved.isPresent());
         val topologyExecutor = createExecutor(EpochTopologyRunState.COMPLETED);
         val lm = createLeadershipManager(true);
         val ex = mock(ExecutorService.class);
@@ -244,7 +249,7 @@ class SchedulerTest {
         });
         s.start();
         lm.onLeadershipStateChange().dispatch(true);
-        assertTrue(s.schedule(topoId, topo.getTrigger(), new Date()).isPresent());
+        assertTrue(s.schedule(topoId, EpochUtils.scheduleId(saved.get()), topo.getTrigger(), new Date()).isPresent());
         TestUtils.waitUntil(runCompleted::get);
         assertTrue(runCompleted.get());
         s.stop();

@@ -41,6 +41,7 @@ import java.util.Set;
 
 import static com.phonepe.epoch.server.utils.EpochUtils.appName;
 import static com.phonepe.epoch.server.utils.EpochUtils.scheduleTopology;
+import static com.phonepe.epoch.server.utils.EpochUtils.scheduleUpdatedTopology;
 import static com.phonepe.epoch.server.utils.EpochUtils.topologyId;
 
 /**
@@ -101,9 +102,9 @@ public class Apis {
             return ApiResponse.failure("Topology " + topology.getName() + " doesn't exist with ID: " + topologyId);
         }
         val saved = topologyStore.update(topologyId, topology);
-        saved.ifPresent(epochTopologyDetails -> {
+        saved.ifPresent(updatedTopologyDetails -> {
             runInfoStore.deleteAll(topologyId);
-            scheduleTopology(epochTopologyDetails, scheduler, new Date());
+            scheduleUpdatedTopology(topologyDetails.get(), updatedTopologyDetails, scheduler, new Date());
         });
         return saved
                 .map(ApiResponse::success)

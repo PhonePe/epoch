@@ -75,7 +75,7 @@ class TopologyRecoveryTest extends TestBase {
         val scheduler = mock(Scheduler.class);
         val recoveryCount = new AtomicInteger();
         val scheduleCount = new AtomicInteger();
-        when(scheduler.recover(anyString(), anyString(), any(), any()))
+        when(scheduler.recover(anyString(), anyString(), anyString(), any(), any()))
                 .then(new Answer<Boolean>() {
                     final AtomicInteger idx = new AtomicInteger();
 
@@ -88,7 +88,7 @@ class TopologyRecoveryTest extends TestBase {
                         return false;
                     }
                 });
-        when(scheduler.schedule(anyString(), any(), any()))
+        when(scheduler.schedule(anyString(), anyString(), any(), any()))
                 .thenAnswer((Answer<Optional<String>>) invocationMock -> {
                     scheduleCount.incrementAndGet();
                     return Optional.of("xx");
