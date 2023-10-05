@@ -50,7 +50,14 @@ public class EpochUtils {
         return topologyId(topology.getName());
     }
 
+    /**
+     * scheduleId represents the schedule being created in Kaal, from a specific version of the Topology
+     *
+     * @param topologyDetails a specific version of the topology
+     * @return a unique schedule id
+     */
     public static String scheduleId(final EpochTopologyDetails topologyDetails) {
+        /* we use updated timestamp along with the Id as a representation of the specific version of topology */
         return topologyDetails.getId() + topologyDetails.getUpdated().getTime();
     }
 
