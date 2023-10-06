@@ -9,6 +9,7 @@ import com.phonepe.epoch.server.execution.ExecuteCommand;
 import com.phonepe.epoch.server.execution.ExecutionTimeCalculator;
 import com.phonepe.epoch.server.execution.TopologyExecutor;
 import com.phonepe.epoch.server.store.TopologyStore;
+import com.phonepe.epoch.server.utils.EpochUtils;
 import io.appform.kaal.*;
 import io.appform.signals.signals.ConsumingFireForgetSignal;
 import io.dropwizard.lifecycle.Managed;
@@ -92,10 +93,10 @@ public class Scheduler implements Managed {
             val runId = runData.getRunId();
             val executionTime = runData.getTargetExecutionTime();
             if(!leadershipManager.isLeader()) {
-                log.warn("Skipped execution for {}/{} at {} as I am not the leader", taskId, runId, executionTime);
+                log.warn("Skipped execution for {}/{}/{} at {} as I am not the leader", taskId, scheduleId, runId, executionTime);
                 return null;
             }
-            log.trace("Received exec command for: {}/{}", taskId, runId);
+            log.trace("Received exec command for: {}/{}/{}", taskId, scheduleId, runId);
             return new TaskData(topologyId,
                          topologyExecutor.execute(new ExecuteCommand(runId, executionTime, topologyId, runType)).orElse(null),
                          runType);
@@ -219,7 +220,8 @@ public class Scheduler implements Managed {
 
     public Optional<String> scheduleNow(String topologyId) {
         val currTime = new Date();
-        return schedule(topologyId, UUID.randomUUID().toString(), new EpochTaskTriggerAt(currTime), currTime, EpochTopologyRunType.INSTANT);
+        val scheduleId = EpochUtils.scheduleId(topologyId, currTime);
+        return schedule(topologyId, scheduleId, new EpochTaskTriggerAt(currTime), currTime, EpochTopologyRunType.INSTANT);
     }
 
     public boolean recover(

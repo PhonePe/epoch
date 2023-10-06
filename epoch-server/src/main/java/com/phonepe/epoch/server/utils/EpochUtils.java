@@ -58,7 +58,12 @@ public class EpochUtils {
      */
     public static String scheduleId(final EpochTopologyDetails topologyDetails) {
         /* we use updated timestamp along with the Id as a representation of the specific version of topology */
-        return topologyDetails.getId() + topologyDetails.getUpdated().getTime();
+        return scheduleId(topologyDetails.getId(), topologyDetails.getUpdated());
+    }
+
+    public static String scheduleId(final String topologyId, final Date time) {
+        /* we use updated timestamp along with the Id as a representation of the specific version of topology */
+        return topologyId + "-" + time.getTime();
     }
 
     public static String topologyId(final String topologyName) {

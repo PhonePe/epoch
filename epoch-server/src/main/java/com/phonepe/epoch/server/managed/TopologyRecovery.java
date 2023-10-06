@@ -72,17 +72,19 @@ public class TopologyRecovery implements Managed {
             val activeRuns = runInfoStore.list(tId, run -> run.getState().equals(EpochTopologyRunState.RUNNING));
 
             activeRuns.forEach(run -> {
+                val scheduleId = EpochUtils.scheduleId(topologyDetails);
                 try {
                     val status = scheduler.recover(
                             topologyDetails.getId(),
-                            EpochUtils.scheduleId(topologyDetails),
+                            scheduleId,
                             run.getRunId(),
                             new Date(),
                             run.getRunType());
                     if (status) {
-                        log.info("Recovered {} topology run {}/{}",
+                        log.info("Recovered {} topology run {}/{}/{}",
                                  run.getRunType().name().toLowerCase(),
                                  topologyDetails.getId(),
+                                 scheduleId,
                                  run.getRunId());
                     }
                     else {
@@ -93,8 +95,8 @@ public class TopologyRecovery implements Managed {
                     }
                 }
                 catch (Exception e) {
-                    log.error("Could not recover topology run " + topologyDetails.getId() + "/" + run.getRunId()
-                                      + ". Error: " + EpochUtils.errorMessage(e), e);
+                    log.error("Could not recover topology run {}/{}/{}. Error: {}",
+                            topologyDetails.getId(), scheduleId, run.getRunId(), EpochUtils.errorMessage(e), e);
                 }
             });
             try {
