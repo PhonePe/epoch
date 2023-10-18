@@ -5,7 +5,7 @@
     <groupId>com.phonepe</groupId>
     <artifactId>epoch</artifactId>
     <packaging>pom</packaging>
-    <version>1.8</version>
+    <version>1.9-SNAPSHOT</version>
     <modules>
         <module>epoch-models</module>
         <module>epoch-server</module>
