@@ -47,4 +47,24 @@ class DroveClientManagerTest {
         assertTrue(dc.getClient().leader().isPresent());
         dc.stop();
     }
+
+
+    @Test
+    @SneakyThrows
+    void testBasicAuth() {
+        controller1.stubFor(get(DroveClient.PING_API).withBasicAuth("admin", "admin").willReturn(badRequest()));
+        controller2.stubFor(get(DroveClient.PING_API).withBasicAuth("admin", "admin").willReturn(ok()));
+        val dc = new DroveClientManager(new DroveConfig()
+                                                .setEndpoints(List.of(controller1.baseUrl(),
+                                                                      controller2.baseUrl()))
+                                                .setConnectionTimeout(Duration.seconds(3))
+                                                .setOperationTimeout(Duration.seconds(3))
+                                                .setUsername("admin")
+                                                .setPassword("admin"));
+
+        dc.start();
+        TestUtils.waitUntil(() -> dc.getClient().leader().isPresent());
+        assertTrue(dc.getClient().leader().isPresent());
+        dc.stop();
+    }
 }
