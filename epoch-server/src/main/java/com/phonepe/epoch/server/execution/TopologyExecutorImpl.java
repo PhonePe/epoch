@@ -15,6 +15,7 @@ import com.phonepe.epoch.server.event.EpochEventBus;
 import com.phonepe.epoch.server.event.EpochEventType;
 import com.phonepe.epoch.server.event.EpochStateChangeEvent;
 import com.phonepe.epoch.server.event.StateChangeEventDataTag;
+import com.phonepe.epoch.server.remote.CancelResponse;
 import com.phonepe.epoch.server.remote.TaskExecutionContext;
 import com.phonepe.epoch.server.remote.TaskExecutionEngine;
 import com.phonepe.epoch.server.statemanagement.TaskStateElaborator;
@@ -24,10 +25,13 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 /**
@@ -147,7 +151,8 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
                 .getTask();
         val runId = executeCommand.getRunId();
 
-        val allTaskRunState = task.accept(new TaskExecutor(runId, runInfo, taskEngine, runInfoStore, this));
+        val allTaskRunState = task.accept(new TaskExecutor(runId, runInfo, taskEngine, runInfoStore, this,
+                new Date(Instant.now().plus(10, ChronoUnit.MINUTES).toEpochMilli())));
         return allTaskRunState.state() == EpochTaskRunState.COMPLETED
                ? successState(topologyDetails, executeCommand)
                : EpochTopologyRunState.FAILED;
@@ -156,7 +161,8 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
 
     private record TaskExecutor(String runId, EpochTopologyRunInfo topologyExecutionInfo,
                                 TaskExecutionEngine taskEngine, TopologyRunInfoStore runInfoStore,
-                                TopologyExecutorImpl executor) implements EpochTaskVisitor<TaskStatusData> {
+                                TopologyExecutorImpl executor,
+                                Date stopTime) implements EpochTaskVisitor<TaskStatusData> {
 
         @Override
         public TaskStatusData visit(EpochCompositeTask composite) {
@@ -187,14 +193,7 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
             val topologyName = topologyExecutionInfo.getTopologyId();
             val taskName = containerExecution.getTaskName();
             val taskInfo = topologyExecutionInfo.getTasks().get(taskName);
-            val existingUpstreamTaskId =
-                    Objects.requireNonNullElse(taskInfo.getUpstreamId(),
-                                               EpochTopologyRunTaskInfo.UNKNOWN_TASK_ID);
-            val context = new TaskExecutionContext(topologyExecutionInfo.getTopologyId(),
-                                                   runId,
-                                                   containerExecution.getTaskName(),
-                                                   topologyExecutionInfo.getRunType(),
-                                                   existingUpstreamTaskId);
+            final var context = getTaskExecutionContext(containerExecution, taskInfo);
             try {
                 val currState = taskInfo.getState();
                 val status = switch (currState) {
@@ -221,6 +220,19 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
                           e);
                 throw e;
             }
+        }
+
+        @NotNull
+        private TaskExecutionContext getTaskExecutionContext(EpochContainerExecutionTask containerExecution,
+                                                             EpochTopologyRunTaskInfo taskInfo) {
+            val existingUpstreamTaskId =
+                    Objects.requireNonNullElse(taskInfo.getUpstreamId(),
+                            EpochTopologyRunTaskInfo.UNKNOWN_TASK_ID);
+            return new TaskExecutionContext(topologyExecutionInfo.getTopologyId(),
+                    runId,
+                    containerExecution.getTaskName(),
+                    topologyExecutionInfo.getRunType(),
+                    existingUpstreamTaskId);
         }
 
         private TaskStatusData runTask(
@@ -279,6 +291,9 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
             try {
                 return Failsafe.with(List.of(retryPolicy))
                         .get(() -> {
+                            if (new Date().after(stopTime)) {
+                                CancelResponse cancelResponse = taskEngine.cancelTask(context.getUpstreamTaskId());
+                            }
                             val status = taskEngine.status(context, containerExecution);
                             if (null == status) {
                                 log.debug("No status received. Task has probably not started yet..");

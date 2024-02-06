@@ -7,7 +7,6 @@ import com.phonepe.epoch.models.triggers.EpochTaskTrigger;
 import com.phonepe.epoch.models.triggers.EpochTaskTriggerAt;
 import com.phonepe.epoch.models.triggers.EpochTaskTriggerCron;
 import com.phonepe.epoch.models.triggers.EpochTriggerVisitor;
-import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
 import java.time.Duration;

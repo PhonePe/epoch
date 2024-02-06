@@ -1,6 +1,7 @@
 package com.phonepe.epoch.models.topology;
 
 import com.phonepe.drove.models.application.MountedVolume;
+import io.dropwizard.validation.ValidationMethod;
 import lombok.Value;
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.Range;
@@ -15,8 +16,6 @@ import java.util.Map;
 public class SimpleTopologyEditRequest {
 
     @NotEmpty
-    @Pattern(regexp = Regexes.QUARTZ_CRON_REGEX,
-                message = "Invalid cron, please check https://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html for help")
     String cron;
 
     @NotEmpty
@@ -37,4 +36,9 @@ public class SimpleTopologyEditRequest {
 
     List<MountedVolume> volumes;
 
+    @ValidationMethod(
+            message = "Invalid cron, please check https://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html for help")
+    public boolean isValidCronExpression() {
+        return Validators.validateCronExpression(cron);
+    }
 }
