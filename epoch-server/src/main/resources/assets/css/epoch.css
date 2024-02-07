@@ -63,6 +63,10 @@ a {
     padding-top: 1rem;
 }
 
+main {
+    padding-top: 1rem;
+}
+
 .fa-gray {
     color: gray;
 }

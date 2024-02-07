@@ -295,14 +295,30 @@
         }
         tdef['volumes'] = volumes;
         console.log(JSON.stringify(tdef));
+        var xhr = new XMLHttpRequest();
         $.ajax({
             type: 'post',
             url: '/topologies/create',
             data: JSON.stringify(tdef),
+            xhr: function() {
+                return xhr;
+            },
             contentType: "application/json; charset=utf-8",
             traditional: true,
             success: function (data) {
                 window.location.replace("/");
+            },
+            error: function (xhr, status, error) {
+                var response = xhr.responseJSON;
+                var errorMessage = response.message;
+                if (response.data && response.data.validationErrors) {
+                    errorMessage += "<br>" + response.data.validationErrors.join("<br>");
+                }
+                document.getElementById('error-section').style.display = 'block';
+                document.getElementById('error-message').innerHTML = errorMessage;
+                setTimeout(function() {
+                    document.getElementById('error-section').style.display = 'none';
+                }, 5000);
             }
         });
     }

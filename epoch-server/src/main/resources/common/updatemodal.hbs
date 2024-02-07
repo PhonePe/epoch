@@ -1,5 +1,10 @@
 <div class="modal fade" id="editTopology" tabindex="-1" role="dialog" aria-labelledby="editTopologyTitle" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
+        <section id="modal-error-section" style="display: none;">
+            <div class="alert alert-danger" role="alert">
+                <b>Error:</b> <span id="modal-error-message"></span>
+            </div>
+        </section>
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="editTopologyTitle">Edit Topology: {{details.id}}</h5>
@@ -255,16 +260,33 @@
         }
         tdef['volumes'] = volumes;
         console.log(JSON.stringify(tdef));
+        var xhr = new XMLHttpRequest();
         $.ajax({
             type: 'put',
             url: '/apis/v1/topologies/' + inputs.get('name'),
             data: JSON.stringify(tdef),
+            xhr: function() {
+                return xhr;
+            },
             contentType: "application/json; charset=utf-8",
             traditional: true,
             success: function (data) {
                 alert("Topology updated successfully.");
                 $('#editTopology').modal('hide');
                 location.reload();
+            },
+            error: function (xhr, status, error) {
+                var response = xhr.responseJSON;
+                var errorMessage = response.message;
+                console.log("DATA:" + JSON.stringify(response.data));
+                if (response.data && response.data.validationErrors) {
+                    errorMessage += "<br>" + response.data.validationErrors.join("<br>");
+                }
+                document.getElementById('modal-error-section').style.display = 'block';
+                document.getElementById('modal-error-message').innerHTML = errorMessage;
+                setTimeout(function() {
+                    document.getElementById('modal-error-section').style.display = 'none';
+                }, 5000);
             }
         });
     }
