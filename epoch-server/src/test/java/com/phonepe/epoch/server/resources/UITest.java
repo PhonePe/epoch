@@ -115,8 +115,61 @@ class UITest extends TestBase {
                                                       "test@x.com",
                                                       Map.of(),
                                                       List.of());
-        EpochError epochError = assertThrows(EpochError.class, () -> ui.createSimpleTopology(request));
+        val epochError = assertThrows(EpochError.class, () -> ui.createSimpleTopology(request));
         assertEquals(epochError.getErrorCode(), EpochErrorCode.INPUT_VALIDATION_ERROR);
         assertFalse(saveCalled.get());
+    }
+
+    @Test
+    void testFailOnCreatingExistingTopologyOrUpdatingMissingTopology() {
+        val topo = TestUtils.generateTopologyDesc(0);
+        val details = EpochUtils.detailsFrom(topo);
+        val saveCalled = new AtomicBoolean();
+        val scheduleCalled = new AtomicBoolean();
+        val updateCalled = new AtomicBoolean();
+        when(topologyStore.save(any())).thenAnswer(invocationMock -> {
+            saveCalled.set(true);
+            return Optional.of(details);
+        });
+        when(scheduler.schedule(anyString(), anyString(), any(), any())).thenAnswer(invocationOnMock -> {
+            scheduleCalled.set(true);
+            return Optional.of("TR1");
+        });
+        val ui = new UI(new TopologyEngine(topologyStore, scheduler, epochEventbus), MAPPER);
+
+        val request = new SimpleTopologyCreateRequest("TEST_TOPO",
+                "0 0/1 * * * ?",
+                "docker.io/bash",
+                4,
+                512,
+                "test@x.com",
+                Map.of(),
+                List.of());
+        val r = ui.createSimpleTopology(request);
+        assertNotNull(r);
+        assertTrue(saveCalled.get());
+        assertTrue(scheduleCalled.get());
+        assertFalse(updateCalled.get());
+
+        when(topologyStore.get(any())).thenAnswer(invocationMock -> {
+            return Optional.of(details);
+        });
+
+        val epochError = assertThrows(EpochError.class, () -> ui.createSimpleTopology(request));
+        assertEquals(epochError.getErrorCode(), EpochErrorCode.TOPOLOGY_ALREADY_EXISTS);
+
+        when(topologyStore.get(any())).thenAnswer(invocationMock -> {
+            return Optional.empty();
+        });
+
+        val updateRequest = new SimpleTopologyEditRequest("0 0/1 * * * ?",
+                "docker.io/bash",
+                4,
+                512,
+                "test@x.com",
+                Map.of(),
+                List.of());
+        val updateError = assertThrows(EpochError.class, () -> ui.updateTopology("TEST_TOPO", updateRequest));
+        assertEquals(updateError.getErrorCode(), EpochErrorCode.TOPOLOGY_NOT_FOUND);
     }
 }
