@@ -1,4 +1,4 @@
-package com.phonepe.epoch.server.errorhandlers;
+package com.phonepe.epoch.server.error;
 
 import io.dropwizard.jersey.validation.JerseyViolationException;
 import lombok.val;

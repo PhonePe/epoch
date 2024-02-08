@@ -35,10 +35,4 @@ public class SimpleTopologyEditRequest {
     Map<String, String> env;
 
     List<MountedVolume> volumes;
-
-    @ValidationMethod(
-            message = "Invalid cron, please check https://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html for help")
-    public boolean isValidCronExpression() {
-        return Validators.validateCronExpression(cron);
-    }
 }

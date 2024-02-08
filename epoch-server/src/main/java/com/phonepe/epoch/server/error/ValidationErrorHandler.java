@@ -1,4 +1,4 @@
-package com.phonepe.epoch.server.errorhandlers;
+package com.phonepe.epoch.server.error;
 
 import com.phonepe.epoch.server.utils.EpochUtils;
 import io.dropwizard.jersey.validation.ConstraintMessage;

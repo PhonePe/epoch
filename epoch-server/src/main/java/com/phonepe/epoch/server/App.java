@@ -9,6 +9,7 @@ import com.phonepe.epoch.server.auth.core.EpochAuthorizer;
 import com.phonepe.epoch.server.auth.filters.DummyAuthFilter;
 import com.phonepe.epoch.server.auth.models.EpochUser;
 import com.phonepe.epoch.server.config.AppConfig;
+import com.phonepe.epoch.server.error.EpochErrorHandler;
 import com.phonepe.epoch.server.ui.HandlebarsViewRenderer;
 import com.phonepe.epoch.server.utils.IgnoreInJacocoGeneratedReport;
 import io.appform.functionmetrics.FunctionMetricsManager;
@@ -70,6 +71,7 @@ public class App extends Application<AppConfig> {
         configureMapper(environment.getObjectMapper());
         ((AbstractServerFactory) appConfig.getServerFactory()).setJerseyRootPath("/apis/*");
         setupAuth(appConfig, environment, environment.jersey());
+        environment.jersey().register(new EpochErrorHandler());
     }
 
     @SneakyThrows

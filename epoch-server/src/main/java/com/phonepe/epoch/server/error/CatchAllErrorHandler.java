@@ -1,4 +1,4 @@
-package com.phonepe.epoch.server.errorhandlers;
+package com.phonepe.epoch.server.error;
 
 import com.phonepe.drove.models.api.ApiResponse;
 import lombok.extern.slf4j.Slf4j;

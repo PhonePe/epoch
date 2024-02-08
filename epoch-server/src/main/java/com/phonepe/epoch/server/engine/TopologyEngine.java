@@ -13,10 +13,13 @@ import com.phonepe.epoch.models.topology.SimpleTopologyEditRequest;
 import com.phonepe.epoch.models.topology.EpochTopologyState;
 import com.phonepe.epoch.models.topology.SimpleTopologyCreateRequest;
 import com.phonepe.epoch.models.triggers.EpochTaskTriggerCron;
+import com.phonepe.epoch.server.error.EpochError;
+import com.phonepe.epoch.server.error.EpochErrorCode;
 import com.phonepe.epoch.server.event.EpochEventBus;
 import com.phonepe.epoch.server.event.EpochEventType;
 import com.phonepe.epoch.server.event.EpochStateChangeEvent;
 import com.phonepe.epoch.server.event.StateChangeEventDataTag;
+import com.phonepe.epoch.server.execution.QuartzCronUtility;
 import com.phonepe.epoch.server.managed.Scheduler;
 import com.phonepe.epoch.server.store.TopologyStore;
 import io.dropwizard.util.Duration;
@@ -44,7 +47,16 @@ public class TopologyEngine {
     private final Scheduler scheduler;
     private final EpochEventBus eventBus;
 
+    private static void validateCronExpression(final String cronExpression) {
+        if (!QuartzCronUtility.isValidCronExpression(cronExpression)) {
+            throw EpochError.raise(EpochErrorCode.INPUT_VALIDATION_ERROR, Map.of(
+                    "field", "cron", "cron", cronExpression,
+                    "message", "check https://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html for help"));
+        }
+    }
+
     public Optional<EpochTopologyDetails> createSimpleTopology(final SimpleTopologyCreateRequest request) {
+        validateCronExpression(request.getCron());
         val topology = new EpochTopology(
                 request.getName(),
                 new EpochContainerExecutionTask("docker-task",
@@ -61,7 +73,7 @@ public class TopologyEngine {
         val topologyId = topologyId(topology);
         val existingTopology = topologyStore.get(topologyId);
         if (existingTopology.isPresent()) {
-            return existingTopology; // todo, create an error here
+            throw EpochError.raise(EpochErrorCode.TOPOLOGY_ALREADY_EXISTS, Map.of("name", existingTopology.get().getTopology().getName()));
         }
         val saved = topologyStore.save(topology);
         saved.ifPresent(epochTopologyDetails -> {
@@ -78,9 +90,10 @@ public class TopologyEngine {
 
     public Optional<EpochTopologyDetails> updateTopology(@PathParam("topologyId") String topologyId,
                                                          @Valid final SimpleTopologyEditRequest request) {
+        validateCronExpression(request.getCron());
         final Optional<EpochTopologyDetails> topologyDetails = topologyStore.get(topologyId);
         if (topologyDetails.isEmpty()) {
-            return Optional.empty();
+            throw EpochError.raise(EpochErrorCode.TOPOLOGY_NOT_FOUND, Map.of("id", topologyId));
         }
         val topology = new EpochTopology(
                 topologyId,

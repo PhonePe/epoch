@@ -314,10 +314,13 @@
                 if (response.data && response.data.validationErrors) {
                     errorMessage += "<br>" + response.data.validationErrors.join("<br>");
                 }
-                document.getElementById('error-section').style.display = 'block';
-                document.getElementById('error-message').innerHTML = errorMessage;
+                if (response.data && response.data.message) {
+                    errorMessage += "<br>" + response.data.message;
+                }
+                $('#error-section').removeClass('d-none').addClass('d-block');
+                $('#error-message').html(errorMessage);
                 setTimeout(function() {
-                    document.getElementById('error-section').style.display = 'none';
+                    $('#error-section').removeClass('d-block').addClass('d-none');
                 }, 5000);
             }
         });

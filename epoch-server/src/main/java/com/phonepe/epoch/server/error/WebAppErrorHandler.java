@@ -1,4 +1,4 @@
-package com.phonepe.epoch.server.errorhandlers;
+package com.phonepe.epoch.server.error;
 
 import lombok.extern.slf4j.Slf4j;
 
