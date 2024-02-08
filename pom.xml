@@ -55,6 +55,7 @@
             **/model/**,
             **/models/**,
             **com/phonepe/epoch/server/config/**,
+            **com/phonepe/epoch/server/error/EpochError.java,
             **com/phonepe/epoch/server/ui/**,
             **com/phonepe/epoch/server/ui/views/**,
             **com/phonepe/epoch/server/App.java,
