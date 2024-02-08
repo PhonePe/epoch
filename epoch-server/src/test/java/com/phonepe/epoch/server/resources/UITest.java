@@ -5,6 +5,8 @@ import com.phonepe.epoch.models.topology.SimpleTopologyCreateRequest;
 import com.phonepe.epoch.server.TestBase;
 import com.phonepe.epoch.server.TestUtils;
 import com.phonepe.epoch.server.engine.TopologyEngine;
+import com.phonepe.epoch.server.error.EpochError;
+import com.phonepe.epoch.server.error.EpochErrorCode;
 import com.phonepe.epoch.server.event.EpochEventBus;
 import com.phonepe.epoch.server.managed.Scheduler;
 import com.phonepe.epoch.server.store.TopologyStore;
@@ -59,7 +61,7 @@ class UITest extends TestBase {
         val ui = new UI(new TopologyEngine(topologyStore, scheduler, epochEventbus), MAPPER);
 
         val request = new SimpleTopologyCreateRequest("TEST_TOPO",
-                                                      "* * * * *",
+                                                      "0 0/1 * * * ?",
                                                       "docker.io/bash",
                                                       4,
                                                       512,
@@ -79,7 +81,7 @@ class UITest extends TestBase {
         when(topologyStore.get(any())).thenAnswer(invocationMock -> Optional.of(details));
         scheduleCalled.set(false);
         saveCalled.set(false);
-        val updateRequest = new SimpleTopologyEditRequest("* * * * *",
+        val updateRequest = new SimpleTopologyEditRequest("0 0/1 * * * ?",
                                                           "docker.io/bash",
                                                           4,
                                                           512,
@@ -113,8 +115,8 @@ class UITest extends TestBase {
                                                       "test@x.com",
                                                       Map.of(),
                                                       List.of());
-        val r = ui.createSimpleTopology(request);
-        assertNotNull(r);
+        EpochError epochError = assertThrows(EpochError.class, () -> ui.createSimpleTopology(request));
+        assertEquals(epochError.getErrorCode(), EpochErrorCode.INPUT_VALIDATION_ERROR);
         assertFalse(saveCalled.get());
     }
 }
