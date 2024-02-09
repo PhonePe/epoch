@@ -198,7 +198,6 @@
             {{/each}}
 
             {{#each details.topology.task.volumes}}
-                console.log("path =" + "{{this.pathInContainer}}");
                 var row = originalVolRowCopy.clone().removeClass("d-none vol-row-prototype");
                 row.find(".vol-host-path").val("{{this.pathOnHost}}");
                 row.find(".vol-cont-path").val("{{this.pathInContainer}}");
@@ -218,7 +217,6 @@
     });
 
     $('#editTopology').on('hidden.bs.modal', function() {
-        console.log("we be resetting");
         $("#edit-topology-form")[0].reset();
 
         // Reset the display for the memory slider
@@ -231,7 +229,6 @@
     });
 
     function updateTopology() {
-        console.log('update topology');
         const form = document.getElementById('edit-topology-form');
         const inputs = new FormData(form);
         var tdef = {};
@@ -259,26 +256,30 @@
             volumes.push(volDef);
         }
         tdef['volumes'] = volumes;
-        console.log(JSON.stringify(tdef));
         var xhr = new XMLHttpRequest();
         $.ajax({
             type: 'put',
-            url: '/apis/v1/topologies/' + inputs.get('name'),
+            url: '/topologies/' + inputs.get('name') + '/update',
             data: JSON.stringify(tdef),
             xhr: function() {
                 return xhr;
             },
             contentType: "application/json; charset=utf-8",
             traditional: true,
-            success: function (data) {
-                alert("Topology updated successfully.");
-                $('#editTopology').modal('hide');
-                location.reload();
+            success: function (data, status, xhr) {
+                console.log("data: "+ JSON.stringify(data));
+                if (data.data.redirectUrl) {
+                    console.log("we be redirecting: "+ data.data.redirectUrl);
+                    alert("Topology updated successfully.");
+                    $('#editTopology').modal('hide');
+                    window.location.replace(data.data.redirectUrl);
+                } else {
+                    location.reload();
+                }
             },
             error: function (xhr, status, error) {
                 var response = xhr.responseJSON;
                 var errorMessage = response.message;
-                console.log("DATA:" + JSON.stringify(response.data));
                 if (response.data && response.data.validationErrors) {
                     errorMessage += "<br>" + response.data.validationErrors.join("<br>");
                 }

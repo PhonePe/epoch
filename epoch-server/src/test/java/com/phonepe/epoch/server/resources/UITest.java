@@ -44,7 +44,7 @@ class UITest extends TestBase {
     }
 
     @Test
-    void testHomeSuccess() {
+    void testHomeSuccess() throws EpochError {
         val topo = TestUtils.generateTopologyDesc(0);
         val details = EpochUtils.detailsFrom(topo);
         val saveCalled = new AtomicBoolean();
@@ -121,7 +121,7 @@ class UITest extends TestBase {
     }
 
     @Test
-    void testFailOnCreatingExistingTopologyOrUpdatingMissingTopology() {
+    void testFailOnCreatingExistingTopologyOrUpdatingMissingTopology() throws EpochError {
         val topo = TestUtils.generateTopologyDesc(0);
         val details = EpochUtils.detailsFrom(topo);
         val saveCalled = new AtomicBoolean();

@@ -47,14 +47,6 @@ public class TopologyEngine {
     private final Scheduler scheduler;
     private final EpochEventBus eventBus;
 
-    private static void validateCronExpression(final String cronExpression) {
-        if (!QuartzCronUtility.isValidCronExpression(cronExpression)) {
-            throw EpochError.raise(EpochErrorCode.INPUT_VALIDATION_ERROR, Map.of(
-                    "field", "cron", "cron", cronExpression,
-                    "message", "check https://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html for help"));
-        }
-    }
-
     public Optional<EpochTopologyDetails> createSimpleTopology(final SimpleTopologyCreateRequest request) {
         validateCronExpression(request.getCron());
         val topology = new EpochTopology(
@@ -124,5 +116,13 @@ public class TopologyEngine {
 
     public Optional<EpochTopologyDetails> get(String topologyId) {
         return topologyStore.get(topologyId);
+    }
+
+    private static void validateCronExpression(final String cronExpression) {
+        if (!QuartzCronUtility.isValidCronExpression(cronExpression)) {
+            throw EpochError.raise(EpochErrorCode.INPUT_VALIDATION_ERROR, Map.of(
+                    "field", "cron", "cron", cronExpression,
+                    "message", "check https://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html for help"));
+        }
     }
 }

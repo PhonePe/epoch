@@ -1,6 +1,7 @@
 package com.phonepe.epoch.server.error;
 
 import lombok.Getter;
+import org.apache.commons.text.StringSubstitutor;
 
 import java.util.Collections;
 import java.util.Map;
@@ -13,7 +14,7 @@ public class EpochError extends RuntimeException {
 
     public EpochError(final EpochErrorCode errorCode,
                       final Map<String, Object> context) {
-        super(ErrorUtils.message(errorCode, context));
+        super(message(errorCode, context));
         this.errorCode = errorCode;
         this.context = context;
         this.parsedMessage = super.getMessage();
@@ -26,13 +27,13 @@ public class EpochError extends RuntimeException {
         super(message, e);
         this.errorCode = errorCode;
         this.context = context;
-        this.parsedMessage = ErrorUtils.message(errorCode, context);
+        this.parsedMessage = message(errorCode, context);
     }
 
     public EpochError(final EpochErrorCode errorCode,
                       final Throwable e,
                       final Map<String, Object> context) {
-        super(ErrorUtils.message(errorCode, context), e);
+        super(message(errorCode, context), e);
         this.errorCode = errorCode;
         this.context = context;
         this.parsedMessage = super.getMessage();
@@ -83,5 +84,10 @@ public class EpochError extends RuntimeException {
             return epochError;
         }
         return new EpochError(errorCode, " Error:" + e.getMessage(), e, Collections.emptyMap());
+    }
+
+    private static String message(EpochErrorCode errorCode, Map<String, Object> context) {
+        return String.format("[%d]: %s", errorCode.getCode(),
+                new StringSubstitutor(context).replace(errorCode.getMessage()));
     }
 }

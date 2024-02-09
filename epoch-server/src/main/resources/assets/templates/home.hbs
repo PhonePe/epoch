@@ -294,7 +294,6 @@
             volumes.push(volDef);
         }
         tdef['volumes'] = volumes;
-        console.log(JSON.stringify(tdef));
         var xhr = new XMLHttpRequest();
         $.ajax({
             type: 'post',
@@ -305,8 +304,13 @@
             },
             contentType: "application/json; charset=utf-8",
             traditional: true,
-            success: function (data) {
-                window.location.replace("/");
+            success: function (data, status, xhr) {
+                if (data.data.redirectUrl) {
+                    alert(data.data.topologyId + " Created successfully");
+                    window.location.replace(data.data.redirectUrl);
+                } else {
+                    window.location.replace("/");
+                }
             },
             error: function (xhr, status, error) {
                 var response = xhr.responseJSON;

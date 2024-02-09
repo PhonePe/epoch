@@ -10,7 +10,7 @@ import javax.ws.rs.ext.Provider;
 public class EpochErrorHandler implements ExceptionMapper<EpochError> {
     @Override
     public Response toResponse(EpochError error) {
-        return Response.status(Response.Status.fromStatusCode(error.getErrorCode().getHttpStatusCode()))
+        return Response.status(error.getErrorCode().getResponseStatus())
                 .entity(ApiResponse.failure(error.getContext(), error.getParsedMessage()))
                 .build();
     }

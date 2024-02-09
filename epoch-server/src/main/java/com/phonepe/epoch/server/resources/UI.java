@@ -3,7 +3,9 @@ package com.phonepe.epoch.server.resources;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
+import com.phonepe.drove.models.api.ApiResponse;
 import com.phonepe.epoch.models.topology.EpochTopologyDetails;
+import com.phonepe.epoch.models.topology.EpochTopologyNavigationResponse;
 import com.phonepe.epoch.models.topology.SimpleTopologyEditRequest;
 import com.phonepe.epoch.models.topology.SimpleTopologyCreateRequest;
 import com.phonepe.epoch.server.auth.models.EpochUser;
@@ -23,6 +25,7 @@ import javax.annotation.security.RolesAllowed;
 import javax.validation.Valid;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -86,20 +89,31 @@ public class UI {
     @Path("/topologies/create")
     @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
     public Response createSimpleTopology(@Valid final SimpleTopologyCreateRequest request) {
-        topologyEngine.createSimpleTopology(request);
-        return redirectToHome();
+        val createdTopologyOptional = topologyEngine.createSimpleTopology(request);
+        return createdTopologyOptional
+                .map(topologyDetails -> responseToTopology(topologyDetails.getId()))
+                .orElse(redirectToHome());
     }
 
-    @POST
+    @PUT
     @Path("/topologies/{topologyId}/update")
     @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
     public Response updateTopology(@PathParam("topologyId")String topologyId, @Valid final SimpleTopologyEditRequest request) {
-        topologyEngine.updateTopology(topologyId, request);
-        return redirectToHome();
+        val updatedDetails = topologyEngine.updateTopology(topologyId, request);
+        return updatedDetails
+                .map(topologyDetails -> responseToTopology(topologyDetails.getId()))
+                .orElse(redirectToHome());
     }
 
     private static Response redirectToHome() {
         return Response.seeOther(URI.create("/")).build();
     }
 
+    private static Response responseToTopology(String topologyId) {
+        return Response
+                .ok(ApiResponse.success(EpochTopologyNavigationResponse.builder()
+                        .redirectUrl("/topologies/" + topologyId)
+                        .topologyId(topologyId).build()))
+                .build();
+    }
 }
