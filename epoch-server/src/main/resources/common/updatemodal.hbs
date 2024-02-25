@@ -1,10 +1,5 @@
 <div class="modal fade" id="editTopology" tabindex="-1" role="dialog" aria-labelledby="editTopologyTitle" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
-        <section id="modal-error-section" class="d-none">
-            <div class="alert alert-danger" role="alert">
-                <b>Error:</b> <span id="modal-error-message"></span>
-            </div>
-        </section>
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="editTopologyTitle">Edit Topology: {{details.id}}</h5>
@@ -270,9 +265,14 @@
                 console.log("data: "+ JSON.stringify(data));
                 if (data.data.redirectUrl) {
                     console.log("we be redirecting: "+ data.data.redirectUrl);
-                    alert("Topology updated successfully.");
-                    $('#editTopology').modal('hide');
-                    window.location.replace(data.data.redirectUrl);
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: 'Topology updated successfully.'
+                    }).then((result) => {
+                        $('#editTopology').modal('hide');
+                        window.location.replace(data.data.redirectUrl);
+                    });
                 } else {
                     location.reload();
                 }
@@ -280,17 +280,23 @@
             error: function (xhr, status, error) {
                 var response = xhr.responseJSON;
                 var errorMessage = response.message;
+                var errorData = "";
                 if (response.data && response.data.validationErrors) {
-                    errorMessage += "<br>" + response.data.validationErrors.join("<br>");
+                    errorData += "\n" + response.data.validationErrors.join("\n");
                 }
                 if (response.data && response.data.message) {
-                    errorMessage += "<br>" + response.data.message;
+                    errorData += "\n" + response.data.message;
                 }
-                $('#modal-error-section').removeClass('d-none').addClass('d-block');
-                $('#modal-error-message').html(errorMessage);
-                setTimeout(function() {
-                    $('#modal-error-section').removeClass('d-block').addClass('d-none');
-                }, 5000);
+                const urlRegex = /(https?:\/\/[^\s]+)/g;
+                errorData = errorData.replace(urlRegex, function(url) {
+                    return '<a href="' + url + '" target="_blank">' + url + '</a>';
+                });
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    html: errorData,
+                    footer: errorMessage
+                });
             }
         });
     }

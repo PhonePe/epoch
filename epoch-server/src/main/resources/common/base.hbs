@@ -46,11 +46,13 @@
     </nav>
 </header>
 <main role="main" class="container-fluid">
-    <section id="error-section" class="d-none">
+    {{#if error}}
+        <section>
         <div class="alert alert-danger" role="alert">
-            <b>Error:</b> <span id="error-message"></span>
+                <b>Error:</b> {{error}}
         </div>
     </section>
+    {{/if}}
     {{#block "content"}}
 
     {{/block}}
@@ -268,7 +270,7 @@ $(document).ready(function() {
             Swal.fire({
                     title: form.attr('data-cnf-title'),
                     text: form.attr('data-cnf-text'),
-                    type: "warning",
+                    icon: "warning",
                     showCancelButton: true,
                     focusConfirm: false,
                     confirmButtonColor: "#00c559",

@@ -306,8 +306,12 @@
             traditional: true,
             success: function (data, status, xhr) {
                 if (data.data.redirectUrl) {
-                    alert(data.data.topologyId + " Created successfully");
-                    window.location.replace(data.data.redirectUrl);
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success !',
+                        title: 'Topology created successfully...'
+                    })
+                    .then(result => window.location.replace(data.data.redirectUrl));
                 } else {
                     window.location.replace("/");
                 }
@@ -315,17 +319,23 @@
             error: function (xhr, status, error) {
                 var response = xhr.responseJSON;
                 var errorMessage = response.message;
+                var errorData = "";
                 if (response.data && response.data.validationErrors) {
-                    errorMessage += "<br>" + response.data.validationErrors.join("<br>");
+                    errorData += "\n" + response.data.validationErrors.join("\n");
                 }
                 if (response.data && response.data.message) {
-                    errorMessage += "<br>" + response.data.message;
+                    errorData += "\n" + response.data.message;
                 }
-                $('#error-section').removeClass('d-none').addClass('d-block');
-                $('#error-message').html(errorMessage);
-                setTimeout(function() {
-                    $('#error-section').removeClass('d-block').addClass('d-none');
-                }, 5000);
+                const urlRegex = /(https?:\/\/[^\s]+)/g;
+                errorData = errorData.replace(urlRegex, function(url) {
+                    return '<a href="' + url + '" target="_blank">' + url + '</a>';
+                });
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    html: errorData,
+                    footer: errorMessage
+                });
             }
         });
     }

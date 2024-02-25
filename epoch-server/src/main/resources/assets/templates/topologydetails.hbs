@@ -189,7 +189,7 @@
         Swal.fire({
             title: title,
             text: question,
-            type: "warning",
+            icon: "warning",
             showCancelButton: true,
             focusConfirm: false,
             confirmButtonColor: "#00c559",
@@ -244,7 +244,12 @@
                                             "Are you sure you want to delete this topology? You will not be able to undo this.",
                                             "DELETE",
                                             "/apis/v1/topologies/{{topologyId}}",
-                                            () => window.location = "/"));
+                                            () => {
+                                                return Swal.fire({
+                                                    icon: 'success',
+                                                    title: 'Deleted successfully'
+                                                }).then(result => window.location = "/");
+                                            }));
     {{#block "update_modal_js"}}{{/block}}
 
 {{/partial}}
