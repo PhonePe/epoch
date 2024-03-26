@@ -1,0 +1,44 @@
+server:
+  applicationConnectors:
+    - type: http
+      port: 6200
+  adminConnectors:
+    - type: http
+      port: 6201
+  applicationContextPath: /
+  requestLog:
+    appenders:
+      - type: console
+        timeZone: IST
+
+logging:
+  level: INFO
+  loggers:
+    com.phonepe.epoch: INFO
+
+  appenders:
+    - type: console
+      threshold: TRACE
+      timeZone: IST
+
+zookeeper:
+  connectionString: ${ZK_CONNECTION_STRING}
+
+drove:
+  endpoints:
+  - ${DROVE_ENDPOINT}
+
+userAuth:
+  enabled: true
+  users:
+  - username: admin
+    password: admin
+    role: READ_WRITE
+
+  - username: guest
+    password: guest
+    role: READ_ONLY
+
+options:
+  cleanupJobInterval: 30m
+  numRunsPerJob: 20
