@@ -1,0 +1,97 @@
+{
+  "name": "epoch",
+  "version": "1",
+  "executable": {
+    "type": "DOCKER",
+    "url": "quay.io/santanu_sinha/epoch-server:1.9",
+    "dockerPullTimeout": "2 minute"
+  },
+  "exposedPorts": [
+    {
+      "name": "main",
+      "port": 8080,
+      "type": "HTTP"
+    },
+    {
+      "name": "admin",
+      "port": 8081,
+      "type": "HTTP"
+    }
+  ],
+  "volumes": [],
+  "type": "SERVICE",
+  "logging": {
+    "type": "LOCAL",
+    "maxSize": "10m",
+    "maxFiles": 3,
+    "compress": true
+  },
+  "resources": [
+    {
+      "type": "MEMORY",
+      "sizeInMB": 4096
+    },
+    {
+      "type": "CPU",
+      "count": 1
+    }
+  ],
+  "placementPolicy": {
+    "type": "ANY"
+  },
+  "healthcheck": {
+    "mode": {
+      "type": "HTTP",
+      "protocol": "HTTP",
+      "portName": "admin",
+      "path": "/healthcheck",
+      "verb": "GET",
+      "successCodes": [
+        200
+      ],
+      "payload": "",
+      "connectionTimeout": "20 seconds"
+    },
+    "timeout": "5 seconds",
+    "interval": "20 seconds",
+    "attempts": 3,
+    "initialDelay": "0 seconds"
+  },
+  "readiness": {
+    "mode": {
+      "type": "HTTP",
+      "protocol": "HTTP",
+      "portName": "admin",
+      "path": "/healthcheck",
+      "verb": "GET",
+      "successCodes": [
+        200
+      ],
+      "payload": "",
+      "connectionTimeout": "3 seconds"
+    },
+    "timeout": "3 seconds",
+    "interval": "10 seconds",
+    "attempts": 3,
+    "initialDelay": "10 seconds"
+  },
+  "tags": {},
+  "env": {
+    "JAVA_PROCESS_MIN_HEAP": "2g",
+    "JAVA_PROCESS_MAX_HEAP": "2g",
+    "ADMIN_PASSWORD" : "adminpassword",
+    "GUEST_PASSWORD" : "guestpassword",
+    "ZK_CONNECTION_STRING" : "172.17.0.1:2181",
+    "DROVE_ENDPOINT" : "http://172.17.0.1:4000"
+  },
+  "exposureSpec": {
+    "vhost": "epoch.mydomain.net",
+    "portName": "main",
+    "mode": "ALL"
+  },
+  "preShutdown": {
+    "hooks": [],
+    "waitBeforeKill": "30 seconds"
+  },
+  "instances" : 1
+}

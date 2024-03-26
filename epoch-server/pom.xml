@@ -267,4 +267,47 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>docker</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.spotify</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <version>1.2.0</version>
+                        <configuration>
+                            <imageName>quay.io/santanu_sinha/${project.artifactId}:${project.version}</imageName>
+                            <dockerDirectory>${project.basedir}</dockerDirectory>
+                            <registryUrl>https://quay.io/santanu_sinha/</registryUrl>
+                            <buildArgs>
+                                <VERSION>${project.version}</VERSION>
+                            </buildArgs>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>build</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>push-image</id>
+                                <phase>deploy</phase>
+                                <goals>
+                                    <goal>push</goal>
+                                </goals>
+                                <configuration>
+                                    <imageName>quay.io/santanu_sinha/${project.artifactId}:${project.version}
+                                    </imageName>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>

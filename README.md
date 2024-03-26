@@ -85,3 +85,151 @@ The following shows the various states of a topology <br>
 Epoch uses Zookeeper to store the tasks and topologies. The following diagram shows the structure of the data in
 Zookeeper
 <img src="resources/zkDataStructure.png" width="80%">
+
+## Usage
+
+The Epoch server container is available at [quay.io](quay.io/santanu_sinha/epoch-server).
+
+The container is intended to be run on a Drove cluster.
+
+### Environment Variables
+The following environment variables are understood by the container:
+
+| Variable Name         |                              Required without external config                               | Description                                                                                                        |
+|-----------------------|:-------------------------------------------------------------------------------------------:|--------------------------------------------------------------------------------------------------------------------|
+| ZK_CONNECTION_STRING  |                        Yes. Unnecessary if config is being injected.                        | Connection String for the Zookeeper Cluster                                                                        |
+| DROVE_ENDPOINT        |                        Yes. Unnecessary if config is being injected.                        | HTTP(S) endpoint for the Drove cluster                                                                             |
+| DROVE_APP_NAME        |                                     Injected by  Drove                                      | App name for the container on the Drove cluster.<br> Do not keep changing this as it will lose stored job context. |
+| CONFIG_FILE_PATH      | To use custom config file. Can be put on some executor and volume mounted in the container. | By default config file in `/home/default/config.yml` is used.                                                      |
+| ADMIN_PASSWORD        |              **Optional but Recommended**. Unnecessary if config is injected.               | Password for the user `admin` which has read/write permissions. Default value is `admin`.                          |
+| GUEST_PASSWORD        |              **Optional but Recommended**. Unnecessary if config is injected.               | Password for the user `guest` which has read only permissions. Default value is `guest`.                           |
+| GC_ALGO               |                                          Optional                                           | GC to be used by JVM. By default G1GC is used.                                                                     |
+| JAVA_PROCESS_MIN_HEAP |                                          Optional                                           | Minimum Java Heap size. Set to 1 GB by default.                                                                    |
+| JAVA_PROCESS_MAX_HEAP |                                          Optional                                           | Maximum Java Heap size. Set to 1 GB by default.                                                                    |
+| JAVA_OPTS             |                                          Optional                                           | Additional java options.                                                                                           |
+| DEBUG                 |                                          Optional                                           | Set to a non-zero value to print environment variables etc. Note: This will print _all_ env variables.             |
+
+### Deploying Epoch on Drove
+
+The following is a sample app specification for deploying the epoch container on drove.
+
+```json
+{
+  "name": "epoch",
+  "version": "1",
+  "executable": {
+    "type": "DOCKER",
+    "url": "quay.io/santanu_sinha/epoch-server:1.9",
+    "dockerPullTimeout": "2 minute"
+  },
+  "exposedPorts": [
+    {
+      "name": "main",
+      "port": 8080,
+      "type": "HTTP"
+    },
+    {
+      "name": "admin",
+      "port": 8081,
+      "type": "HTTP"
+    }
+  ],
+  "volumes": [],
+  "type": "SERVICE",
+  "logging": {
+    "type": "LOCAL",
+    "maxSize": "10m",
+    "maxFiles": 3,
+    "compress": true
+  },
+  "resources": [
+    {
+      "type": "MEMORY",
+      "sizeInMB": 4096
+    },
+    {
+      "type": "CPU",
+      "count": 1
+    }
+  ],
+  "placementPolicy": {
+    "type": "ANY"
+  },
+  "healthcheck": {
+    "mode": {
+      "type": "HTTP",
+      "protocol": "HTTP",
+      "portName": "admin",
+      "path": "/healthcheck",
+      "verb": "GET",
+      "successCodes": [
+        200
+      ],
+      "payload": "",
+      "connectionTimeout": "20 seconds"
+    },
+    "timeout": "5 seconds",
+    "interval": "20 seconds",
+    "attempts": 3,
+    "initialDelay": "0 seconds"
+  },
+  "readiness": {
+    "mode": {
+      "type": "HTTP",
+      "protocol": "HTTP",
+      "portName": "admin",
+      "path": "/healthcheck",
+      "verb": "GET",
+      "successCodes": [
+        200
+      ],
+      "payload": "",
+      "connectionTimeout": "3 seconds"
+    },
+    "timeout": "3 seconds",
+    "interval": "10 seconds",
+    "attempts": 3,
+    "initialDelay": "10 seconds"
+  },
+  "tags": {},
+  "env": {
+    "JAVA_PROCESS_MIN_HEAP": "2g",
+    "JAVA_PROCESS_MAX_HEAP": "2g",
+    "ADMIN_PASSWORD" : "adminpassword",
+    "GUEST_PASSWORD" : "guestpassword",
+    "ZK_CONNECTION_STRING" : "<YOUR_ZK_CONNECTION_STRING>",
+    "DROVE_ENDPOINT" : "<YOUR_DROVE_ENDPOINT>"
+  },
+  "exposureSpec": {
+    "vhost": "epoch.<YOUR_DOMAIN>",
+    "portName": "main",
+    "mode": "ALL"
+  },
+  "preShutdown": {
+    "hooks": [],
+    "waitBeforeKill": "30 seconds"
+  },
+  "instances" : 1
+}
+```
+
+Replace the following in the above:
+ - **YOUR_ZK_CONNECTION_STRING** - Connection string for your zookeeper cluster
+ - **YOUR_DROVE_ENDPOINT** - HTTP(S) endpoint for Drove
+ - **YOUR_DOMAIN** - Domain on which you want drove-nixy to configure nginx vhost
+
+Save the json in some file say `epoch.json`
+
+Deploy to drove using the following command:
+
+```shell
+drove -c testing apps create epoch.json
+```
+This will create an app called `epoch-1`.
+
+Scale the app to one instance.
+```shell
+drove -c oss apps deploy epoch-1 1 -w
+```
+
+The drove app should be available at http://epoch.<YOU_DOMAIN>.

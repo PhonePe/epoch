@@ -17,13 +17,16 @@ term_handler() {
 # on callback, kill the last background process, which is `tail -f /dev/null` and execute the specified handler
 trap 'kill ${!}; term_handler' SIGTERM
 
-echo "Environment variables:"
-printenv
+export EPOCH_ADMIN_PASSWORD="${ADMIN_PASSWORD-admin}"
+export EPOCH_GUEST_PASSWORD="${GUEST_PASSWORD-guest}"
 
-CONFIG_PATH=${CONFIG_FILE_PATH:-/configs/config.yml}
+
+
+
+CONFIG_PATH=${CONFIG_FILE_PATH:-config.yml}
 
 if [ ! -f "${CONFIG_PATH}" ]; then
-  echo "Config file ${CONFIG_PATH} not found"
+  echo "Config file ${CONFIG_PATH} not found."
   echo "File system:"
   ls -l /
   exit 1
@@ -31,12 +34,27 @@ else
   echo "Config ${CONFIG_PATH} file exists. Proceeding to service startup."
 fi
 
-# run application
+export JAVA_HOME="${JAVA_HOME}:${PWD}"
+
+DEBUG_ENABLED="${DEBUG-0}"
+if [ "$DEBUG_ENABLED" -ne 0 ]; then
+
+echo "Environment variables:"
+printenv
+
 echo "Java version details:"
 java -version
 
-echo "Starting Epoch Server"
-java -jar -XX:+"${GC_ALGO-UseG1GC}" -Xms"${JAVA_PROCESS_MIN_HEAP-1g}" -Xmx"${JAVA_PROCESS_MAX_HEAP-1g}" "${JAVA_OPTS}" epoch-server.jar server /rosey/config.yml &
+echo "Contents of working dir: ${PWD}"
+ls -l "${PWD}"
+
+fi
+
+# run application
+CMD=$(eval echo "java -jar -XX:+${GC_ALGO-UseG1GC} -Xms${JAVA_PROCESS_MIN_HEAP-1g} -Xmx${JAVA_PROCESS_MAX_HEAP-1g} ${JAVA_OPTS} epoch-server.jar server ${CONFIG_PATH}")
+echo "Starting Epoch Server by running command: ${CMD}"
+
+eval "${CMD}" &
 
 pid="$!"
 

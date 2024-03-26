@@ -1,10 +1,10 @@
 server:
   applicationConnectors:
     - type: http
-      port: 6200
+      port: 8080
   adminConnectors:
     - type: http
-      port: 6201
+      port: 8081
   applicationContextPath: /
   requestLog:
     appenders:
@@ -32,11 +32,11 @@ userAuth:
   enabled: true
   users:
   - username: admin
-    password: admin
+    password: ${EPOCH_ADMIN_PASSWORD}
     role: READ_WRITE
 
   - username: guest
-    password: guest
+    password: ${EPOCH_GUEST_PASSWORD}
     role: READ_ONLY
 
 options:
