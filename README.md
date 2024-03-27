@@ -9,7 +9,6 @@ Think of it being very similar to Chronos, but on Drove and not Mesos.
 
 ## Features
 
-- Authentication and Authorization using Olympus
 - Self-serve UI for creating and managing tasks
 - Ability to create a topology and schedule a recurring task
 - Ability to run the above topology instantly
@@ -27,9 +26,7 @@ recurring intervals. <br>
   the topology. <br>
 
 > :warning: **Tasks On Drove**: Today, Drove only supports running tasks that are packaged as docker images. So, the
-> task that you want to run on Drove should be packaged as a docker image and pushed to the Docker registry on
-> PhonePe. <br>
-
+> task that you want to run on Drove should be packaged as a docker image and pushed to a Docker registry.
 
 > :information_source: **Quartz Cron**: Epoch uses Quartz cron expressions to schedule tasks. You can read more about
 > Quartz cron expressions [here](http://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html)
@@ -233,3 +230,6 @@ drove -c oss apps deploy epoch-1 1 -w
 ```
 
 The drove app should be available at http://epoch.<YOU_DOMAIN>.
+
+## License
+Apache 2
