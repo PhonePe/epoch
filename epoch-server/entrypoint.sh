@@ -19,9 +19,8 @@ trap 'kill ${!}; term_handler' SIGTERM
 
 export EPOCH_ADMIN_PASSWORD="${ADMIN_PASSWORD-admin}"
 export EPOCH_GUEST_PASSWORD="${GUEST_PASSWORD-guest}"
-
-
-
+export DROVE_USERNAME="${DROVE_USERNAME-admin}"
+export DROVE_PASSWORD="${DROVE_PASSWORD-password}"
 
 CONFIG_PATH=${CONFIG_FILE_PATH:-config.yml}
 

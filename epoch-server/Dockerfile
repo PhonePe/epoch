@@ -1,9 +1,10 @@
-FROM registry.access.redhat.com/ubi9/openjdk-17
+FROM ubuntu:jammy
+
+USER root
+RUN apt-get update && apt-get install -y openjdk-17-jre-headless
 
 EXPOSE 8080
 EXPOSE 8081
-EXPOSE 8082
-EXPOSE 8083
 
 ARG VERSION
 

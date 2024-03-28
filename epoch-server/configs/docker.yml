@@ -27,6 +27,8 @@ zookeeper:
 drove:
   endpoints:
   - ${DROVE_ENDPOINT}
+  username: ${DROVE_USERNAME}
+  password: ${DROVE_PASSWORD}
 
 userAuth:
   enabled: true

@@ -82,7 +82,9 @@
     "ADMIN_PASSWORD" : "adminpassword",
     "GUEST_PASSWORD" : "guestpassword",
     "ZK_CONNECTION_STRING" : "172.17.0.1:2181",
-    "DROVE_ENDPOINT" : "http://172.17.0.1:4000"
+    "DROVE_ENDPOINT" : "http://172.17.0.1:4000",
+    "DROVE_USERNAME" : "admin",
+    "DROVE_PASSWORD" : "admin"
   },
   "exposureSpec": {
     "vhost": "epoch.mydomain.net",
