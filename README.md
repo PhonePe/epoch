@@ -85,7 +85,7 @@ Zookeeper
 
 ## Usage
 
-The Epoch server container is available at [quay.io](quay.io/santanu_sinha/epoch-server).
+The Epoch server container is available at [ghcr.io](ghcr.io/phonepe/epoch-server).
 
 The container is intended to be run on a Drove cluster.
 
@@ -116,7 +116,7 @@ The following is a sample app specification for deploying the epoch container on
   "version": "1",
   "executable": {
     "type": "DOCKER",
-    "url": "quay.io/santanu_sinha/epoch-server:1.9",
+    "url": "ghcr.io/phonepe/epoch:latest",
     "dockerPullTimeout": "2 minute"
   },
   "exposedPorts": [

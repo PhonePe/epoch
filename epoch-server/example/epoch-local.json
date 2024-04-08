@@ -3,7 +3,7 @@
   "version": "1",
   "executable": {
     "type": "DOCKER",
-    "url": "quay.io/santanu_sinha/epoch-server:1.9",
+    "url": "ghcr.io/phonepe/epoch-server:latest",
     "dockerPullTimeout": "2 minute"
   },
   "exposedPorts": [
