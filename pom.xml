@@ -32,7 +32,7 @@
         <aspectj.version>1.9.9.1</aspectj.version>
         <junit.version>5.8.2</junit.version>
         <mockito.version>4.8.0</mockito.version>
-        <wiremock.version>2.35.0</wiremock.version>
+        <wiremock.version>3.3.1</wiremock.version>
         <bytebuddy.version>1.12.16</bytebuddy.version>
         <maven.deploy.skip>false</maven.deploy.skip>
         <cronutils.version>9.2.0</cronutils.version>
@@ -116,16 +116,10 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.github.tomakehurst</groupId>
-            <artifactId>wiremock-jre8</artifactId>
+            <groupId>org.wiremock</groupId>
+            <artifactId>wiremock-standalone</artifactId>
             <version>${wiremock.version}</version>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.httpcomponents.client5</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
     </dependencies>
 
