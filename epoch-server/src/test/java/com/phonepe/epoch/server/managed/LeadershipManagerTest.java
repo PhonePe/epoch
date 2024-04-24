@@ -75,6 +75,13 @@ class LeadershipManagerTest extends TestBase {
         }
     }
 
+    @Test
+    void testPortMapping() {
+        assertEquals(8080, LeadershipManager.determinePort(8080));
+        assertEquals(32100, LeadershipManager.determinePort(8000));
+        assertThrows(NumberFormatException.class, () -> LeadershipManager.determinePort(9090));
+    }
+
     private Server server(int port) {
         val server = mock(Server.class);
         val conn = mock(ServerConnector.class);

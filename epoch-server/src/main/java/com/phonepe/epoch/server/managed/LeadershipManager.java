@@ -1,5 +1,6 @@
 package com.phonepe.epoch.server.managed;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.phonepe.epoch.server.utils.EpochUtils;
 import io.appform.signals.signals.ConsumingFireForgetSignal;
@@ -113,8 +114,10 @@ public class LeadershipManager implements LeaderSelectorListener, Managed, Serve
     @Override
     public void serverStarted(Server server) {
         log.info("Dropwizard server started. Starting leader election.");
-        val port = ((ServerConnector) server.getConnectors()[0]).getLocalPort();
-        val isHttp = server.getConnectors()[0].getConnectionFactory("ssl") == null;
+        val connector = (ServerConnector) server.getConnectors()[0];
+        val specifiedPort = connector.getLocalPort();
+        val port = determinePort(specifiedPort);
+        val isHttp = connector.getConnectionFactory("ssl") == null;
         val host = EpochUtils.hostname();
         val id = String.format("%s://%s:%d", isHttp ? "http" : "https", host, port);
         log.info("Node id being set to {}", id);
@@ -129,6 +132,14 @@ public class LeadershipManager implements LeaderSelectorListener, Managed, Serve
             log.error("ZK connection state went to {}. Will commit seppuku.", newState);
             System.exit(-1);
         }
+    }
+
+    @VisibleForTesting
+    static int determinePort(int specifiedPort) {
+        //If the app is deployed on drove, this would be mapped to a random port.
+        //We need to use that in the id. If no such mapping exists, the original port is used.
+        val mappedPort = System.getenv("PORT_" + specifiedPort);
+        return Strings.isNullOrEmpty(mappedPort) ? specifiedPort : Integer.parseInt(mappedPort);
     }
 
     /**
