@@ -34,6 +34,10 @@ public class MailNotificationConfig extends NotificationConfig {
 
     List<@Email String> defaultEmails;
 
+    String fromName;
+
+    String fromAddress;
+
     boolean disableForSuccessfulRuns;
 
     public MailNotificationConfig(
@@ -43,6 +47,8 @@ public class MailNotificationConfig extends NotificationConfig {
             String username,
             String password,
             List<@Email String> defaultEmails,
+            String fromName,
+            String fromAddress,
             boolean disableForSuccessfulRuns) {
         super(NotificationReceiverType.MAIL);
         this.smtpServer = smtpServer;
@@ -51,6 +57,8 @@ public class MailNotificationConfig extends NotificationConfig {
         this.username = username;
         this.password = password;
         this.defaultEmails = defaultEmails;
+        this.fromName = fromName;
+        this.fromAddress = fromAddress;
         this.disableForSuccessfulRuns = disableForSuccessfulRuns;
     }
 
