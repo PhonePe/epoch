@@ -62,7 +62,7 @@ public class EventMailDataConverter {
                     }
                 }))
                 .filter(emails -> !emails.isEmpty())
-                .orElseGet(() -> defaultReceivers);
+                .orElse(defaultReceivers);
         if (emailIds.isEmpty()) {
             log.warn("No mail notification spec provided. Ignoring state change message");
             return Optional.empty();
