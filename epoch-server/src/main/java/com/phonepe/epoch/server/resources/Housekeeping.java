@@ -2,13 +2,10 @@ package com.phonepe.epoch.server.resources;
 
 import com.google.inject.Inject;
 import com.phonepe.epoch.server.managed.LeadershipManager;
-import io.dropwizard.primer.auth.annotation.AuthWhitelist;
-import io.dropwizard.primer.auth.whitelist.WhitelistType;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
-import javax.annotation.security.PermitAll;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
