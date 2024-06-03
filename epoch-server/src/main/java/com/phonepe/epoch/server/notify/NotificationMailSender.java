@@ -7,7 +7,6 @@ import com.phonepe.epoch.server.event.EpochEventVisitor;
 import com.phonepe.epoch.server.utils.IgnoreInJacocoGeneratedReport;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import org.simplejavamail.api.email.Recipient;
 import org.simplejavamail.api.mailer.Mailer;
 import org.simplejavamail.api.mailer.config.TransportStrategy;
 import org.simplejavamail.email.EmailBuilder;
