@@ -2,6 +2,8 @@ package com.phonepe.epoch.server.resources;
 
 import com.google.inject.Inject;
 import com.phonepe.epoch.server.managed.LeadershipManager;
+import io.dropwizard.primer.auth.annotation.AuthWhitelist;
+import io.dropwizard.primer.auth.whitelist.WhitelistType;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -19,7 +21,6 @@ import java.util.Map;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Slf4j
-@PermitAll
 @AllArgsConstructor(onConstructor = @__(@Inject))
 public class Housekeeping {
 
