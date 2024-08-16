@@ -61,6 +61,8 @@
             **com/phonepe/epoch/server/App.java,
             **com/phonepe/epoch/server/EpochModule.java
         </sonar.coverage.exclusions>
+        <sonar.organization>phonepe</sonar.organization>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     </properties>
 
     <repositories>
