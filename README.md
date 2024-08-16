@@ -1,5 +1,7 @@
 # E P O C H
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=PhonePe_epoch&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=PhonePe_epoch)
+
 The task scheduler on Drove
 
 ## Description
@@ -85,7 +87,7 @@ Zookeeper
 
 ## Usage
 
-The Epoch server container is available at [ghcr.io](ghcr.io/phonepe/epoch-server).
+The Epoch server container is available at [ghcr.io](https://github.com/PhonePe/epoch/pkgs/container/epoch).
 
 The container is intended to be run on a Drove cluster.
 
