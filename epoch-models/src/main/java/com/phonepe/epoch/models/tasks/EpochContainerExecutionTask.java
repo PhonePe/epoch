@@ -60,11 +60,13 @@ public class EpochContainerExecutionTask extends EpochTask {
             String taskName,
             ExecutableCoordinates executable,
             List<ResourceRequirement> resources,
-            List<MountedVolume> volumes, List<ConfigSpec> configs,
+            List<MountedVolume> volumes,
+            List<ConfigSpec> configs,
             LoggingSpec logging,
             PlacementPolicy placementPolicy,
             Map<String, String> tags,
-            Map<String, String> env, List<String> args) {
+            Map<String, String> env,
+            List<String> args) {
         super(EpochTaskType.CONTAINER_EXECUTION);
         this.taskName = taskName;
         this.executable = executable;
