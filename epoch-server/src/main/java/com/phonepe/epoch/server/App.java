@@ -2,6 +2,7 @@ package com.phonepe.epoch.server;
 
 import com.github.benmanes.caffeine.cache.CaffeineSpec;
 import com.google.common.base.Strings;
+import com.google.inject.Injector;
 import com.google.inject.Stage;
 import com.phonepe.epoch.server.auth.config.BasicAuthConfig;
 import com.phonepe.epoch.server.auth.core.EpochAuthenticator;
@@ -70,7 +71,7 @@ public class App extends Application<AppConfig> {
         FunctionMetricsManager.initialize("com.phonepe.epoch", environment.metrics());
         configureMapper(environment.getObjectMapper());
         ((AbstractServerFactory) appConfig.getServerFactory()).setJerseyRootPath("/apis/*");
-        setupAuth(appConfig, environment, environment.jersey());
+        setupAuth(appConfig, environment, environment.jersey(), guiceBundle.getInjector());
     }
 
     @SneakyThrows

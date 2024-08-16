@@ -425,11 +425,13 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
                                                     instanceId(context),
                                                     task.getExecutable(),
                                                     task.getVolumes(),
+                                                    task.getConfigs(),
                                                     task.getLogging(),
                                                     task.getResources(),
                                                     task.getPlacementPolicy(),
                                                     task.getTags(),
-                                                    task.getEnv()),
+                                                    task.getEnv(),
+                                                    task.getArgs()),
                                        Objects.requireNonNullElse(droveClientManager
                                                                           .getDroveConfig()
                                                                           .getClusterOpSpec(),

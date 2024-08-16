@@ -5,6 +5,7 @@ import com.phonepe.drove.models.application.executable.ExecutableCoordinates;
 import com.phonepe.drove.models.application.logging.LoggingSpec;
 import com.phonepe.drove.models.application.placement.PlacementPolicy;
 import com.phonepe.drove.models.application.requirements.ResourceRequirement;
+import com.phonepe.drove.models.config.ConfigSpec;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -39,6 +40,9 @@ public class EpochContainerExecutionTask extends EpochTask {
     List<MountedVolume> volumes;
 
     @Valid
+    List<ConfigSpec> configs;
+
+    @Valid
     LoggingSpec logging;
 
     PlacementPolicy placementPolicy;
@@ -47,25 +51,29 @@ public class EpochContainerExecutionTask extends EpochTask {
 
     Map<String, String> env;
 
+    List<String> args;
+
     @SuppressWarnings("java:S107") //Model class needs required params
     public EpochContainerExecutionTask(
             String taskName,
             ExecutableCoordinates executable,
             List<ResourceRequirement> resources,
-            List<MountedVolume> volumes,
+            List<MountedVolume> volumes, List<ConfigSpec> configs,
             LoggingSpec logging,
             PlacementPolicy placementPolicy,
             Map<String, String> tags,
-            Map<String, String> env) {
+            Map<String, String> env, List<String> args) {
         super(EpochTaskType.CONTAINER_EXECUTION);
         this.taskName = taskName;
         this.executable = executable;
         this.resources = resources;
         this.volumes = volumes;
+        this.configs = configs;
         this.logging = logging;
         this.placementPolicy = placementPolicy;
         this.tags = tags;
         this.env = env;
+        this.args = args;
     }
 
 

@@ -52,6 +52,8 @@ class TopologyRecoveryTest extends TestBase {
                                                                                          null,
                                                                                          null,
                                                                                          null,
+                                                                                         null,
+                                                                                         null,
                                                                                          null),
                                                          new EpochTaskTriggerCron("0/2 * * ? * * *"),
                                                          BlackholeNotificationSpec.DEFAULT))

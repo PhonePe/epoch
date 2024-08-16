@@ -62,10 +62,12 @@ class DroveTaskExecutionEngineTest extends TestBase {
                                                    List.of(new CPURequirement(1),
                                                            new MemoryRequirement(1)),
                                                    List.of(),
+                                                   List.of(),
                                                    LocalLoggingSpec.DEFAULT,
                                                    new AnyPlacementPolicy(),
                                                    Map.of(),
-                                                   Map.of());
+                                                   Map.of(),
+                                                   List.of());
         val spec = new EpochTopology("Test",
                                      task,
                                      new EpochTaskTriggerAt(new Date()),
@@ -92,10 +94,12 @@ class DroveTaskExecutionEngineTest extends TestBase {
                                                    List.of(new CPURequirement(1),
                                                            new MemoryRequirement(1)),
                                                    List.of(),
+                                                   List.of(),
                                                    LocalLoggingSpec.DEFAULT,
                                                    new AnyPlacementPolicy(),
                                                    Map.of(),
-                                                   Map.of());
+                                                   Map.of(),
+                                                   List.of());
         val spec = new EpochTopology("Test",
                                      task,
                                      new EpochTaskTriggerAt(new Date()),
@@ -123,10 +127,12 @@ class DroveTaskExecutionEngineTest extends TestBase {
                                                    List.of(new CPURequirement(1),
                                                            new MemoryRequirement(1)),
                                                    List.of(),
+                                                   List.of(),
                                                    LocalLoggingSpec.DEFAULT,
                                                    new AnyPlacementPolicy(),
                                                    Map.of(),
-                                                   Map.of());
+                                                   Map.of(),
+                                                   List.of());
         val spec = new EpochTopology("Test",
                                      task,
                                      new EpochTaskTriggerAt(new Date()),
@@ -173,10 +179,12 @@ class DroveTaskExecutionEngineTest extends TestBase {
                                                    List.of(new CPURequirement(1),
                                                            new MemoryRequirement(1)),
                                                    List.of(),
+                                                   List.of(),
                                                    LocalLoggingSpec.DEFAULT,
                                                    new AnyPlacementPolicy(),
                                                    Map.of(),
-                                                   Map.of());
+                                                   Map.of(),
+                                                   List.of());
         val spec = new EpochTopology("Test",
                                      task,
                                      new EpochTaskTriggerAt(new Date()),
@@ -202,10 +210,12 @@ class DroveTaskExecutionEngineTest extends TestBase {
                                                    List.of(new CPURequirement(1),
                                                            new MemoryRequirement(1)),
                                                    List.of(),
+                                                   List.of(),
                                                    LocalLoggingSpec.DEFAULT,
                                                    new AnyPlacementPolicy(),
                                                    Map.of(),
-                                                   Map.of());
+                                                   Map.of(),
+                                                   List.of());
         val spec = new EpochTopology("Test",
                                      task,
                                      new EpochTaskTriggerAt(new Date()),
@@ -231,10 +241,12 @@ class DroveTaskExecutionEngineTest extends TestBase {
                                                    List.of(new CPURequirement(1),
                                                            new MemoryRequirement(1)),
                                                    List.of(),
+                                                   List.of(),
                                                    LocalLoggingSpec.DEFAULT,
                                                    new AnyPlacementPolicy(),
                                                    Map.of(),
-                                                   Map.of());
+                                                   Map.of(),
+                                                   List.of());
         val spec = new EpochTopology("Test",
                                      task,
                                      new EpochTaskTriggerAt(new Date()),
@@ -287,10 +299,12 @@ class DroveTaskExecutionEngineTest extends TestBase {
                                                    List.of(new CPURequirement(1),
                                                            new MemoryRequirement(1)),
                                                    List.of(),
+                                                   List.of(),
                                                    LocalLoggingSpec.DEFAULT,
                                                    new AnyPlacementPolicy(),
                                                    Map.of(),
-                                                   Map.of());
+                                                   Map.of(),
+                                                   List.of());
         val spec = new EpochTopology("Test",
                                      task,
                                      new EpochTaskTriggerAt(new Date()),
@@ -323,10 +337,12 @@ class DroveTaskExecutionEngineTest extends TestBase {
                                                    List.of(new CPURequirement(1),
                                                            new MemoryRequirement(1)),
                                                    List.of(),
+                                                   List.of(),
                                                    LocalLoggingSpec.DEFAULT,
                                                    new AnyPlacementPolicy(),
                                                    Map.of(),
-                                                   Map.of());
+                                                   Map.of(),
+                                                   List.of());
         val spec = new EpochTopology("Test",
                                      task,
                                      new EpochTaskTriggerAt(new Date()),
@@ -359,10 +375,12 @@ class DroveTaskExecutionEngineTest extends TestBase {
                                                    List.of(new CPURequirement(1),
                                                            new MemoryRequirement(1)),
                                                    List.of(),
+                                                   List.of(),
                                                    LocalLoggingSpec.DEFAULT,
                                                    new AnyPlacementPolicy(),
                                                    Map.of(),
-                                                   Map.of());
+                                                   Map.of(),
+                                                   List.of());
         val spec = new EpochTopology("Test",
                                      task,
                                      new EpochTaskTriggerAt(new Date()),
@@ -395,10 +413,12 @@ class DroveTaskExecutionEngineTest extends TestBase {
                                                    List.of(new CPURequirement(1),
                                                            new MemoryRequirement(1)),
                                                    List.of(),
+                                                   List.of(),
                                                    LocalLoggingSpec.DEFAULT,
                                                    new AnyPlacementPolicy(),
                                                    Map.of(),
-                                                   Map.of());
+                                                   Map.of(),
+                                                   List.of());
         val spec = new EpochTopology("Test",
                                      task,
                                      new EpochTaskTriggerAt(new Date()),

@@ -72,10 +72,12 @@ public class TestUtils {
                                                List.of(new MountedVolume("/tmp",
                                                                          "/tmp",
                                                                          MountedVolume.MountMode.READ_ONLY)),
+                                               List.of(),
                                                LocalLoggingSpec.DEFAULT,
                                                new AnyPlacementPolicy(),
                                                Map.of(),
-                                               Map.of());
+                                               Map.of(),
+                                               null);
     }
 
     public static EpochTopologyRunInfo genRunInfo(int index, EpochTopologyRunState state) {

@@ -56,10 +56,12 @@ public class TopologyEngine {
                                                 List.of(new CPURequirement(request.getCpus()),
                                                         new MemoryRequirement(request.getMemory())),
                                                 request.getVolumes(),
+                                                List.of(),
                                                 LocalLoggingSpec.DEFAULT,
                                                 new AnyPlacementPolicy(),
                                                 Map.of(),
-                                                request.getEnv()),
+                                                request.getEnv(),
+                                                null),
                 new EpochTaskTriggerCron(request.getCron()),
                 new MailNotificationSpec(List.of(request.getNotifyEmail().split(","))));
         val topologyId = topologyId(topology);
@@ -94,10 +96,12 @@ public class TopologyEngine {
                                                 List.of(new CPURequirement(request.getCpus()),
                                                         new MemoryRequirement(request.getMemory())),
                                                 request.getVolumes(),
+                                                List.of(),
                                                 LocalLoggingSpec.DEFAULT,
                                                 new AnyPlacementPolicy(),
                                                 Map.of(),
-                                                request.getEnv()),
+                                                request.getEnv(),
+                                                null),
                 new EpochTaskTriggerCron(request.getCron()),
                 new MailNotificationSpec(List.of(request.getNotifyEmail().split(","))));
 
