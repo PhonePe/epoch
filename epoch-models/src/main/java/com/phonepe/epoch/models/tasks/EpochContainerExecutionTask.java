@@ -15,6 +15,7 @@ import lombok.extern.jackson.Jacksonized;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.util.List;
 import java.util.Map;
 
@@ -51,6 +52,7 @@ public class EpochContainerExecutionTask extends EpochTask {
 
     Map<String, String> env;
 
+    @Size(max = 2048)
     List<String> args;
 
     @SuppressWarnings("java:S107") //Model class needs required params
