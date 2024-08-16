@@ -51,7 +51,7 @@ jobs:
       with:
         context: epoch-server
         build-args: |
-            VERSION=${{ github.ref }}
+            VERSION=${{ github.ref_name }}
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
