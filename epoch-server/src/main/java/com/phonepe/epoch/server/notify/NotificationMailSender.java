@@ -73,10 +73,11 @@ public class NotificationMailSender implements NotificationSender {
                     .toMultiple(mailData.emailIds())
                     .withSubject(mailData.subject())
                     .withPlainText(mailData.body())
-                    .from("santanu.sinha@gmail.com")
+                    .from(mailConfig.getFromName(), mailConfig.getFromAddress())
                     .buildEmail();
             mailer.sendMail(email);
-            log.info("Mail subject: {}, Body: {}", mailData.subject(), mailData.body());
+            log.info("Mail subject: {}, Body: {} To: {} From: {} <{}>", mailData.subject(), mailData.body(),
+                    mailData.emailIds(), mailConfig.getFromName(), mailConfig.getFromAddress());
         }
         catch (Exception e) {
             log.error("Error sending notification email: ", e);
