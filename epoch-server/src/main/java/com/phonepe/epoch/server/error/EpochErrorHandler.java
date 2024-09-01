@@ -11,7 +11,7 @@ public class EpochErrorHandler implements ExceptionMapper<EpochError> {
     @Override
     public Response toResponse(EpochError error) {
         return Response.status(error.getErrorCode().getResponseStatus())
-                .entity(ApiResponse.failure(error.getContext(), error.getParsedMessage()))
+                .entity(ApiResponse.failure(error.getParsedMessage()))
                 .build();
     }
 }

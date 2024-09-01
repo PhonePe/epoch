@@ -112,7 +112,7 @@ class TopologyEngineTest extends E2ETestBase {
 
         // create a topology
         final var save = topologyEngine.save(
-                TestUtils.generateTopologyDesc(1, new EpochTaskTriggerCron("0/2 * * * * ?"), new MailNotificationSpec(List.of("test@email.com"))));
+                TestUtils.generateTopologyDesc((int) System.currentTimeMillis(), new EpochTaskTriggerCron("0/2 * * * * ?"), new MailNotificationSpec(List.of("test@email.com"))));
         assertTrue(save.isPresent());
         final var topologyId = save.get().getId();
 

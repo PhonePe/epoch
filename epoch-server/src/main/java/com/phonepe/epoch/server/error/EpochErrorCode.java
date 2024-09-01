@@ -26,7 +26,7 @@ public enum EpochErrorCode {
     INVALID_INPUT_ID(3001, "Input id invalid ${id}", Response.Status.BAD_REQUEST),
     INPUT_VALIDATION_ERROR(3002, "Validation failed for input: ${field}", Response.Status.BAD_REQUEST),
     TOPOLOGY_ALREADY_EXISTS(3003, "Topology already exists with name: ${name}", Response.Status.CONFLICT),
-    TOPOLOGY_NOT_FOUND(3004, "Topology not found: ${id}", Response.Status.NOT_FOUND),
+    TOPOLOGY_NOT_FOUND(3004, "Topology not found: ${id}", Response.Status.OK),
 
     /* 4xxx for client errors */
     DROVE_CLIENT_FAILURE(4000, "Failed to call drove", Response.Status.INTERNAL_SERVER_ERROR),

@@ -9,6 +9,7 @@ import com.phonepe.epoch.models.topology.*;
 import com.phonepe.epoch.server.TestBase;
 import com.phonepe.epoch.server.TestUtils;
 import com.phonepe.epoch.server.engine.TopologyEngine;
+import com.phonepe.epoch.server.error.EpochErrorHandler;
 import com.phonepe.epoch.server.event.EpochEvent;
 import com.phonepe.epoch.server.event.EpochEventBus;
 import com.phonepe.epoch.server.managed.DroveClientManager;
@@ -65,6 +66,8 @@ class ApisTest extends TestBase {
                                   topologyEngine,
                                   droveClientManager,
                                   taskExecutionEngine))
+            .setRegisterDefaultExceptionMappers(true)
+            .addProvider(new EpochErrorHandler())
             .build();
 
     @AfterEach
@@ -278,6 +281,13 @@ class ApisTest extends TestBase {
     @Test
     void testPauseTopologySuccess() {
         val details = EpochUtils.detailsFrom(TestUtils.generateTopologyDesc(0, new MailNotificationSpec(List.of("test@email.com"))));
+
+        when(topologyStore.get(details.getId()))
+                .thenReturn(Optional.of(new EpochTopologyDetails(details.getId(),
+                        details.getTopology(),
+                        ACTIVE,
+                        details.getCreated(),
+                        new Date())));
         when(topologyStore.updateState(details.getId(), PAUSED))
                 .thenAnswer(invocationMock -> Optional.of(new EpochTopologyDetails(details.getId(),
                                                                                    details.getTopology(),
@@ -313,6 +323,14 @@ class ApisTest extends TestBase {
     void testUnpauseTopologySuccess() {
         val details = EpochUtils.detailsFrom(TestUtils.generateTopologyDesc(0, new MailNotificationSpec(List.of("test@email.com"))));
         val called = new AtomicBoolean();
+
+        when(topologyStore.get(details.getId()))
+                .thenReturn(Optional.of(new EpochTopologyDetails(details.getId(),
+                        details.getTopology(),
+                        PAUSED,
+                        details.getCreated(),
+                        new Date())));
+
         when(topologyStore.updateState(details.getId(), ACTIVE))
                 .thenAnswer(invocationMock -> {
                     called.set(true);
