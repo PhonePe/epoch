@@ -6,11 +6,9 @@ import com.phonepe.epoch.models.topology.*;
 import com.phonepe.epoch.server.auth.models.EpochUserRole;
 import com.phonepe.epoch.server.engine.TopologyEngine;
 import com.phonepe.epoch.server.managed.DroveClientManager;
-import com.phonepe.epoch.server.managed.Scheduler;
 import com.phonepe.epoch.server.remote.CancelResponse;
 import com.phonepe.epoch.server.remote.TaskExecutionEngine;
 import com.phonepe.epoch.server.store.TopologyRunInfoStore;
-import com.phonepe.epoch.server.store.TopologyStore;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
@@ -32,7 +30,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.net.URI;
 import java.util.Collection;
-import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -40,8 +37,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import static com.phonepe.epoch.server.utils.EpochUtils.appName;
-import static com.phonepe.epoch.server.utils.EpochUtils.scheduleTopology;
-import static com.phonepe.epoch.server.utils.EpochUtils.scheduleUpdatedTopology;
 import static com.phonepe.epoch.server.utils.EpochUtils.topologyId;
 
 /**
@@ -53,26 +48,19 @@ import static com.phonepe.epoch.server.utils.EpochUtils.topologyId;
 @Slf4j
 @PermitAll
 public class Apis {
-    private final TopologyStore topologyStore;
     private final TopologyRunInfoStore runInfoStore;
     private final TopologyEngine topologyEngine;
-
-    private final Scheduler scheduler;
     private final DroveClientManager clientManager;
     private final TaskExecutionEngine taskExecutionEngine;
 
     @Inject
     public Apis(
-            TopologyStore topologyStore,
             TopologyRunInfoStore runInfoStore,
             final TopologyEngine topologyEngine,
-            Scheduler scheduler,
             DroveClientManager clientManager,
             TaskExecutionEngine taskExecutionEngine) {
-        this.topologyStore = topologyStore;
         this.runInfoStore = runInfoStore;
         this.topologyEngine = topologyEngine;
-        this.scheduler = scheduler;
         this.clientManager = clientManager;
         this.taskExecutionEngine = taskExecutionEngine;
     }
@@ -82,11 +70,10 @@ public class Apis {
     @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
     public ApiResponse<EpochTopologyDetails> save(@NotNull @Valid final EpochTopology topology) {
         val topologyId = topologyId(topology);
-        if (topologyStore.get(topologyId).isPresent()) {
+        if (topologyEngine.get(topologyId).isPresent()) {
             return ApiResponse.failure("Topology " + topology.getName() + " already exists with ID: " + topologyId);
         }
-        val saved = topologyStore.save(topology);
-        saved.ifPresent(epochTopologyDetails -> scheduleTopology(epochTopologyDetails, scheduler, new Date()));
+        val saved = topologyEngine.save(topology);
         return saved
                 .map(ApiResponse::success)
                 .orElseGet(() -> ApiResponse.failure("Could not create topology"));
@@ -97,16 +84,8 @@ public class Apis {
     @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
     public ApiResponse<EpochTopologyDetails> update(@NotNull @Valid final EpochTopology topology) {
         val topologyId = topologyId(topology);
-        val topologyDetails = topologyStore.get(topologyId);
-        if (topologyDetails.isEmpty()) {
-            return ApiResponse.failure("Topology " + topology.getName() + " doesn't exist with ID: " + topologyId);
-        }
-        val saved = topologyStore.update(topologyId, topology);
-        saved.ifPresent(updatedTopologyDetails -> {
-            runInfoStore.deleteAll(topologyId);
-            scheduleUpdatedTopology(topologyDetails.get(), updatedTopologyDetails, scheduler, new Date());
-        });
-        return saved
+        val updated = topologyEngine.update(topologyId, topology);
+        return updated
                 .map(ApiResponse::success)
                 .orElseGet(() -> ApiResponse.failure("Could not update topology"));
     }
@@ -125,13 +104,13 @@ public class Apis {
     @GET
     @Path("/topologies")
     public ApiResponse<List<EpochTopologyDetails>> listTopologies() {
-        return ApiResponse.success(topologyStore.list(t -> true));
+        return ApiResponse.success(topologyEngine.list(t -> true));
     }
 
     @GET
     @Path("/topologies/{topologyId}")
     public ApiResponse<EpochTopologyDetails> getTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
-        return topologyStore.get(topologyId)
+        return topologyEngine.get(topologyId)
                 .map(ApiResponse::success)
                 .orElseGet(() -> ApiResponse.failure(noTopoError(topologyId)));
     }
@@ -140,8 +119,7 @@ public class Apis {
     @Path("/topologies/{topologyId}/run")
     @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
     public ApiResponse<Map<String, String>> runTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
-        return topologyStore.get(topologyId)
-                .flatMap(topology -> scheduler.scheduleNow(topologyId))
+        return topologyEngine.scheduleNow(topologyId)
                 .map(runId -> ApiResponse.success(Map.of("runId", runId)))
                 .orElseGet(() -> ApiResponse.failure(noTopoError(topologyId)));
     }
@@ -150,7 +128,7 @@ public class Apis {
     @Path("/topologies/{topologyId}/pause")
     @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
     public ApiResponse<EpochTopologyDetails> pauseTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
-        return topologyStore.updateState(topologyId, EpochTopologyState.PAUSED)
+        return topologyEngine.updateState(topologyId, EpochTopologyState.PAUSED)
                 .map(ApiResponse::success)
                 .orElseGet(() -> ApiResponse.failure(noTopoError(topologyId)));
     }
@@ -159,7 +137,7 @@ public class Apis {
     @Path("/topologies/{topologyId}/unpause")
     @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
     public ApiResponse<EpochTopologyDetails> unpauseTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
-        return topologyStore.updateState(topologyId, EpochTopologyState.ACTIVE)
+        return topologyEngine.updateState(topologyId, EpochTopologyState.ACTIVE)
                 .map(ApiResponse::success)
                 .orElseGet(() -> ApiResponse.failure(noTopoError(topologyId)));
     }
@@ -168,7 +146,7 @@ public class Apis {
     @Path("/topologies/{topologyId}")
     @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
     public ApiResponse<Boolean> deleteTopology(@NotEmpty @PathParam("topologyId") final String topologyId) {
-        return ApiResponse.success(topologyStore.delete(topologyId) && runInfoStore.deleteAll(topologyId));
+        return ApiResponse.success(topologyEngine.delete(topologyId) && runInfoStore.deleteAll(topologyId));
     }
 
     @GET

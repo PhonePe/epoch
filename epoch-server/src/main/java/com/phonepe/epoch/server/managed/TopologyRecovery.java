@@ -100,7 +100,7 @@ public class TopologyRecovery implements Managed {
                 }
             });
             try {
-                scheduleTopology(topologyDetails, scheduler, new Date());
+                scheduleTopology(topologyDetails, scheduler);
             }
             catch (Exception e) {
                 log.error("Could not reschedule topology " + topologyDetails.getId() + ". Error: " + EpochUtils.errorMessage(e), e);

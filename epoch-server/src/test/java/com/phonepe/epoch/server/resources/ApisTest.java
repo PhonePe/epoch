@@ -9,6 +9,8 @@ import com.phonepe.epoch.models.topology.*;
 import com.phonepe.epoch.server.TestBase;
 import com.phonepe.epoch.server.TestUtils;
 import com.phonepe.epoch.server.engine.TopologyEngine;
+import com.phonepe.epoch.server.event.EpochEvent;
+import com.phonepe.epoch.server.event.EpochEventBus;
 import com.phonepe.epoch.server.managed.DroveClientManager;
 import com.phonepe.epoch.server.managed.Scheduler;
 import com.phonepe.epoch.server.remote.CancelResponse;
@@ -37,8 +39,7 @@ import static com.phonepe.epoch.models.topology.EpochTopologyState.ACTIVE;
 import static com.phonepe.epoch.models.topology.EpochTopologyState.PAUSED;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  *
@@ -54,15 +55,14 @@ class ApisTest extends TestBase {
 
     private static final TaskExecutionEngine taskExecutionEngine = mock(TaskExecutionEngine.class);
 
-    private static final TopologyEngine topologyEngine = mock(TopologyEngine.class);
+    private static final EpochEventBus eventBus = mock(EpochEventBus.class);
 
+    private static final TopologyEngine topologyEngine = new TopologyEngine(topologyStore, scheduler, eventBus);
 
     private static final ResourceExtension EXT = ResourceExtension.builder()
             .setMapper(MAPPER)
-            .addResource(new Apis(topologyStore,
-                                  topologyRunInfoStore,
+            .addResource(new Apis(topologyRunInfoStore,
                                   topologyEngine,
-                                  scheduler,
                                   droveClientManager,
                                   taskExecutionEngine))
             .build();
@@ -73,7 +73,7 @@ class ApisTest extends TestBase {
         Mockito.reset(topologyRunInfoStore);
         Mockito.reset(scheduler);
         Mockito.reset(droveClientManager);
-        Mockito.reset(topologyEngine);
+        Mockito.reset(eventBus);
         Mockito.reset(taskExecutionEngine);
     }
 
@@ -132,6 +132,7 @@ class ApisTest extends TestBase {
 
     @Test
     void testUpdateFailOnNotExists() {
+        doNothing().when(eventBus).publish(isA(EpochEvent.class));
         val topology = TestUtils.generateTopologyDesc(1, new MailNotificationSpec(List.of("test@email.com")));
         when(topologyStore.get(anyString())).thenReturn(Optional.empty());
         try (val r = EXT.target("/v1/topologies")
@@ -344,6 +345,7 @@ class ApisTest extends TestBase {
 
     @Test
     void testDeleteTopologySuccess() {
+        doNothing().when(eventBus).publish(isA(EpochEvent.class));
         when(topologyStore.delete("TEST_TOPO-0")).thenReturn(true);
         when(topologyRunInfoStore.deleteAll("TEST_TOPO-0")).thenReturn(true);
         try (val r = EXT.target("/v1/topologies/TEST_TOPO-0")

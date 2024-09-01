@@ -76,23 +76,26 @@ public class EpochUtils {
 
     public static void scheduleUpdatedTopology(final EpochTopologyDetails previousTopologyDetails,
                                                final EpochTopologyDetails newTopologyDetails,
-                                               final Scheduler scheduler,
-                                               final Date currTime) {
-        val scheduleId = EpochUtils.scheduleId(previousTopologyDetails);
+                                               final Scheduler scheduler) {
+        removeScheduledTopology(previousTopologyDetails, scheduler);
+        scheduleTopology(newTopologyDetails, scheduler);
+    }
+
+    public static void removeScheduledTopology(final EpochTopologyDetails topologyDetails,
+                                               final Scheduler scheduler) {
+        val scheduleId = EpochUtils.scheduleId(topologyDetails);
         scheduler.delete(scheduleId);
-        log.info("Removed previous schedule with id: {}", scheduleId);
-        scheduleTopology(newTopologyDetails, scheduler, currTime);
+        log.info("Removed schedule with id: {}", scheduleId);
     }
 
     public static void scheduleTopology(final EpochTopologyDetails topologyDetails,
-                                        final Scheduler scheduler,
-                                        final Date currTime) {
+                                        final Scheduler scheduler) {
         val scheduleId = EpochUtils.scheduleId(topologyDetails);
         val runId = scheduler.schedule(
                 topologyDetails.getId(),
                 scheduleId,
                 topologyDetails.getTopology().getTrigger(),
-                currTime);
+                new Date());
         if(runId.isPresent()) {
             log.info("Scheduled topology {} for execution with run id: {} schedule id: {}", topologyDetails.getId(), runId.get(), scheduleId);
         }

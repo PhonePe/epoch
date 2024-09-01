@@ -10,7 +10,11 @@ import com.phonepe.epoch.server.execution.ExecutionTimeCalculator;
 import com.phonepe.epoch.server.execution.TopologyExecutor;
 import com.phonepe.epoch.server.store.TopologyStore;
 import com.phonepe.epoch.server.utils.EpochUtils;
-import io.appform.kaal.*;
+import io.appform.kaal.KaalScheduler;
+import io.appform.kaal.KaalTask;
+import io.appform.kaal.KaalTaskData;
+import io.appform.kaal.KaalTaskRunIdGenerator;
+import io.appform.kaal.KaalTaskStopStrategy;
 import io.appform.signals.signals.ConsumingFireForgetSignal;
 import io.dropwizard.lifecycle.Managed;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +28,6 @@ import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.Date;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -125,6 +128,12 @@ public class Scheduler implements Managed {
                 return false;
             }
             val tId = taskData.topologyId();
+
+            if (taskData.runInfo() == null) {
+                log.info("Task was probably abruptly deleted. No further scheduling needed for {}", tId);
+                return false;
+            }
+
             val rId = taskData.runInfo().getRunId();
 
             val result = taskData.runInfo().getState();

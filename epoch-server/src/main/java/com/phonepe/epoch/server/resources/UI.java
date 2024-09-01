@@ -69,22 +69,6 @@ public class UI {
         return details;
     }
 
-    @IgnoreInJacocoGeneratedReport(reason = "Parent function is ignored")
-    private TopologyDetailsView createTopologyDetailsView(
-            String topologyId,
-            EpochUser user,
-            EpochTopologyDetails topologyDetails) {
-        try {
-            return new TopologyDetailsView(user.getRole(), topologyId, topologyDetails,
-                                           mapper.writerWithDefaultPrettyPrinter()
-                                                   .writeValueAsString(topologyDetails));
-        }
-        catch (JsonProcessingException e) {
-            log.error("Error creating topology details view for topology " + topologyId + ": " + e.getMessage(), e);
-            return null;
-        }
-    }
-
     @POST
     @Path("/topologies/create")
     @RolesAllowed(EpochUserRole.Values.EPOCH_READ_WRITE_ROLE)
@@ -115,5 +99,21 @@ public class UI {
                         .redirectUrl("/topologies/" + topologyId)
                         .topologyId(topologyId).build()))
                 .build();
+    }
+
+    @IgnoreInJacocoGeneratedReport(reason = "Parent function is ignored")
+    private TopologyDetailsView createTopologyDetailsView(
+            String topologyId,
+            EpochUser user,
+            EpochTopologyDetails topologyDetails) {
+        try {
+            return new TopologyDetailsView(user.getRole(), topologyId, topologyDetails,
+                    mapper.writerWithDefaultPrettyPrinter()
+                            .writeValueAsString(topologyDetails));
+        }
+        catch (JsonProcessingException e) {
+            log.error("Error creating topology details view for topology {}: {}", topologyId, e.getMessage(), e);
+            return null;
+        }
     }
 }

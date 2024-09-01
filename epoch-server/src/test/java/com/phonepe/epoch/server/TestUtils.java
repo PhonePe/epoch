@@ -61,6 +61,14 @@ public class TestUtils {
                 .until(condition);
     }
 
+    public static void ensureUntil(Callable<Boolean> condition, int waitTillSeconds) {
+        await()
+                .pollInterval(java.time.Duration.ofSeconds(1))
+                .pollDelay(java.time.Duration.ofSeconds(waitTillSeconds))
+                .timeout(java.time.Duration.ofSeconds(waitTillSeconds + 5))
+                .until(condition);
+    }
+
     public static EpochContainerExecutionTask genContainerTask(int index) {
         return new EpochContainerExecutionTask("test-task-" + index,
                                                new DockerCoordinates(
@@ -131,9 +139,29 @@ public class TestUtils {
     }
 
     public static EpochTopology generateTopologyDesc(int i, NotificationSpec notificationSpec) {
+        return generateTopologyDesc(i, new EpochTaskTriggerAt(new Date()), notificationSpec);
+    }
+
+    public static EpochTopology generateTopologyRunningEveryFiveSecs(int i, NotificationSpec notificationSpec) {
+        return generateTopologyDesc(i, new EpochTaskTriggerCron("*/5 * * * * ?"), notificationSpec);
+    }
+
+    public static EpochTopology generateTopologyThatCanNeverRun(int i, NotificationSpec notificationSpec) {
+        return generateTopologyDesc(i, new EpochTaskTriggerAt(new Date(1700000000000L)), notificationSpec);
+    }
+
+    public static EpochTopology generateTopologyDesc(int i, EpochTaskTrigger trigger, NotificationSpec notificationSpec) {
         return new EpochTopology("TEST_TOPO-" + i,
-                                 genContainerTask(i),
-                                 new EpochTaskTriggerAt(new Date()),
-                                 notificationSpec);
+                genContainerTask(i),
+                trigger,
+                notificationSpec);
+    }
+
+    public static EpochTopology updateTopologyCronSpec(EpochTopology topology,
+                                                       EpochTaskTrigger trigger) {
+        return new EpochTopology(topology.getName(),
+                                 topology.getTask(),
+                                 trigger,
+                                 topology.getNotify());
     }
 }

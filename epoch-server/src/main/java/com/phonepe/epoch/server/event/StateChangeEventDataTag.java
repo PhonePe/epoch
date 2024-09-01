@@ -10,5 +10,6 @@ public enum StateChangeEventDataTag {
     TOPOLOGY_RUN_TYPE,
     OLD_STATE,
     NEW_STATE,
+    NEW_TRIGGER,
     ERROR_MESSAGE
 }
