@@ -35,9 +35,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-import static com.phonepe.epoch.server.utils.EpochUtils.scheduleTopology;
-import static com.phonepe.epoch.server.utils.EpochUtils.scheduleUpdatedTopology;
-import static com.phonepe.epoch.server.utils.EpochUtils.removeScheduledTopology;
+import static com.phonepe.epoch.server.utils.EpochUtils.updateTopologySchedule;
 import static com.phonepe.epoch.server.utils.EpochUtils.topologyId;
 
 @RequiredArgsConstructor(onConstructor_ = {@Inject})
@@ -72,7 +70,7 @@ public class TopologyEngine {
         }
         val saved = topologyStore.save(topology);
         saved.ifPresent(epochTopologyDetails -> {
-            scheduleTopology(epochTopologyDetails, scheduler);
+            updateTopologySchedule(epochTopologyDetails, scheduler);
             eventBus.publish(EpochStateChangeEvent.builder()
                                      .type(EpochEventType.TOPOLOGY_STATE_CHANGED)
                                      .metadata(Map.of(StateChangeEventDataTag.TOPOLOGY_ID, topologyId,
@@ -106,23 +104,18 @@ public class TopologyEngine {
                 new EpochTaskTriggerCron(request.getCron()),
                 new MailNotificationSpec(List.of(request.getNotifyEmail().split(","))));
 
-        val saved = topologyStore.update(topologyId, topology);
-        saved.ifPresent(epochTopologyDetails -> {
-            scheduleUpdatedTopology(topologyDetails.get(), epochTopologyDetails, scheduler);
-            eventBus.publish(EpochStateChangeEvent.builder()
-                                     .type(EpochEventType.TOPOLOGY_UPDATED)
-                                     .metadata(Map.of(StateChangeEventDataTag.TOPOLOGY_ID, topologyId,
-                                                      StateChangeEventDataTag.NEW_STATE, topologyDetails.get().getState(),
-                                                      StateChangeEventDataTag.NEW_TRIGGER, topologyDetails.get().getTopology().getTrigger()))
-                                     .build());
+        val previousTopology = topologyDetails.get();
+        val updated = topologyStore.update(topologyId, topology);
+        updated.ifPresent(epochTopologyDetails -> {
+            updateScheduleAndRaiseEvent(topologyId, epochTopologyDetails, previousTopology, scheduler, eventBus);
 
         });
-        return saved;
+        return updated;
     }
 
     public Optional<EpochTopologyDetails> save(final EpochTopology topology) {
         val stored = topologyStore.save(topology);
-        stored.ifPresent(epochTopologyDetails -> scheduleTopology(epochTopologyDetails, scheduler));
+        stored.ifPresent(epochTopologyDetails -> updateTopologySchedule(epochTopologyDetails, scheduler));
         return stored;
     }
 
@@ -136,9 +129,10 @@ public class TopologyEngine {
         if (topologyDetails.isEmpty()) {
             throw EpochError.raise(EpochErrorCode.TOPOLOGY_NOT_FOUND, Map.of("id", topologyId));
         }
+        val previousTopology = topologyDetails.get();
         val updated = topologyStore.update(topologyId, topology);
         updated.ifPresent(updatedTopologyDetails -> {
-            scheduleUpdatedTopology(topologyDetails.get(), updatedTopologyDetails, scheduler);
+            updateScheduleAndRaiseEvent(topologyId, updatedTopologyDetails, previousTopology, scheduler, eventBus);
         });
         return updated;
     }
@@ -156,16 +150,11 @@ public class TopologyEngine {
         if (topologyDetails.isEmpty()) {
             throw EpochError.raise(EpochErrorCode.TOPOLOGY_NOT_FOUND, Map.of("id", topologyId));
         }
+        val previousTopology = topologyDetails.get();
         val updated = topologyStore.updateState(topologyId, state);
-        if (state == EpochTopologyState.ACTIVE) {
-            updated.ifPresent(updatedTopologyDetails -> {
-                scheduleTopology(updatedTopologyDetails, scheduler);
-            });
-        } else {
-            updated.ifPresent(updatedTopologyDetails -> {
-                removeScheduledTopology(topologyDetails.get(), scheduler);
-            });
-        }
+        updated.ifPresent(updatedTopologyDetails -> {
+            updateScheduleAndRaiseEvent(topologyId, updatedTopologyDetails, previousTopology, scheduler, eventBus);
+        });
         return updated;
     }
 
@@ -180,6 +169,21 @@ public class TopologyEngine {
                                      .build());
         }
         return deleted;
+    }
+
+    private static void updateScheduleAndRaiseEvent(final String topologyId,
+                                                    final EpochTopologyDetails updatedTopologyDetails,
+                                                    final EpochTopologyDetails previousTopology,
+                                                    final Scheduler scheduler,
+                                                    final EpochEventBus eventBus) {
+        updateTopologySchedule(previousTopology, scheduler);
+        updateTopologySchedule(updatedTopologyDetails, scheduler);
+        eventBus.publish(EpochStateChangeEvent.builder()
+                .type(EpochEventType.TOPOLOGY_UPDATED)
+                .metadata(Map.of(StateChangeEventDataTag.TOPOLOGY_ID, topologyId,
+                        StateChangeEventDataTag.NEW_STATE, updatedTopologyDetails.getState(),
+                        StateChangeEventDataTag.NEW_TRIGGER, updatedTopologyDetails.getTopology().getTrigger()))
+                .build());
     }
 
     private static void validateCronExpression(final String cronExpression) {

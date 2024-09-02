@@ -40,7 +40,9 @@ import static com.phonepe.epoch.models.topology.EpochTopologyState.ACTIVE;
 import static com.phonepe.epoch.models.topology.EpochTopologyState.PAUSED;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doNothing;
 
 /**
  *
