@@ -17,7 +17,7 @@ import java.util.Date;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.phonepe.epoch.server.utils.EpochUtils.updateTopologySchedule;
+import static com.phonepe.epoch.server.utils.EpochUtils.scheduleTopology;
 
 /**
  *
@@ -100,7 +100,7 @@ public class TopologyRecovery implements Managed {
                 }
             });
             try {
-                updateTopologySchedule(topologyDetails, scheduler);
+                scheduleTopology(topologyDetails, scheduler);
             }
             catch (Exception e) {
                 log.error("Could not reschedule topology " + topologyDetails.getId() + ". Error: " + EpochUtils.errorMessage(e), e);

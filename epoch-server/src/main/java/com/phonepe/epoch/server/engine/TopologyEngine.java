@@ -35,7 +35,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-import static com.phonepe.epoch.server.utils.EpochUtils.updateTopologySchedule;
+import static com.phonepe.epoch.server.utils.EpochUtils.scheduleTopology;
+import static com.phonepe.epoch.server.utils.EpochUtils.scheduleUpdatedTopology;
+import static com.phonepe.epoch.server.utils.EpochUtils.removeScheduledTopology;
 import static com.phonepe.epoch.server.utils.EpochUtils.topologyId;
 
 @RequiredArgsConstructor(onConstructor_ = {@Inject})
@@ -70,7 +72,7 @@ public class TopologyEngine {
         }
         val saved = topologyStore.save(topology);
         saved.ifPresent(epochTopologyDetails -> {
-            updateTopologySchedule(epochTopologyDetails, scheduler);
+            scheduleTopology(epochTopologyDetails, scheduler);
             eventBus.publish(EpochStateChangeEvent.builder()
                                      .type(EpochEventType.TOPOLOGY_STATE_CHANGED)
                                      .metadata(Map.of(StateChangeEventDataTag.TOPOLOGY_ID, topologyId,
@@ -104,10 +106,15 @@ public class TopologyEngine {
                 new EpochTaskTriggerCron(request.getCron()),
                 new MailNotificationSpec(List.of(request.getNotifyEmail().split(","))));
 
-        val previousTopology = topologyDetails.get();
         val updated = topologyStore.update(topologyId, topology);
-        updated.ifPresent(epochTopologyDetails -> {
-            updateScheduleAndRaiseEvent(topologyId, epochTopologyDetails, previousTopology, scheduler, eventBus);
+        updated.ifPresent(updatedTopologyDetails -> {
+            scheduleUpdatedTopology(topologyDetails.get(), updatedTopologyDetails, scheduler);
+            eventBus.publish(EpochStateChangeEvent.builder()
+                                     .type(EpochEventType.TOPOLOGY_UPDATED)
+                                     .metadata(Map.of(StateChangeEventDataTag.TOPOLOGY_ID, topologyId,
+                                                      StateChangeEventDataTag.NEW_STATE, updatedTopologyDetails.getState(),
+                                                      StateChangeEventDataTag.NEW_TRIGGER, updatedTopologyDetails.getTopology().getTrigger()))
+                                     .build());
 
         });
         return updated;
@@ -115,8 +122,36 @@ public class TopologyEngine {
 
     public Optional<EpochTopologyDetails> save(final EpochTopology topology) {
         val stored = topologyStore.save(topology);
-        stored.ifPresent(epochTopologyDetails -> updateTopologySchedule(epochTopologyDetails, scheduler));
+        stored.ifPresent(epochTopologyDetails -> {
+            scheduleTopology(epochTopologyDetails, scheduler);
+            eventBus.publish(EpochStateChangeEvent.builder()
+                    .type(EpochEventType.TOPOLOGY_STATE_CHANGED)
+                    .metadata(Map.of(StateChangeEventDataTag.TOPOLOGY_ID, epochTopologyDetails.getId(),
+                            StateChangeEventDataTag.NEW_STATE, epochTopologyDetails.getState()))
+                    .build());
+        });
         return stored;
+    }
+
+    public Optional<EpochTopologyDetails> get(String topologyId) {
+        return topologyStore.get(topologyId);
+    }
+
+    public List<EpochTopologyDetails> list(Predicate<EpochTopologyDetails> filter) {
+        return topologyStore.list(filter);
+    }
+
+    public boolean delete(String topologyId) {
+        val deleted = topologyStore.delete(topologyId);
+        if (deleted) {
+            scheduler.delete(topologyId);
+            eventBus.publish(EpochStateChangeEvent.builder()
+                    .type(EpochEventType.TOPOLOGY_STATE_CHANGED)
+                    .metadata(Map.of(StateChangeEventDataTag.TOPOLOGY_ID, topologyId,
+                            StateChangeEventDataTag.NEW_STATE, EpochTopologyState.DELETED))
+                    .build());
+        }
+        return deleted;
     }
 
     public Optional<String> scheduleNow(String topologyId) {
@@ -132,17 +167,15 @@ public class TopologyEngine {
         val previousTopology = topologyDetails.get();
         val updated = topologyStore.update(topologyId, topology);
         updated.ifPresent(updatedTopologyDetails -> {
-            updateScheduleAndRaiseEvent(topologyId, updatedTopologyDetails, previousTopology, scheduler, eventBus);
+            scheduleUpdatedTopology(previousTopology, updatedTopologyDetails, scheduler);
+            eventBus.publish(EpochStateChangeEvent.builder()
+                    .type(EpochEventType.TOPOLOGY_UPDATED)
+                    .metadata(Map.of(StateChangeEventDataTag.TOPOLOGY_ID, topologyId,
+                            StateChangeEventDataTag.NEW_STATE, updatedTopologyDetails.getState(),
+                            StateChangeEventDataTag.NEW_TRIGGER, updatedTopologyDetails.getTopology().getTrigger()))
+                    .build());
         });
         return updated;
-    }
-
-    public Optional<EpochTopologyDetails> get(String topologyId) {
-        return topologyStore.get(topologyId);
-    }
-
-    public List<EpochTopologyDetails> list(Predicate<EpochTopologyDetails> filter) {
-        return topologyStore.list(filter);
     }
 
     public Optional<EpochTopologyDetails> updateState(String topologyId, EpochTopologyState state) {
@@ -153,37 +186,19 @@ public class TopologyEngine {
         val previousTopology = topologyDetails.get();
         val updated = topologyStore.updateState(topologyId, state);
         updated.ifPresent(updatedTopologyDetails -> {
-            updateScheduleAndRaiseEvent(topologyId, updatedTopologyDetails, previousTopology, scheduler, eventBus);
+            if (updatedTopologyDetails.getState() == EpochTopologyState.ACTIVE) {
+                scheduleTopology(updatedTopologyDetails, scheduler);
+            } else {
+                removeScheduledTopology(previousTopology, scheduler);
+            }
+            eventBus.publish(EpochStateChangeEvent.builder()
+                    .type(EpochEventType.TOPOLOGY_UPDATED)
+                    .metadata(Map.of(StateChangeEventDataTag.TOPOLOGY_ID, topologyId,
+                            StateChangeEventDataTag.NEW_STATE, updatedTopologyDetails.getState(),
+                            StateChangeEventDataTag.NEW_TRIGGER, updatedTopologyDetails.getTopology().getTrigger()))
+                    .build());
         });
         return updated;
-    }
-
-    public boolean delete(String topologyId) {
-        val deleted = topologyStore.delete(topologyId);
-        if (deleted) {
-            scheduler.delete(topologyId);
-            eventBus.publish(EpochStateChangeEvent.builder()
-                                     .type(EpochEventType.TOPOLOGY_STATE_CHANGED)
-                                     .metadata(Map.of(StateChangeEventDataTag.TOPOLOGY_ID, topologyId,
-                                                      StateChangeEventDataTag.NEW_STATE, EpochTopologyState.DELETED))
-                                     .build());
-        }
-        return deleted;
-    }
-
-    private static void updateScheduleAndRaiseEvent(final String topologyId,
-                                                    final EpochTopologyDetails updatedTopologyDetails,
-                                                    final EpochTopologyDetails previousTopology,
-                                                    final Scheduler scheduler,
-                                                    final EpochEventBus eventBus) {
-        updateTopologySchedule(previousTopology, scheduler);
-        updateTopologySchedule(updatedTopologyDetails, scheduler);
-        eventBus.publish(EpochStateChangeEvent.builder()
-                .type(EpochEventType.TOPOLOGY_UPDATED)
-                .metadata(Map.of(StateChangeEventDataTag.TOPOLOGY_ID, topologyId,
-                        StateChangeEventDataTag.NEW_STATE, updatedTopologyDetails.getState(),
-                        StateChangeEventDataTag.NEW_TRIGGER, updatedTopologyDetails.getTopology().getTrigger()))
-                .build());
     }
 
     private static void validateCronExpression(final String cronExpression) {

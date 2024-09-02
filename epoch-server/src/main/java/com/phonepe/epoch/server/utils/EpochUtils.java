@@ -73,10 +73,25 @@ public class EpochUtils {
     public static EpochTopologyDetails detailsFrom(final EpochTopology topology) {
         return new EpochTopologyDetails(topologyId(topology), topology, EpochTopologyState.ACTIVE, new Date(), new Date());
     }
-    public static void updateTopologySchedule(final EpochTopologyDetails topologyDetails,
+
+    public static void scheduleUpdatedTopology(final EpochTopologyDetails previousTopologyDetails,
+                                               final EpochTopologyDetails newTopologyDetails,
+                                               final Scheduler scheduler) {
+        removeScheduledTopology(previousTopologyDetails, scheduler);
+        scheduleTopology(newTopologyDetails, scheduler);
+    }
+
+    public static void removeScheduledTopology(final EpochTopologyDetails topologyDetails,
                                               final Scheduler scheduler) {
+        val scheduleId = EpochUtils.scheduleId(topologyDetails);
+        scheduler.delete(scheduleId);
+        log.info("Removed schedule with id: {}", scheduleId);
+    }
+
+    public static void scheduleTopology(final EpochTopologyDetails topologyDetails,
+                                        final Scheduler scheduler) {
         if (topologyDetails.getState() != EpochTopologyState.ACTIVE) {
-            removeScheduledTopology(topologyDetails, scheduler);
+            /* double check here for recovery flows */
             log.info("Not scheduling topology {} as it is not active", topologyDetails.getId());
             return;
         }
@@ -92,13 +107,6 @@ public class EpochUtils {
         else {
             log.warn("Could not schedule {} for topology {} for execution", scheduleId, topologyDetails.getId());
         }
-    }
-
-    private static void removeScheduledTopology(final EpochTopologyDetails topologyDetails,
-                                                final Scheduler scheduler) {
-        val scheduleId = EpochUtils.scheduleId(topologyDetails);
-        scheduler.delete(scheduleId);
-        log.info("Removed schedule with id: {}", scheduleId);
     }
 
     @IgnoreInJacocoGeneratedReport(reason = "Not possible to simulate properly")
