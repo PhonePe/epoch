@@ -36,6 +36,7 @@ public class MailNotificationConfig extends NotificationConfig {
 
     String fromName;
 
+    @NotEmpty
     String fromAddress;
 
     boolean disableForSuccessfulRuns;

@@ -14,6 +14,7 @@ import org.simplejavamail.mailer.MailerBuilder;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.Objects;
 
 /**
  *
@@ -73,10 +74,10 @@ public class NotificationMailSender implements NotificationSender {
                     .toMultiple(mailData.emailIds())
                     .withSubject(mailData.subject())
                     .withPlainText(mailData.body())
-                    .from(mailConfig.getFromName(), mailConfig.getFromAddress())
+                    .from(Objects.requireNonNullElseGet(mailConfig.getFromName(), mailConfig::getFromAddress), mailConfig.getFromAddress())
                     .buildEmail();
             mailer.sendMail(email);
-            log.info("Mail subject: {}, Body: {} To: {} From: {} <{}>", mailData.subject(), mailData.body(),
+            log.debug("Mail subject: {}, Body: {} To: {} From: {} <{}>", mailData.subject(), mailData.body(),
                     mailData.emailIds(), mailConfig.getFromName(), mailConfig.getFromAddress());
         }
         catch (Exception e) {
