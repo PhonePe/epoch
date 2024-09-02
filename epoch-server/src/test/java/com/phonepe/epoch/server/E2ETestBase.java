@@ -82,7 +82,6 @@ public abstract class E2ETestBase {
         valueCapture.getAllValues()
                 .forEach(managed -> ignoredExec(managed::start));
         scheduler.start();
-
     }
 
     @BeforeEach

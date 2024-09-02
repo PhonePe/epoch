@@ -9,8 +9,10 @@ import com.phonepe.epoch.server.TestUtils;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Stream;
 
 import static com.phonepe.epoch.server.TestUtils.ensureUntil;
@@ -22,13 +24,16 @@ class TopologyEngineTest extends E2ETestBase {
     @Inject
     private TopologyEngine topologyEngine;
 
+    private final Random random = new SecureRandom();
+
     @Test
     public void testCreationOfTopologyWithSuccessfulExecution() {
         assert taskExecutionEngine.capturedTasksSize() == 0;
 
         // create a topology
         final var save = topologyEngine.save(
-                TestUtils.generateTopologyRunningEveryFiveSecs(1, new MailNotificationSpec(List.of("test@email.com"))));
+                TestUtils.generateTopologyRunningEveryFiveSecs(newRandomInt(),
+                        new MailNotificationSpec(List.of("test@email.com"))));
         assertTrue(save.isPresent());
         final var topologyId = save.get().getId();
 
@@ -42,7 +47,8 @@ class TopologyEngineTest extends E2ETestBase {
 
         // create a topology
         final var save = topologyEngine.save(
-                TestUtils.generateTopologyRunningEveryFiveSecs(1, new MailNotificationSpec(List.of("test@email.com"))));
+                TestUtils.generateTopologyRunningEveryFiveSecs(newRandomInt(),
+                        new MailNotificationSpec(List.of("test@email.com"))));
         assertTrue(save.isPresent());
         final var topologyId = save.get().getId();
 
@@ -69,7 +75,8 @@ class TopologyEngineTest extends E2ETestBase {
 
         // create a topology
         final var save = topologyEngine.save(
-                TestUtils.generateTopologyRunningEveryFiveSecs(1, new MailNotificationSpec(List.of("test@email.com"))));
+                TestUtils.generateTopologyRunningEveryFiveSecs(newRandomInt(),
+                        new MailNotificationSpec(List.of("test@email.com"))));
         assertTrue(save.isPresent());
         final var topologyId = save.get().getId();
 
@@ -89,7 +96,8 @@ class TopologyEngineTest extends E2ETestBase {
 
         // create a topology
         final var save = topologyEngine.save(
-                TestUtils.generateTopologyThatCanNeverRun(1, new MailNotificationSpec(List.of("test@email.com"))));
+                TestUtils.generateTopologyThatCanNeverRun(newRandomInt(),
+                        new MailNotificationSpec(List.of("test@email.com"))));
         assertTrue(save.isPresent());
         final var topologyId = save.get().getId();
 
@@ -112,7 +120,8 @@ class TopologyEngineTest extends E2ETestBase {
 
         // create a topology
         final var save = topologyEngine.save(
-                TestUtils.generateTopologyDesc((int) System.currentTimeMillis(), new EpochTaskTriggerCron("0/2 * * * * ?"), new MailNotificationSpec(List.of("test@email.com"))));
+                TestUtils.generateTopologyDesc(newRandomInt(), new EpochTaskTriggerCron("0/2 * * * * ?"),
+                        new MailNotificationSpec(List.of("test@email.com"))));
         assertTrue(save.isPresent());
         final var topologyId = save.get().getId();
 
@@ -135,7 +144,8 @@ class TopologyEngineTest extends E2ETestBase {
 
         // create a topology
         final var save = topologyEngine.save(
-                TestUtils.generateTopologyDesc(1, new EpochTaskTriggerCron("0/2 * * * * ?"), new MailNotificationSpec(List.of("test@email.com"))));
+                TestUtils.generateTopologyDesc(1, new EpochTaskTriggerCron("0/2 * * * * ?"),
+                        new MailNotificationSpec(List.of("test@email.com"))));
         assertTrue(save.isPresent());
         final var topologyId = save.get().getId();
 
@@ -163,4 +173,7 @@ class TopologyEngineTest extends E2ETestBase {
         return Stream.empty();
     }
 
+    private int newRandomInt() {
+        return random.nextInt(100000);
+    }
 }
