@@ -106,4 +106,71 @@ class TopologyRecoveryTest extends TestBase {
         tr.stop();
         scheduler.stop();
     }
+
+    @Test
+    @SneakyThrows
+    void testRecoveryForPaused() {
+        val ts = new InMemoryTopologyStore();
+        val topologies = IntStream.rangeClosed(1, 100)
+                .mapToObj(i -> ts.save(new EpochTopology("test-topo-" + i,
+                                                         new EpochContainerExecutionTask("TEST_TASK",
+                                                                                         null,
+                                                                                         null,
+                                                                                         null,
+                                                                                         null,
+                                                                                         null,
+                                                                                         null,
+                                                                                         null,
+                                                                                         null,
+                                                                                         null),
+                                                         new EpochTaskTriggerCron("0/2 * * ? * * *"),
+                                                         BlackholeNotificationSpec.DEFAULT))
+                        .flatMap(topology -> i % 2 == 0 ? ts.updateState(topologyId(topology.getTopology()),
+                                                                    EpochTopologyState.PAUSED)
+                                                        : Optional.of(topology))
+                        .orElse(null))
+                .filter(Objects::nonNull)
+                .toList();
+        val ris = new InMemoryTopologyRunInfoStore();
+        topologies.forEach(td -> ris.save(
+                new EpochTopologyRunInfo(td.getId(),
+                                         "R-001",
+                                         EpochTopologyRunState.RUNNING,
+                                         "",
+                                         Map.of("TEST_TASK", new EpochTopologyRunTaskInfo()
+                                                 .setState(EpochTaskRunState.RUNNING)),
+                                         EpochTopologyRunType.INSTANT,
+                                         new Date(),
+                                         new Date())));
+        val scheduler = mock(Scheduler.class);
+        val recoveryCount = new AtomicInteger();
+        val scheduleCount = new AtomicInteger();
+        when(scheduler.recover(anyString(), anyString(), anyString(), any(), any()))
+                .then(new Answer<Boolean>() {
+                    final AtomicInteger idx = new AtomicInteger();
+
+                    @Override
+                    public Boolean answer(InvocationOnMock invocationMock) {
+                        recoveryCount.incrementAndGet();
+                        return true;
+                    }
+                });
+        when(scheduler.schedule(anyString(), anyString(), any(), any()))
+                .thenAnswer((Answer<Optional<String>>) invocationMock -> {
+                    scheduleCount.incrementAndGet();
+                    return Optional.of("xx");
+                });
+        scheduler.start();
+        val lm = TestUtils.createLeadershipManager(true);
+        val tr = new TopologyRecovery(lm, ts, ris, scheduler);
+        tr.start();
+        lm.onLeadershipStateChange().dispatch(true);
+        TestUtils.waitUntil(() -> scheduleCount.get() == 50);
+
+        /* all 100 should recover, and 50 active ones should be scheduled */
+        assertEquals(100, recoveryCount.get());
+        assertEquals(50, scheduleCount.get());
+        tr.stop();
+        scheduler.stop();
+    }
 }
