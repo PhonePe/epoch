@@ -161,20 +161,10 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
         val retryPolicy = RetryPolicy.<TaskStatusData>builder()
                 .withDelay(retryInterval)
                 .withMaxRetries(retryCount)
-                .onFailedAttempt(attempt -> {
-                    if (attempt.getLastException() != null) {
-                        log.warn("Status read attempt {} for drove task {} failed with error: {}",
-                                 attempt.getAttemptCount(),
-                                 context.getUpstreamTaskId(),
-                                 EpochUtils.errorMessage(attempt.getLastException()));
-                    }
-                    else {
-                        log.warn("Status read attempt {} for drove task {} failed as state is still {}",
-                                 attempt.getAttemptCount(),
-                                 context.getUpstreamTaskId(),
-                                 attempt.getLastResult());
-                    }
-                })
+                .onFailedAttempt(attempt -> log.warn("Status read attempt {} for drove task {} failed as state is still {}",
+                        attempt.getAttemptCount(),
+                        context.getUpstreamTaskId(),
+                        attempt.getLastResult()))
                 .handle(Exception.class)
                 .handleResultIf(r -> r == null || r.state().equals(EpochTaskRunState.UNKNOWN))
                 .build();
@@ -324,20 +314,10 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
         val retryPolicy = RetryPolicy.<EpochTopologyRunTaskInfo>builder()
                 .withDelay(retryInterval)
                 .withMaxRetries(retryCount)
-                .onFailedAttempt(attempt -> {
-                    if (attempt.getLastException() != null) {
-                        log.warn("Status read attempt {} for existing drove task {} failed with error: {}",
-                                 attempt.getAttemptCount(),
-                                 context.getUpstreamTaskId(),
-                                 EpochUtils.errorMessage(attempt.getLastException()));
-                    }
-                    else {
-                        log.warn("Status read attempt {} for existing drove task {} failed as state is still {}",
-                                 attempt.getAttemptCount(),
-                                 context.getUpstreamTaskId(),
-                                 attempt.getLastResult());
-                    }
-                })
+                .onFailedAttempt(attempt -> log.warn("Status read attempt {} for existing drove task {} failed as state is still {}",
+                             attempt.getAttemptCount(),
+                             context.getUpstreamTaskId(),
+                             attempt.getLastResult()))
                 .handle(Exception.class)
                 .handleResultIf(r -> r == null
                         || Strings.isNullOrEmpty(r.getUpstreamId())

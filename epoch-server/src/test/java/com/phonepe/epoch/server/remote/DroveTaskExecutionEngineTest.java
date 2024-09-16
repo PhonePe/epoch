@@ -523,6 +523,22 @@ class DroveTaskExecutionEngineTest extends TestBase {
     }
 
     @Test
+    void testStatusFailThrowableException(WireMockRuntimeInfo wm) {
+        val engine = createEngineThatRaisesExceptionThatCantBeCaught(wm);
+
+        val context = new TaskExecutionContext(EpochUtils.topologyId("Test"),
+                                               "TR1",
+                                               "CT1",
+                                               EpochTopologyRunType.INSTANT,
+                                               EpochTopologyRunTaskInfo.UNKNOWN_TASK_ID);
+
+        val status = engine.status(context, null);
+        assertEquals(EpochTaskRunState.UNKNOWN, status.state());
+        assertEquals("Error getting task status: Failure testing error",
+                     status.errorMessage());
+    }
+
+    @Test
     @SneakyThrows
     void testCleanupSuccess(WireMockRuntimeInfo wm) {
         val engine = createEngine(wm);
@@ -666,6 +682,22 @@ class DroveTaskExecutionEngineTest extends TestBase {
         when(client.getClient()).thenReturn(dc);
         when(dc.execute(ArgumentMatchers.any(DroveClient.Request.class)))
                 .thenThrow(new RuntimeException("Failure testing error"));
+        return new DroveTaskExecutionEngine(client, MAPPER);
+    }
+
+    private static DroveTaskExecutionEngine createEngineThatRaisesExceptionThatCantBeCaught(WireMockRuntimeInfo wm) {
+        val config = new DroveConfig()
+                .setEndpoints(List.of(wm.getHttpBaseUrl()))
+                .setRpcRetryCount(3)
+                .setRpcRetryInterval(Duration.milliseconds(10));
+        val client = mock(DroveClientManager.class);
+        val dc = mock(DroveClient.class);
+        when(client.getDroveConfig()).thenReturn(config);
+        when(client.getClient()).thenReturn(dc);
+        when(dc.execute(ArgumentMatchers.any(DroveClient.Request.class)))
+                .thenAnswer(i -> {
+                    throw new Throwable("Failure testing error");
+                });
         return new DroveTaskExecutionEngine(client, MAPPER);
     }
 }
