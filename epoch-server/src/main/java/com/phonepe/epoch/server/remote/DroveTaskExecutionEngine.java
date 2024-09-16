@@ -432,7 +432,7 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
                                                     task.getTags(),
                                                     task.getEnv(),
                                                     task.getArgs(),
-                task),
+                                                    List.of()),
                                        Objects.requireNonNullElse(droveClientManager
                                                                           .getDroveConfig()
                                                                           .getClusterOpSpec(),
