@@ -143,7 +143,7 @@ class ApisTest extends TestBase {
         try (val r = EXT.target("/v1/topologies")
                 .request()
                 .put(Entity.json(topology))) {
-            assertEquals(HttpStatus.SC_OK, r.getStatus());
+            assertEquals(HttpStatus.SC_NOT_FOUND, r.getStatus());
             val apiR = r.readEntity(new GenericType<ApiResponse<EpochTopologyDetails>>() {
             });
             assertEquals(ApiErrorCode.FAILED, apiR.getStatus());
@@ -313,7 +313,7 @@ class ApisTest extends TestBase {
         try (val r = EXT.target("/v1/topologies/TEST_TOPO-0/pause")
                 .request()
                 .put(Entity.json(""))) {
-            assertEquals(HttpStatus.SC_OK, r.getStatus());
+            assertEquals(HttpStatus.SC_NOT_FOUND, r.getStatus());
             val apiR = r.readEntity(new GenericType<ApiResponse<EpochTopologyDetails>>() {
             });
             assertEquals(ApiErrorCode.FAILED, apiR.getStatus());
@@ -355,7 +355,7 @@ class ApisTest extends TestBase {
         try (val r = EXT.target("/v1/topologies/TEST_TOPO-0/unpause")
                 .request()
                 .put(Entity.json(""))) {
-            assertEquals(HttpStatus.SC_OK, r.getStatus());
+            assertEquals(HttpStatus.SC_NOT_FOUND, r.getStatus());
             val apiR = r.readEntity(new GenericType<ApiResponse<EpochTopologyDetails>>() {
             });
             assertEquals(ApiErrorCode.FAILED, apiR.getStatus());
