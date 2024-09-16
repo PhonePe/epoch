@@ -20,10 +20,10 @@ import com.phonepe.epoch.server.remote.TaskExecutionEngine;
 import com.phonepe.epoch.server.statemanagement.TaskStateElaborator;
 import com.phonepe.epoch.server.store.TopologyRunInfoStore;
 import com.phonepe.epoch.server.store.TopologyStore;
+import dev.failsafe.Failsafe;
+import dev.failsafe.RetryPolicy;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import net.jodah.failsafe.Failsafe;
-import net.jodah.failsafe.RetryPolicy;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -259,15 +259,15 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
                 final EpochContainerExecutionTask containerExecution) {
             val topologyName = topologyExecutionInfo.getTopologyId();
             val taskName = containerExecution.getTaskName();
-            val retryPolicy = new RetryPolicy<TaskStatusData>()
+            val retryPolicy = RetryPolicy.<TaskStatusData>builder()
                     .withDelay(Duration.ofSeconds(3))
                     .withMaxRetries(-1)
                     .onFailedAttempt(attempt -> {
-                        if (null != attempt.getLastFailure()) {
+                        if (null != attempt.getLastException()) {
                             log.error("Task status fetch attempt " + attempt.getAttemptCount()
                                               + " for " + context.printId()
-                                              + " failed with error: " + attempt.getLastFailure()
-                                    .getMessage(), attempt.getLastFailure());
+                                              + " failed with error: " + attempt.getLastException()
+                                    .getMessage(), attempt.getLastException());
                         }
                         else {
                             log.debug("Task status fetch attempt {}  for {} returned non-terminal state : {}",
@@ -275,7 +275,8 @@ public final class TopologyExecutorImpl implements TopologyExecutor {
                         }
                     })
                     .handleIf(e -> true)
-                    .handleResultIf(result -> null == result || !EpochTaskRunState.TERMINAL_STATES.contains(result.state()));
+                    .handleResultIf(result -> null == result || !EpochTaskRunState.TERMINAL_STATES.contains(result.state()))
+                    .build();
             try {
                 return Failsafe.with(List.of(retryPolicy))
                         .get(() -> {

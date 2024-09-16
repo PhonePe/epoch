@@ -21,14 +21,14 @@
         <signals.version>1.4</signals.version>
         <kaal.version>1.0.0</kaal.version>
         <drove.version>1.30</drove.version>
-        <function-metrics.version>1.0.14</function-metrics.version>
+        <function-metrics.version>1.0.16</function-metrics.version>
         <awaitility.version>4.2.0</awaitility.version>
-        <guice.version>5.1.0</guice.version>
-        <dw-guicey.version>5.5.0</dw-guicey.version>
-        <curator.version>5.3.0</curator.version>
-        <metrics-core.version>4.2.9</metrics-core.version>
+        <guice.version>6.0.0</guice.version>
+        <dw-guicey.version>5.10.2</dw-guicey.version>
+        <curator.version>5.4.0</curator.version>
+        <metrics-core.version>4.2.13</metrics-core.version>
         <logback.version>1.2.11</logback.version>
-        <failsafe.version>2.4.4</failsafe.version>
+        <failsafe.version>3.3.2</failsafe.version>
         <aspectj.version>1.9.9.1</aspectj.version>
         <junit.version>5.8.2</junit.version>
         <mockito.version>4.8.0</mockito.version>
@@ -36,6 +36,7 @@
         <bytebuddy.version>1.12.16</bytebuddy.version>
         <maven.deploy.skip>false</maven.deploy.skip>
         <cronutils.version>9.2.0</cronutils.version>
+        <jakarta.inject-api.version>2.0.1</jakarta.inject-api.version>
         <sonar.exclusions>
             **/*.hbs,
             **/*.js,

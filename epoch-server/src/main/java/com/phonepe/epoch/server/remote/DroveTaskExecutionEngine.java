@@ -18,14 +18,14 @@ import com.phonepe.epoch.models.topology.EpochTopologyRunTaskInfo;
 import com.phonepe.epoch.server.execution.TaskStatusData;
 import com.phonepe.epoch.server.managed.DroveClientManager;
 import com.phonepe.epoch.server.utils.EpochUtils;
+import dev.failsafe.Failsafe;
+import dev.failsafe.FailsafeException;
+import dev.failsafe.RetryPolicy;
 import io.appform.functionmetrics.MonitoredFunction;
 import io.dropwizard.util.Strings;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import net.jodah.failsafe.Failsafe;
-import net.jodah.failsafe.FailsafeException;
-import net.jodah.failsafe.RetryPolicy;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -158,15 +158,15 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
         Keep task in unknown state in case we are unable to find the status
          */
         log.info("Fetching data for existing task");
-        val retryPolicy = new RetryPolicy<TaskStatusData>()
+        val retryPolicy = RetryPolicy.<TaskStatusData>builder()
                 .withDelay(retryInterval)
                 .withMaxRetries(retryCount)
                 .onFailedAttempt(attempt -> {
-                    if (attempt.getLastFailure() != null) {
+                    if (attempt.getLastException() != null) {
                         log.warn("Status read attempt {} for drove task {} failed with error: {}",
                                  attempt.getAttemptCount(),
                                  context.getUpstreamTaskId(),
-                                 EpochUtils.errorMessage(attempt.getLastFailure()));
+                                 EpochUtils.errorMessage(attempt.getLastException()));
                     }
                     else {
                         log.warn("Status read attempt {} for drove task {} failed as state is still {}",
@@ -176,7 +176,8 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
                     }
                 })
                 .handle(Exception.class)
-                .handleResultIf(r -> r == null || r.state().equals(EpochTaskRunState.UNKNOWN));
+                .handleResultIf(r -> r == null || r.state().equals(EpochTaskRunState.UNKNOWN))
+                .build();
         val defaultValue = new TaskStatusData(EpochTaskRunState.UNKNOWN,
                                               "Status could not be ascertained. Task might not have started yet");
         try {
@@ -320,15 +321,15 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
             String instanceId,
             String taskId) {
         log.info("Fetching data for existing task");
-        val retryPolicy = new RetryPolicy<EpochTopologyRunTaskInfo>()
+        val retryPolicy = RetryPolicy.<EpochTopologyRunTaskInfo>builder()
                 .withDelay(retryInterval)
                 .withMaxRetries(retryCount)
                 .onFailedAttempt(attempt -> {
-                    if (attempt.getLastFailure() != null) {
+                    if (attempt.getLastException() != null) {
                         log.warn("Status read attempt {} for existing drove task {} failed with error: {}",
                                  attempt.getAttemptCount(),
                                  context.getUpstreamTaskId(),
-                                 EpochUtils.errorMessage(attempt.getLastFailure()));
+                                 EpochUtils.errorMessage(attempt.getLastException()));
                     }
                     else {
                         log.warn("Status read attempt {} for existing drove task {} failed as state is still {}",
@@ -341,7 +342,8 @@ public class DroveTaskExecutionEngine implements TaskExecutionEngine {
                 .handleResultIf(r -> r == null
                         || Strings.isNullOrEmpty(r.getUpstreamId())
                         || r.getState().equals(EpochTaskRunState.UNKNOWN)
-                        || r.getUpstreamId().equals(EpochTopologyRunTaskInfo.UNKNOWN_TASK_ID));
+                        || r.getUpstreamId().equals(EpochTopologyRunTaskInfo.UNKNOWN_TASK_ID))
+                .build();
         val upstreamId = Strings.isNullOrEmpty(context.getUpstreamTaskId())
                          ? EpochTopologyRunTaskInfo.UNKNOWN_TASK_ID
                          : context.getUpstreamTaskId();
