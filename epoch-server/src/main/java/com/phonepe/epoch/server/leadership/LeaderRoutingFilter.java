@@ -183,7 +183,12 @@ public class LeaderRoutingFilter implements ContainerRequestFilter {
     }
 
     private static void copyCookies(ContainerRequest request, HttpRequest proxyRequest) {
-        request.getCookies().forEach((name, cookie) -> proxyRequest.setHeader(HttpHeaders.COOKIE, name + "=" + cookie));
+        if (request.getCookies() != null ) {
+            proxyRequest.setHeader(HttpHeaders.COOKIE, request.getCookies().entrySet()
+                    .stream()
+                    .map(cookie -> cookie.getKey() + "=" + cookie.getValue())
+                    .reduce((first, second) -> first + ";" + second));
+        }
     }
 
     private static void copyHeaders(ContainerRequest request, HttpRequest proxyRequest) {
