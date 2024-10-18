@@ -7,11 +7,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
-import com.phonepe.epoch.server.config.AppConfig;
 import com.phonepe.epoch.server.managed.Scheduler;
 import com.phonepe.epoch.server.mocks.MockTaskExecutionEngine;
-import com.phonepe.olympus.im.client.OlympusIMBundle;
-import com.phonepe.olympus.im.client.OlympusIMClient;
 import io.dropwizard.jersey.DropwizardResourceConfig;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
 import io.dropwizard.lifecycle.Managed;
@@ -45,7 +42,6 @@ public abstract class E2ETestBase {
 
     private static final Bootstrap<?> bootstrap = mock(Bootstrap.class);
     private static final AdminEnvironment adminEnvironment = mock(AdminEnvironment.class);
-    private final OlympusIMBundle<AppConfig> olympusIMBundle = mock(OlympusIMBundle.class);
     protected Injector injector;
     protected ObjectMapper mapper;
     protected MockTaskExecutionEngine taskExecutionEngine = new MockTaskExecutionEngine();
@@ -66,9 +62,6 @@ public abstract class E2ETestBase {
         when(environment.lifecycle()).thenReturn(lifecycleEnvironment);
         when(environment.healthChecks()).thenReturn(healthChecks);
         when(environment.admin()).thenReturn(adminEnvironment);
-        OlympusIMClient olympusIMClient = mock(OlympusIMClient.class);
-        when(olympusIMClient.getSystemAuthHeader()).thenReturn("testHeader");
-        when(olympusIMBundle.getOlympusIMClient()).thenReturn(olympusIMClient);
 
         when(bootstrap.getHealthCheckRegistry())
                 .thenReturn(Mockito.mock(HealthCheckRegistry.class));
